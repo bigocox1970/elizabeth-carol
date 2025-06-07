@@ -1,6 +1,8 @@
 const nodemailer = require('nodemailer');
 const fs = require('fs').promises;
 const path = require('path');
+const SUPABASE_URL = 'https://itsxxdxyigsyqxkeonqr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0c3h4ZHh5aWdzeXF4a2VvbnFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMDQ1NjgsImV4cCI6MjA2NDg4MDU2OH0.YeWzqm0FsIBs8ojIdyMSkprWn1OA4SfFgB2DM3j2ko';
 
 exports.handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
@@ -53,11 +55,48 @@ exports.handler = async (event, context) => {
       dateSubmitted: new Date().toISOString()
     });
 
-    // Here you would typically:
-    // 1. Send an email to Elizabeth with the contact details
-    // 2. Send a confirmation email to the customer
-    // 3. Add to mailing list if they opted in
-    // 4. Save to a database or CRM
+    // Add to subscriber list automatically (check if email already exists first)
+    try {
+      const checkResponse = await fetch(`${SUPABASE_URL}/rest/v1/subscribers?email=eq.${email.toLowerCase()}&select=email`, {
+        method: 'GET',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (checkResponse.ok) {
+        const existingUsers = await checkResponse.json();
+        
+        if (existingUsers.length === 0) {
+          // Add to subscriber list
+          const insertResponse = await fetch(`${SUPABASE_URL}/rest/v1/subscribers`, {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({
+              email: email.toLowerCase(),
+              name: `${firstName} ${lastName}`,
+              source: 'contact_form',
+              date_added: new Date().toISOString(),
+              active: true
+            })
+          });
+
+          if (insertResponse.ok) {
+            console.log('Added to subscriber list from contact form');
+          }
+        }
+      }
+    } catch (subscriberError) {
+      console.error('Failed to add to subscriber list:', subscriberError);
+      // Don't fail the contact form if subscriber addition fails
+    }
 
     return {
       statusCode: 200,

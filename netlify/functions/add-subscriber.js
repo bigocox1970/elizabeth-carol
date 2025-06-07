@@ -1,9 +1,5 @@
-const { createClient } = require('@supabase/supabase-js');
-
-const supabaseUrl = 'https://itsxxdxyigsyqxkeonqr.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0c3h4ZHh5aWdzeXF4a2VvbnFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMDQ1NjgsImV4cCI6MjA2NDg4MDU2OH0.YeWzqm0FsIBs8ojIdyMSkprWn1OA4SfFgB2DM3j2ko';
-
-const supabase = createClient(supabaseUrl, supabaseKey);
+const SUPABASE_URL = 'https://itsxxdxyigsyqxkeonqr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0c3h4ZHh5aWdzeXF4a2VvbnFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMDQ1NjgsImV4cCI6MjA2NDg4MDU2OH0.YeWzqm0FsIBs8ojIdyMSkprWn1OA4SfFgB2DM3j2ko';
 
 exports.handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
@@ -45,36 +41,44 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Check if email already exists
-    const { data: existingUser, error: checkError } = await supabase
-      .from('subscribers')
-      .select('email')
-      .eq('email', email.toLowerCase())
-      .single();
+    // Check if email already exists using Supabase REST API
+    const checkResponse = await fetch(`${SUPABASE_URL}/rest/v1/subscribers?email=eq.${email.toLowerCase()}&select=email`, {
+      method: 'GET',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
 
-    if (checkError && checkError.code !== 'PGRST116') {
-      console.error('Database check error:', checkError);
-      throw checkError;
+    if (!checkResponse.ok) {
+      throw new Error(`Database check failed: ${checkResponse.status}`);
     }
 
+    const existingUsers = await checkResponse.json();
+    
     let isNew = true;
-    if (!existingUser) {
-      // Add new subscriber
-      const { error: insertError } = await supabase
-        .from('subscribers')
-        .insert([
-          {
-            email: email.toLowerCase(),
-            name: name || '',
-            source: source,
-            date_added: new Date().toISOString(),
-            active: true
-          }
-        ]);
+    if (existingUsers.length === 0) {
+      // Add new subscriber using Supabase REST API
+      const insertResponse = await fetch(`${SUPABASE_URL}/rest/v1/subscribers`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          email: email.toLowerCase(),
+          name: name || '',
+          source: source,
+          date_added: new Date().toISOString(),
+          active: true
+        })
+      });
 
-      if (insertError) {
-        console.error('Database insert error:', insertError);
-        throw insertError;
+      if (!insertResponse.ok) {
+        throw new Error(`Database insert failed: ${insertResponse.status}`);
       }
     } else {
       isNew = false;
