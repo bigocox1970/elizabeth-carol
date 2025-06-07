@@ -27,13 +27,13 @@ exports.handler = async (event, context) => {
           };
         }
 
-        // Add to reviews table - use service role key to bypass RLS
-        const reviewAuthKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+        // Add to reviews table (keep original logic that was working)
+        const authToken = userToken || SUPABASE_ANON_KEY;
         const addReviewResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews`, {
           method: 'POST',
           headers: {
-            'apikey': reviewAuthKey,
-            'Authorization': `Bearer ${reviewAuthKey}`,
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${authToken}`,
             'Content-Type': 'application/json',
             'Prefer': 'return=representation'
           },
