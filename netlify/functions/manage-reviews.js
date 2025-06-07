@@ -27,13 +27,20 @@ exports.handler = async (event, context) => {
           };
         }
 
-        // Add to reviews table - use service role key to bypass RLS
-        const reviewAuthKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+        // Add to reviews table - require authentication
+        if (!userToken || !reviewData.userId) {
+          return {
+            statusCode: 401,
+            headers: { "Access-Control-Allow-Origin": "*" },
+            body: JSON.stringify({ message: 'You must be logged in to submit a review' })
+          };
+        }
+
         const addReviewResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews`, {
           method: 'POST',
           headers: {
-            'apikey': reviewAuthKey,
-            'Authorization': `Bearer ${reviewAuthKey}`,
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${userToken}`,
             'Content-Type': 'application/json',
             'Prefer': 'return=representation'
           },
@@ -45,7 +52,7 @@ exports.handler = async (event, context) => {
             rating: parseInt(reviewData.rating),
             title: reviewData.title || '',
             content: reviewData.comment,
-            user_id: reviewData.userId || null,
+            user_id: reviewData.userId,
             approved: false // Requires admin approval
           })
         });

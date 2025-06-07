@@ -1,12 +1,8 @@
--- Allow anonymous review submissions
--- The current RLS policy only allows authenticated users to submit reviews
--- This fixes the 400 error when trying to submit reviews anonymously
+-- Fix review submission for authenticated users only
+-- The issue is that the function needs to properly use the user's auth token
 
--- Drop the restrictive policy
-DROP POLICY IF EXISTS "Enable insert for authenticated users" ON public.reviews;
+-- Restore the correct policy - only authenticated users should submit reviews
+DROP POLICY IF EXISTS "Enable insert for anyone" ON public.reviews;
 
--- Create a new policy that allows both authenticated and anonymous inserts
-CREATE POLICY "Enable insert for anyone" ON public.reviews
-    FOR INSERT WITH CHECK (true);
-
--- Keep the existing policies for read/update/delete unchanged 
+CREATE POLICY "Enable insert for authenticated users" ON public.reviews
+    FOR INSERT WITH CHECK (auth.uid() = user_id); 
