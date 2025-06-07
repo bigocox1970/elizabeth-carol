@@ -33,13 +33,6 @@ const NewsletterSignup = () => {
     setMessage('');
 
     try {
-      // Create form data for Netlify Forms - use the most reliable method
-      const formDataString = new URLSearchParams({
-        'form-name': 'newsletter-signup',
-        'email': email.trim(),
-        'name': name.trim()
-      }).toString();
-
       // Check if we're in development mode
       const isDevelopment = import.meta.env.DEV;
       
@@ -54,26 +47,28 @@ const NewsletterSignup = () => {
         return;
       }
 
-      const response = await fetch('/', {
+      // Use Netlify function for form submission
+      const response = await fetch('/.netlify/functions/submit-form', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: formDataString
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          formName: 'newsletter-signup',
+          email: email.trim(),
+          name: name.trim()
+        })
       });
 
-      if (response.ok) {
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
         setIsSuccess(true);
         setMessage('Successfully subscribed! Thank you for joining our newsletter.');
         setEmail('');
         setName('');
       } else {
-        // Handle different error responses
-        if (response.status === 400) {
-          setMessage('Please check your information and try again.');
-        } else if (response.status >= 500) {
-          setMessage('Server error. Please try again in a moment.');
-        } else {
-          setMessage('Failed to subscribe. Please try again.');
-        }
+        setMessage(result.message || 'Failed to subscribe. Please try again.');
       }
     } catch (error) {
       console.error('Newsletter signup error:', error);

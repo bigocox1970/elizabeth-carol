@@ -71,17 +71,6 @@ const Contact = () => {
     setErrorMessage('');
 
     try {
-      // Create form data for Netlify Forms - use the most reliable method
-      const formDataString = new URLSearchParams({
-        'form-name': 'contact-form',
-        'firstName': formData.firstName.trim(),
-        'lastName': formData.lastName.trim(),
-        'email': formData.email.trim(),
-        'phone': formData.phone.trim(),
-        'service': formData.service,
-        'message': formData.message.trim()
-      }).toString();
-
       // Check if we're in development mode
       const isDevelopment = import.meta.env.DEV;
       
@@ -97,27 +86,33 @@ const Contact = () => {
         return;
       }
 
-      const response = await fetch('/', {
+      // Use Netlify function for form submission
+      const response = await fetch('/.netlify/functions/submit-form', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: formDataString
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          formName: 'contact-form',
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          email: formData.email.trim(),
+          phone: formData.phone.trim(),
+          service: formData.service,
+          message: formData.message.trim()
+        })
       });
 
-      if (response.ok) {
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
         setShowSuccess(true);
         // Scroll to success message
         setTimeout(() => {
           document.getElementById('success-message')?.scrollIntoView({ behavior: 'smooth' });
         }, 100);
       } else {
-        // Handle different error responses
-        if (response.status === 400) {
-          setErrorMessage('Please check your information and try again.');
-        } else if (response.status >= 500) {
-          setErrorMessage('Server error. Please try again in a moment.');
-        } else {
-          setErrorMessage('Failed to send message. Please try again.');
-        }
+        setErrorMessage(result.message || 'Failed to send message. Please try again.');
       }
     } catch (error) {
       console.error('Contact form error:', error);
