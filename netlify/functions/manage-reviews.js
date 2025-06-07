@@ -1,5 +1,6 @@
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 exports.handler = async (event, context) => {
   const { httpMethod } = event;
@@ -173,11 +174,15 @@ exports.handler = async (event, context) => {
         }
 
         console.log('get-all-reviews: Fetching reviews from Supabase');
+        // Use service role key for admin operations to bypass RLS
+        const authKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+        console.log('get-all-reviews: Using service role key:', !!SUPABASE_SERVICE_ROLE_KEY);
+        
         const allReviewsResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews?select=*&order=created_at.desc`, {
           method: 'GET',
           headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'apikey': authKey,
+            'Authorization': `Bearer ${authKey}`,
             'Content-Type': 'application/json'
           }
         });
@@ -283,11 +288,12 @@ exports.handler = async (event, context) => {
           };
         }
 
+        const approveAuthKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
         const approveResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews?id=eq.${reviewId}`, {
           method: 'PATCH',
           headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'apikey': approveAuthKey,
+            'Authorization': `Bearer ${approveAuthKey}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
@@ -315,11 +321,12 @@ exports.handler = async (event, context) => {
           };
         }
 
+        const unapproveAuthKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
         const unapproveResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews?id=eq.${reviewId}`, {
           method: 'PATCH',
           headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'apikey': unapproveAuthKey,
+            'Authorization': `Bearer ${unapproveAuthKey}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
@@ -412,11 +419,12 @@ exports.handler = async (event, context) => {
           };
         }
 
+        const deleteAuthKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
         const deleteResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews?id=eq.${reviewId}`, {
           method: 'DELETE',
           headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'apikey': deleteAuthKey,
+            'Authorization': `Bearer ${deleteAuthKey}`,
             'Content-Type': 'application/json'
           }
         });
