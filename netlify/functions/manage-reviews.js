@@ -40,7 +40,6 @@ exports.handler = async (event, context) => {
             rating: parseInt(reviewData.rating),
             title: reviewData.title || '',
             content: reviewData.comment,
-            service: reviewData.service || 'General',
             approved: false // Requires admin approval
           })
         });
@@ -59,7 +58,6 @@ exports.handler = async (event, context) => {
           email: newReview.email,
           rating: newReview.rating,
           comment: newReview.content,
-          service: newReview.service,
           approved: newReview.approved,
           createdAt: newReview.created_at
         };
