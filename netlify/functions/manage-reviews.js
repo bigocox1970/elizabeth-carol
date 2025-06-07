@@ -27,13 +27,20 @@ exports.handler = async (event, context) => {
           };
         }
 
-        // Add to reviews table - require authentication
-        if (!userToken || !reviewData.userId) {
-          return {
-            statusCode: 401,
-            headers: { "Access-Control-Allow-Origin": "*" },
-            body: JSON.stringify({ message: 'You must be logged in to submit a review' })
-          };
+        // Allow anonymous reviews
+        let authHeaders = {
+          'apikey': SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        };
+        
+        // If user is authenticated, use their token
+        if (userToken && reviewData.userId) {
+          authHeaders['Authorization'] = `Bearer ${userToken}`;
+        } else {
+          // For anonymous reviews, use service role key to bypass RLS
+          authHeaders['Authorization'] = `Bearer ${SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY}`;
+          console.log('Using service role key for anonymous review');
         }
 
         console.log('Adding review for authenticated user:', reviewData.userId);
@@ -42,12 +49,7 @@ exports.handler = async (event, context) => {
         try {
           addReviewResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews`, {
             method: 'POST',
-            headers: {
-              'apikey': SUPABASE_ANON_KEY,
-              'Authorization': `Bearer ${userToken}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=representation'
-            },
+            headers: authHeaders,
             body: JSON.stringify({
               name: reviewData.name,
               email: reviewData.email || '',
