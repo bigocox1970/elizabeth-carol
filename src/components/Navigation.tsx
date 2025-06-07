@@ -77,9 +77,14 @@ const Navigation = () => {
                     <span>Profile</span>
                   </Button>
                 </Link>
-                <Button variant="ghost" size="sm" onClick={() => signOut()} className="flex items-center space-x-1">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => signOut()} 
+                  className="flex items-center"
+                  title="Logout"
+                >
                   <LogOut className="h-4 w-4" />
-                  <span>Logout</span>
                 </Button>
               </div>
             ) : (

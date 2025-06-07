@@ -132,9 +132,21 @@ const Testimonials = () => {
       {/* All Testimonials */}
       <section className="py-20 bg-secondary/20">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-serif font-bold text-foreground mb-12 text-center">
-            Client Reviews
-          </h2>
+          <div className="flex flex-col sm:flex-row items-center justify-between mb-12">
+            <h2 className="text-3xl font-serif font-bold text-foreground mb-4 sm:mb-0">
+              Client Reviews
+            </h2>
+            <Button 
+              onClick={() => {
+                const reviewSection = document.getElementById('review-form-section');
+                reviewSection?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="bg-gradient-mystical hover:opacity-90 text-primary-foreground"
+            >
+              <Star className="w-4 h-4 mr-2" />
+              Add Review
+            </Button>
+          </div>
           
           {loading ? (
             <div className="flex items-center justify-center py-12">
@@ -194,7 +206,7 @@ const Testimonials = () => {
       </section>
 
       {/* Leave a Review Section */}
-      <section className="py-20 bg-background">
+      <section id="review-form-section" className="py-20 bg-background">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-serif font-bold text-foreground mb-12 text-center">
             Share Your Experience
