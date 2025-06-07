@@ -39,7 +39,21 @@ const NewsletterSignup = () => {
       formData.append('email', email.trim());
       formData.append('name', name.trim());
 
-      const response = await fetch('/', {
+      // Check if we're in development mode
+      const isDevelopment = import.meta.env.DEV;
+      
+      if (isDevelopment) {
+        // Simulate form submission in development
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log('Newsletter signup (dev mode):', { name: name.trim(), email: email.trim() });
+        setIsSuccess(true);
+        setMessage('Successfully subscribed! (Development mode - no email sent)');
+        setEmail('');
+        setName('');
+        return;
+      }
+
+      const response = await fetch(window.location.pathname, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams([...formData] as [string, string][]).toString()

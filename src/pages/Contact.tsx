@@ -81,7 +81,22 @@ const Contact = () => {
       formDataToSubmit.append('service', formData.service);
       formDataToSubmit.append('message', formData.message.trim());
 
-      const response = await fetch('/', {
+      // Check if we're in development mode
+      const isDevelopment = import.meta.env.DEV;
+      
+      if (isDevelopment) {
+        // Simulate form submission in development
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        console.log('Contact form submission (dev mode):', formData);
+        setShowSuccess(true);
+        // Scroll to success message
+        setTimeout(() => {
+          document.getElementById('success-message')?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+        return;
+      }
+
+      const response = await fetch(window.location.pathname, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams([...formDataToSubmit] as [string, string][]).toString()
