@@ -7,8 +7,21 @@ import { Badge } from "@/components/ui/badge";
 import { Star, Quote, MapPin, Calendar, Heart, Loader2 } from "lucide-react";
 import ReviewForm from "@/components/ReviewForm";
 
+interface Testimonial {
+  id: number | string;
+  name: string;
+  location?: string;
+  date?: string;
+  createdAt?: string;
+  rating: number;
+  service?: string;
+  comment?: string;
+  content?: string;
+  featured?: boolean;
+}
+
 const Testimonials = () => {
-  const [testimonials, setTestimonials] = useState([]);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
