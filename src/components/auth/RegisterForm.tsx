@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
 
 interface RegisterFormProps {
@@ -22,12 +23,20 @@ const RegisterForm = ({ onSuccess, onLoginClick }: RegisterFormProps) => {
     email: "",
     password: "",
     confirmPassword: "",
+    subscribeToNewsletter: true, // Default to checked
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleCheckboxChange = (checked: boolean) => {
+    setFormData({
+      ...formData,
+      subscribeToNewsletter: checked,
     });
   };
 
@@ -53,7 +62,7 @@ const RegisterForm = ({ onSuccess, onLoginClick }: RegisterFormProps) => {
 
     try {
       setIsLoading(true);
-      const { error } = await signUp(formData.email, formData.password, {
+      const { data, error } = await signUp(formData.email, formData.password, {
         name: formData.name,
       });
 
@@ -61,10 +70,40 @@ const RegisterForm = ({ onSuccess, onLoginClick }: RegisterFormProps) => {
         throw error;
       }
 
-      toast({
-        title: "Registration successful!",
-        description: "Please check your email to confirm your account.",
-      });
+      // If newsletter subscription is enabled and user signed up successfully
+      if (formData.subscribeToNewsletter) {
+        try {
+          const response = await fetch('/.netlify/functions/add-subscriber', {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              email: formData.email.trim(),
+              name: formData.name.trim(),
+              source: 'registration'
+            })
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+              toast({
+                title: "Registration and subscription successful!",
+                description: "Please check your email to confirm your account. You've also been subscribed to our newsletter.",
+              });
+            }
+          }
+        } catch (newsletterError) {
+          console.error('Newsletter subscription error:', newsletterError);
+          // Don't fail the registration if newsletter subscription fails
+        }
+      } else {
+        toast({
+          title: "Registration successful!",
+          description: "Please check your email to confirm your account.",
+        });
+      }
 
       if (onSuccess) {
         onSuccess();
@@ -140,6 +179,18 @@ const RegisterForm = ({ onSuccess, onLoginClick }: RegisterFormProps) => {
               onChange={handleChange}
               disabled={isLoading}
             />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="newsletter"
+              checked={formData.subscribeToNewsletter}
+              onCheckedChange={handleCheckboxChange}
+              disabled={isLoading}
+            />
+            <Label htmlFor="newsletter" className="text-sm">
+              Subscribe to Elizabeth Carol's newsletter for spiritual guidance and updates
+            </Label>
           </div>
 
           <Button type="submit" className="w-full" disabled={isLoading}>

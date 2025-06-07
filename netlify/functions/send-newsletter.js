@@ -77,10 +77,31 @@ exports.handler = async (event, context) => {
       }
 
       const supabaseSubscribers = await response.json();
-      console.log('Raw subscribers from Supabase:', supabaseSubscribers);
+      console.log('Raw subscribers from Supabase:', JSON.stringify(supabaseSubscribers, null, 2));
       
-      // Filter for active subscribers
-      const activeSubscribers = supabaseSubscribers.filter(sub => sub.active === true);
+      // Debug each subscriber
+      supabaseSubscribers.forEach((sub, index) => {
+        console.log(`Subscriber ${index + 1}:`, {
+          email: sub.email,
+          name: sub.name,
+          active: sub.active,
+          activeType: typeof sub.active,
+          activeValue: JSON.stringify(sub.active)
+        });
+      });
+      
+      // Try different ways to filter for active subscribers
+      const activeSubscribers1 = supabaseSubscribers.filter(sub => sub.active === true);
+      const activeSubscribers2 = supabaseSubscribers.filter(sub => sub.active === 'true');
+      const activeSubscribers3 = supabaseSubscribers.filter(sub => Boolean(sub.active));
+      
+      console.log(`Filtering results:`);
+      console.log(`- active === true: ${activeSubscribers1.length}`);
+      console.log(`- active === 'true': ${activeSubscribers2.length}`);
+      console.log(`- Boolean(active): ${activeSubscribers3.length}`);
+      
+      // Use the boolean filter as it's most likely to work
+      const activeSubscribers = activeSubscribers3;
       console.log(`Total subscribers: ${supabaseSubscribers.length}, Active: ${activeSubscribers.length}`);
       
       subscribers = activeSubscribers.map(sub => ({

@@ -26,8 +26,31 @@ const SubscribersList = ({ password }: SubscribersListProps) => {
   const loadSubscribers = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/.netlify/functions/get-subscribers');
-      if (response.ok) {
+      // Check if we're in development mode
+      const isDevelopment = import.meta.env.DEV;
+      
+      if (isDevelopment) {
+        console.log('Development mode: Loading subscribers from localStorage');
+        // In development, get subscribers from localStorage
+        try {
+          const storedSubscribers = localStorage.getItem('subscribers');
+          if (storedSubscribers) {
+            const parsedSubscribers = JSON.parse(storedSubscribers);
+            setSubscribers(parsedSubscribers);
+          } else {
+            // If no subscribers in localStorage, use empty array
+            setSubscribers([]);
+          }
+        } catch (localStorageError) {
+          console.error('Error reading from localStorage:', localStorageError);
+          setSubscribers([]);
+        }
+      } else {
+        // In production, use the Netlify function
+        const response = await fetch('/.netlify/functions/get-subscribers');
+        if (!response.ok) {
+          throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+        }
         const data = await response.json();
         setSubscribers(data.subscribers || []);
       }

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 
 interface LoginFormProps {
   onLogin: (password: string) => void;
@@ -21,7 +21,18 @@ const LoginForm = ({ onLogin }: LoginFormProps) => {
     <div className="min-h-screen bg-background flex items-center justify-center">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-center">Admin Login</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-center flex-1">Admin Login</CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => window.location.href = '/'}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Site
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
