@@ -8,6 +8,8 @@ This is the website for Elizabeth Carol, a psychic medium and spiritual guide. T
 - Email newsletter subscription
 - Blog with commenting functionality
 - Customer reviews and testimonials
+- User authentication system
+- User profile management
 - Admin panel for managing all content
 
 ## Environment Variables
@@ -41,6 +43,22 @@ The site is automatically deployed to Netlify when changes are pushed to the mai
 ## Database Setup
 
 The database is hosted on Supabase. The SQL migrations are in the `supabase/migrations` directory.
+
+## User Authentication
+
+The website includes a user authentication system powered by Supabase Auth. Users can:
+
+- Register for an account
+- Log in to their account
+- View and manage their profile
+- Edit or delete their comments and reviews
+- Associate their newsletter subscription with their account
+
+To set up authentication:
+
+1. Create a Supabase project and enable Email authentication
+2. Run the migrations in the `supabase/migrations` directory
+3. Set the Supabase URL and anon key in your environment variables
 
 ## Project info
 

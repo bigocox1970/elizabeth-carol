@@ -3,11 +3,13 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-import { Menu, Phone, Star } from "lucide-react";
+import { Menu, Phone, Star, User, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { user, signOut } = useAuth();
 
   const navItems = [
     { href: "/", label: "Home" },
@@ -66,6 +68,27 @@ const Navigation = () => {
             <Button size="sm" className="bg-gradient-mystical hover:opacity-90 text-primary-foreground">
               Book Reading
             </Button>
+            
+            {user ? (
+              <div className="flex items-center space-x-2">
+                <Link to="/profile">
+                  <Button variant="ghost" size="sm" className="flex items-center space-x-1">
+                    <User className="h-4 w-4" />
+                    <span>Profile</span>
+                  </Button>
+                </Link>
+                <Button variant="ghost" size="sm" onClick={() => signOut()} className="flex items-center space-x-1">
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </Button>
+              </div>
+            ) : (
+              <Link to="/auth">
+                <Button variant="outline" size="sm">
+                  Login / Register
+                </Button>
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu */}
@@ -106,9 +129,37 @@ const Navigation = () => {
                       <Phone className="h-5 w-5" />
                       <span>01865 361 786</span>
                     </a>
-                    <Button className="w-full bg-gradient-mystical hover:opacity-90 text-primary-foreground">
+                    <Button className="w-full bg-gradient-mystical hover:opacity-90 text-primary-foreground mb-4">
                       Book Reading
                     </Button>
+                    
+                    {user ? (
+                      <div className="flex flex-col space-y-2">
+                        <Link to="/profile" onClick={() => setIsOpen(false)}>
+                          <Button variant="outline" className="w-full flex items-center justify-center">
+                            <User className="h-4 w-4 mr-2" />
+                            <span>My Profile</span>
+                          </Button>
+                        </Link>
+                        <Button 
+                          variant="ghost" 
+                          className="w-full flex items-center justify-center"
+                          onClick={() => {
+                            signOut();
+                            setIsOpen(false);
+                          }}
+                        >
+                          <LogOut className="h-4 w-4 mr-2" />
+                          <span>Logout</span>
+                        </Button>
+                      </div>
+                    ) : (
+                      <Link to="/auth" onClick={() => setIsOpen(false)}>
+                        <Button variant="outline" className="w-full">
+                          Login / Register
+                        </Button>
+                      </Link>
+                    )}
                   </div>
                 </div>
               </SheetContent>

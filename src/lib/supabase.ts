@@ -4,7 +4,22 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Check if environment variables are available
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Supabase URL or Anon Key is missing in environment variables.');
+  
+  // In production, this will show a clear error
+  // In development, we can use the values from .env file
+  if (import.meta.env.PROD) {
+    // Display a more user-friendly error in the console
+    console.error('Please ensure SUPABASE_URL and SUPABASE_ANON_KEY are set in Netlify environment variables.');
+    console.error('And make sure they are properly mapped to VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in netlify.toml.');
+  }
+}
+
+// Create the Supabase client with available credentials
+// If they're undefined, Supabase will throw a clear error
+export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
 
 // Auth helper functions
 export const signUp = async (email: string, password: string, metadata: Record<string, unknown> = {}) => {
