@@ -14,8 +14,15 @@ exports.handler = async (event, context) => {
   }
 
   try {
+    console.log('Starting get-subscribers function');
+    console.log('SUPABASE_URL:', SUPABASE_URL ? 'Exists' : 'Missing');
+    console.log('SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? 'Exists' : 'Missing');
+    
     // Get all subscribers from Supabase using REST API
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/subscribers?select=*&order=date_added.desc`, {
+    const url = `${SUPABASE_URL}/rest/v1/subscribers?select=*&order=date_added.desc`;
+    console.log('Fetch URL:', url);
+    
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'apikey': SUPABASE_ANON_KEY,
@@ -24,8 +31,12 @@ exports.handler = async (event, context) => {
       }
     });
 
+    console.log('Response status:', response.status);
+    
     if (!response.ok) {
-      throw new Error(`Database query failed: ${response.status}`);
+      const errorText = await response.text();
+      console.error('Response error:', errorText);
+      throw new Error(`Database query failed: ${response.status} - ${errorText}`);
     }
 
     const subscribers = await response.json();
@@ -52,13 +63,17 @@ exports.handler = async (event, context) => {
 
   } catch (error) {
     console.error('Error reading subscribers:', error);
+    console.error('Error stack:', error.stack);
     return {
       statusCode: 500,
       headers: {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Headers": "Content-Type",
       },
-      body: JSON.stringify({ message: 'Failed to get subscribers' })
+      body: JSON.stringify({ 
+        message: 'Failed to get subscribers',
+        error: error.message
+      })
     };
   }
 };
