@@ -16,6 +16,11 @@ exports.handler = async (event, context) => {
   }
 
   try {
+    console.log('Starting manage-blog function');
+    console.log('SUPABASE_URL:', SUPABASE_URL ? 'Exists' : 'Missing');
+    console.log('SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? 'Exists' : 'Missing');
+    console.log('Action:', action);
+    
     switch (action) {
       case 'get-all':
         // Return all posts, sorted by date (newest first)
@@ -54,49 +59,103 @@ exports.handler = async (event, context) => {
         };
 
       case 'get-published':
-        // Return only published posts for public view
-        const publishedResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?published=eq.true&select=*,blog_comments(*)&order=created_at.desc`, {
-          method: 'GET',
-          headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json'
+        try {
+          // Return only published posts for public view
+          console.log('Fetching published posts from Supabase');
+          const publishedResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?published=eq.true&select=*,blog_comments(*)&order=created_at.desc`, {
+            method: 'GET',
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          console.log('Published response status:', publishedResponse.status);
+          
+          if (!publishedResponse.ok) {
+            const errorText = await publishedResponse.text();
+            console.error('Published response error:', errorText);
+            throw new Error(`Database query failed: ${publishedResponse.status} - ${errorText}`);
           }
-        });
 
-        if (!publishedResponse.ok) {
-          throw new Error(`Database query failed: ${publishedResponse.status}`);
+          const publishedPosts = await publishedResponse.json();
+          
+          // Format posts for frontend
+          const formattedPublishedPosts = publishedPosts.map(post => ({
+            id: post.id.toString(),
+            title: post.title,
+            content: post.content,
+            excerpt: post.excerpt || post.content.substring(0, 200) + '...',
+            category: post.category,
+            published: post.published,
+            createdAt: post.created_at,
+            updatedAt: post.updated_at,
+            author: post.author,
+            reviews: post.blog_comments.filter(comment => comment.approved).map(comment => ({
+              id: comment.id.toString(),
+              name: comment.author_name,
+              email: comment.author_email,
+              comment: comment.content,
+              approved: comment.approved,
+              createdAt: comment.created_at,
+              rating: 5 // Default rating for comments
+            }))
+          }));
+
+          return {
+            statusCode: 200,
+            headers: { "Access-Control-Allow-Origin": "*" },
+            body: JSON.stringify({ 
+              posts: formattedPublishedPosts,
+              source: 'supabase'
+            })
+          };
+        } catch (supabaseError) {
+          console.error('Supabase operation error:', supabaseError);
+          console.error('Supabase error stack:', supabaseError.stack);
+          
+          // Fall back to reading from the local JSON file
+          console.log('Falling back to local JSON file for blog posts');
+          
+          try {
+            const fs = require('fs').promises;
+            const path = require('path');
+            
+            // Path to the local blog posts JSON file
+            const filePath = path.join(process.cwd(), 'data', 'blog-posts.json');
+            
+            // Read existing blog posts
+            const data = await fs.readFile(filePath, 'utf8');
+            const localPosts = JSON.parse(data);
+            
+            // Filter to only published posts
+            const publishedPosts = localPosts.filter(post => post.published);
+            
+            console.log(`Read ${publishedPosts.length} published posts from local file`);
+            
+            return {
+              statusCode: 200,
+              headers: { "Access-Control-Allow-Origin": "*" },
+              body: JSON.stringify({ 
+                posts: publishedPosts,
+                source: 'local_file'
+              })
+            };
+          } catch (fallbackError) {
+            console.error('Error with fallback storage:', fallbackError);
+            // If even the fallback fails, return an empty array
+            return {
+              statusCode: 200,
+              headers: { "Access-Control-Allow-Origin": "*" },
+              body: JSON.stringify({ 
+                posts: [],
+                source: 'empty_fallback',
+                message: 'Could not retrieve blog posts from any source'
+              })
+            };
+          }
         }
-
-        const publishedPosts = await publishedResponse.json();
-        
-        // Format posts for frontend
-        const formattedPublishedPosts = publishedPosts.map(post => ({
-          id: post.id.toString(),
-          title: post.title,
-          content: post.content,
-          excerpt: post.excerpt || post.content.substring(0, 200) + '...',
-          category: post.category,
-          published: post.published,
-          createdAt: post.created_at,
-          updatedAt: post.updated_at,
-          author: post.author,
-          reviews: post.blog_comments.filter(comment => comment.approved).map(comment => ({
-            id: comment.id.toString(),
-            name: comment.author_name,
-            email: comment.author_email,
-            comment: comment.content,
-            approved: comment.approved,
-            createdAt: comment.created_at,
-            rating: 5 // Default rating for comments
-          }))
-        }));
-
-        return {
-          statusCode: 200,
-          headers: { "Access-Control-Allow-Origin": "*" },
-          body: JSON.stringify({ posts: formattedPublishedPosts })
-        };
 
       case 'get-single':
         // Get a single post by ID
@@ -292,10 +351,48 @@ exports.handler = async (event, context) => {
 
   } catch (error) {
     console.error('Error managing blog:', error);
+    console.error('Error stack:', error.stack);
+    
+    // For certain actions, try to provide a fallback response
+    if (action === 'get-published' || action === 'get-all') {
+      try {
+        const fs = require('fs').promises;
+        const path = require('path');
+        
+        // Path to the local blog posts JSON file
+        const filePath = path.join(process.cwd(), 'data', 'blog-posts.json');
+        
+        // Read existing blog posts
+        const data = await fs.readFile(filePath, 'utf8');
+        const localPosts = JSON.parse(data);
+        
+        // Filter if needed
+        const posts = action === 'get-published' 
+          ? localPosts.filter(post => post.published)
+          : localPosts;
+        
+        console.log(`Emergency fallback: Read ${posts.length} posts from local file`);
+        
+        return {
+          statusCode: 200,
+          headers: { "Access-Control-Allow-Origin": "*" },
+          body: JSON.stringify({ 
+            posts: posts,
+            source: 'emergency_fallback'
+          })
+        };
+      } catch (fallbackError) {
+        console.error('Error with emergency fallback:', fallbackError);
+      }
+    }
+    
     return {
       statusCode: 500,
       headers: { "Access-Control-Allow-Origin": "*" },
-      body: JSON.stringify({ message: 'Failed to manage blog posts' })
+      body: JSON.stringify({ 
+        message: 'Failed to manage blog posts',
+        error: error.message
+      })
     };
   }
 };

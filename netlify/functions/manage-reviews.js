@@ -9,6 +9,11 @@ exports.handler = async (event, context) => {
   const isAdmin = password === process.env.ADMIN_PASSWORD;
 
   try {
+    console.log('Starting manage-reviews function');
+    console.log('SUPABASE_URL:', SUPABASE_URL ? 'Exists' : 'Missing');
+    console.log('SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? 'Exists' : 'Missing');
+    console.log('Action:', action);
+    
     switch (action) {
       case 'add-general-review':
         // Add a general service review
@@ -193,41 +198,95 @@ exports.handler = async (event, context) => {
         };
 
       case 'get-approved-reviews':
-        // Get approved reviews for public display
-        const approvedReviewsResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews?approved=eq.true&select=*&order=created_at.desc`, {
-          method: 'GET',
-          headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json'
+        try {
+          // Get approved reviews for public display
+          console.log('Fetching approved reviews from Supabase');
+          const approvedReviewsResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews?approved=eq.true&select=*&order=created_at.desc`, {
+            method: 'GET',
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          console.log('Approved reviews response status:', approvedReviewsResponse.status);
+          
+          if (!approvedReviewsResponse.ok) {
+            const errorText = await approvedReviewsResponse.text();
+            console.error('Approved reviews response error:', errorText);
+            throw new Error(`Database query failed: ${approvedReviewsResponse.status} - ${errorText}`);
           }
-        });
 
-        if (!approvedReviewsResponse.ok) {
-          throw new Error(`Database query failed: ${approvedReviewsResponse.status}`);
+          const approvedReviews = await approvedReviewsResponse.json();
+
+          // Format reviews for frontend
+          const formattedApprovedReviews = approvedReviews.map(review => ({
+            id: review.id.toString(),
+            name: review.name,
+            email: review.email,
+            rating: review.rating,
+            title: review.title,
+            comment: review.content,
+            service: review.service,
+            approved: review.approved,
+            featured: review.featured,
+            createdAt: review.created_at
+          }));
+
+          return {
+            statusCode: 200,
+            headers: { "Access-Control-Allow-Origin": "*" },
+            body: JSON.stringify({ 
+              reviews: formattedApprovedReviews,
+              source: 'supabase'
+            })
+          };
+        } catch (supabaseError) {
+          console.error('Supabase operation error:', supabaseError);
+          console.error('Supabase error stack:', supabaseError.stack);
+          
+          // Fall back to reading from the local JSON file
+          console.log('Falling back to local JSON file for reviews');
+          
+          try {
+            const fs = require('fs').promises;
+            const path = require('path');
+            
+            // Path to the local reviews JSON file
+            const filePath = path.join(process.cwd(), 'data', 'reviews.json');
+            
+            // Read existing reviews
+            const data = await fs.readFile(filePath, 'utf8');
+            const localReviews = JSON.parse(data);
+            
+            // Filter to only approved reviews
+            const approvedReviews = localReviews.filter(review => review.approved);
+            
+            console.log(`Read ${approvedReviews.length} approved reviews from local file`);
+            
+            return {
+              statusCode: 200,
+              headers: { "Access-Control-Allow-Origin": "*" },
+              body: JSON.stringify({ 
+                reviews: approvedReviews,
+                source: 'local_file'
+              })
+            };
+          } catch (fallbackError) {
+            console.error('Error with fallback storage:', fallbackError);
+            // If even the fallback fails, return an empty array
+            return {
+              statusCode: 200,
+              headers: { "Access-Control-Allow-Origin": "*" },
+              body: JSON.stringify({ 
+                reviews: [],
+                source: 'empty_fallback',
+                message: 'Could not retrieve reviews from any source'
+              })
+            };
+          }
         }
-
-        const approvedReviews = await approvedReviewsResponse.json();
-
-        // Format reviews for frontend
-        const formattedApprovedReviews = approvedReviews.map(review => ({
-          id: review.id.toString(),
-          name: review.name,
-          email: review.email,
-          rating: review.rating,
-          title: review.title,
-          comment: review.content,
-          service: review.service,
-          approved: review.approved,
-          featured: review.featured,
-          createdAt: review.created_at
-        }));
-
-        return {
-          statusCode: 200,
-          headers: { "Access-Control-Allow-Origin": "*" },
-          body: JSON.stringify({ reviews: formattedApprovedReviews })
-        };
 
       case 'approve-review':
         // Approve a review (admin only)
@@ -394,10 +453,46 @@ exports.handler = async (event, context) => {
 
   } catch (error) {
     console.error('Error managing reviews:', error);
+    console.error('Error stack:', error.stack);
+    
+    // For certain actions, try to provide a fallback response
+    if (action === 'get-approved-reviews') {
+      try {
+        const fs = require('fs').promises;
+        const path = require('path');
+        
+        // Path to the local reviews JSON file
+        const filePath = path.join(process.cwd(), 'data', 'reviews.json');
+        
+        // Read existing reviews
+        const data = await fs.readFile(filePath, 'utf8');
+        const localReviews = JSON.parse(data);
+        
+        // Filter to only approved reviews
+        const approvedReviews = localReviews.filter(review => review.approved);
+        
+        console.log(`Emergency fallback: Read ${approvedReviews.length} approved reviews from local file`);
+        
+        return {
+          statusCode: 200,
+          headers: { "Access-Control-Allow-Origin": "*" },
+          body: JSON.stringify({ 
+            reviews: approvedReviews,
+            source: 'emergency_fallback'
+          })
+        };
+      } catch (fallbackError) {
+        console.error('Error with emergency fallback:', fallbackError);
+      }
+    }
+    
     return {
       statusCode: 500,
       headers: { "Access-Control-Allow-Origin": "*" },
-      body: JSON.stringify({ message: 'Failed to manage reviews' })
+      body: JSON.stringify({ 
+        message: 'Failed to manage reviews',
+        error: error.message
+      })
     };
   }
 };

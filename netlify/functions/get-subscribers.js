@@ -18,48 +18,98 @@ exports.handler = async (event, context) => {
     console.log('SUPABASE_URL:', SUPABASE_URL ? 'Exists' : 'Missing');
     console.log('SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? 'Exists' : 'Missing');
     
-    // Get all subscribers from Supabase using REST API
-    const url = `${SUPABASE_URL}/rest/v1/subscribers?select=*&order=date_added.desc`;
-    console.log('Fetch URL:', url);
-    
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'Content-Type': 'application/json'
+    try {
+      // Try to get subscribers from Supabase first
+      const url = `${SUPABASE_URL}/rest/v1/subscribers?select=*&order=date_added.desc`;
+      console.log('Fetch URL:', url);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Response error:', errorText);
+        throw new Error(`Database query failed: ${response.status} - ${errorText}`);
       }
-    });
 
-    console.log('Response status:', response.status);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Response error:', errorText);
-      throw new Error(`Database query failed: ${response.status} - ${errorText}`);
+      const subscribers = await response.json();
+
+      // Format data for the admin panel (match expected format)
+      const formattedSubscribers = subscribers.map(sub => ({
+        email: sub.email,
+        name: sub.name,
+        source: sub.source,
+        dateAdded: sub.date_added,
+        active: sub.active
+      }));
+
+      return {
+        statusCode: 200,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "Content-Type",
+        },
+        body: JSON.stringify({ 
+          subscribers: formattedSubscribers,
+          source: 'supabase'
+        })
+      };
+    } catch (supabaseError) {
+      console.error('Supabase operation error:', supabaseError);
+      console.error('Supabase error stack:', supabaseError.stack);
+      
+      // Fall back to reading from the local JSON file
+      console.log('Falling back to local JSON file');
+      
+      try {
+        const fs = require('fs').promises;
+        const path = require('path');
+        
+        // Path to the local subscribers JSON file
+        const filePath = path.join(process.cwd(), 'data', 'subscribers.json');
+        
+        // Read existing subscribers
+        const data = await fs.readFile(filePath, 'utf8');
+        const subscribers = JSON.parse(data);
+        
+        console.log(`Read ${subscribers.length} subscribers from local file`);
+        
+        return {
+          statusCode: 200,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "Content-Type",
+          },
+          body: JSON.stringify({ 
+            subscribers: subscribers,
+            source: 'local_file'
+          })
+        };
+      } catch (fallbackError) {
+        console.error('Error with fallback storage:', fallbackError);
+        // If even the fallback fails, return an empty array
+        return {
+          statusCode: 200,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "Content-Type",
+          },
+          body: JSON.stringify({ 
+            subscribers: [],
+            source: 'empty_fallback',
+            message: 'Could not retrieve subscribers from any source'
+          })
+        };
+      }
     }
-
-    const subscribers = await response.json();
-
-    // Format data for the admin panel (match expected format)
-    const formattedSubscribers = subscribers.map(sub => ({
-      email: sub.email,
-      name: sub.name,
-      source: sub.source,
-      dateAdded: sub.date_added,
-      active: sub.active
-    }));
-
-    return {
-      statusCode: 200,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type",
-      },
-      body: JSON.stringify({ 
-        subscribers: formattedSubscribers
-      })
-    };
 
   } catch (error) {
     console.error('Error reading subscribers:', error);
