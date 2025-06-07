@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Mail, Check, AlertCircle, Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const NewsletterSignup = () => {
   const [email, setEmail] = useState('');
@@ -10,6 +11,7 @@ const NewsletterSignup = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+  const { user } = useAuth();
 
   const validateEmail = (email: string) => {
     return email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
@@ -56,7 +58,8 @@ const NewsletterSignup = () => {
         body: JSON.stringify({
           email: email.trim(),
           name: name.trim(),
-          source: 'newsletter'
+          source: 'newsletter',
+          user_id: user?.id || null // Send user ID if available
         })
       });
 
@@ -192,4 +195,4 @@ const NewsletterSignup = () => {
   );
 };
 
-export default NewsletterSignup; 
+export default NewsletterSignup;
