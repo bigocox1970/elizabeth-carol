@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, Mail, BookOpen, Star, MessageCircle, Plus } from "lucide-react";
-import { callNetlifyFunction } from "@/lib/api";
 
 // Import admin components
 import LoginForm from "@/components/admin/LoginForm";
@@ -30,8 +29,11 @@ const Admin = () => {
   const handleLogin = (enteredPassword: string) => {
     // Always verify the password on the server side
     // This way we don't expose the password in the frontend code
-    callNetlifyFunction('verify-admin', {
+    fetch('/.netlify/functions/verify-admin', {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({ password: enteredPassword }),
     })
     .then(response => response.json())
@@ -51,7 +53,7 @@ const Admin = () => {
 
   const loadSubscribers = async () => {
     try {
-      const response = await callNetlifyFunction('get-subscribers');
+      const response = await fetch('/.netlify/functions/get-subscribers');
       if (response.ok) {
         const data = await response.json();
         setSubscribers(data.subscribers || []);
