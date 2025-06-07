@@ -147,7 +147,7 @@ const ReviewsList = ({ password }: ReviewsListProps) => {
             </p>
           ) : (
             reviews.map((review) => (
-              <div key={review.id} className="p-3 bg-secondary/30 border border-border rounded-lg">
+              <div key={review.id} className="p-3 bg-secondary/20 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <div>
                     <h3 className="font-medium">{review.name}</h3>
@@ -159,35 +159,32 @@ const ReviewsList = ({ password }: ReviewsListProps) => {
                       <p className="text-xs text-blue-600 font-medium">🔮 {review.service}</p>
                     )}
                   </div>
-                  <div className="flex space-x-1">
+                  <div className="flex space-x-2">
                     {!review.approved && (
                       <Button 
-                        variant="outline" 
+                        variant="ghost" 
                         size="sm" 
                         onClick={() => handleApproveReview(review.id, true)}
-                        className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
-                        title="Approve review"
+                        className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
                       >
                         <Check className="h-4 w-4" />
                       </Button>
                     )}
                     {review.approved && (
                       <Button 
-                        variant="outline" 
+                        variant="ghost" 
                         size="sm" 
                         onClick={() => handleApproveReview(review.id, false)}
-                        className="h-8 w-8 p-0 text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
-                        title="Unapprove review"
+                        className="h-8 w-8 p-0 text-amber-600 hover:text-amber-700"
                       >
                         <X className="h-4 w-4" />
                       </Button>
                     )}
                     <Button 
-                      variant="outline" 
+                      variant="ghost" 
                       size="sm" 
                       onClick={() => handleDeleteReview(review.id)}
-                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                      title="Delete review"
+                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -215,8 +212,7 @@ const ReviewsList = ({ password }: ReviewsListProps) => {
           onClick={loadReviews}
           variant="outline"
           size="sm"
-          className="w-full mt-4 bg-background hover:bg-secondary"
-          disabled={isLoading}
+          className="w-full mt-4"
         >
           <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
           Refresh List

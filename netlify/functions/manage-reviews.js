@@ -27,7 +27,7 @@ exports.handler = async (event, context) => {
           };
         }
 
-        // Add to reviews table (keep original logic that was working)
+        // Add to reviews table
         const authToken = userToken || SUPABASE_ANON_KEY;
         const addReviewResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews`, {
           method: 'POST',
@@ -479,22 +479,13 @@ exports.handler = async (event, context) => {
 
   } catch (error) {
     console.error('Error managing reviews:', error);
-    console.error('Error stack:', error.stack);
-    console.error('Error details:', {
-      name: error.name,
-      message: error.message,
-      action: action,
-      hasReviewData: !!reviewData
-    });
     
     return {
       statusCode: 500,
       headers: { "Access-Control-Allow-Origin": "*" },
       body: JSON.stringify({ 
         message: 'Failed to manage reviews',
-        error: error.message,
-        action: action,
-        stack: error.stack
+        error: error.message
       })
     };
   }
