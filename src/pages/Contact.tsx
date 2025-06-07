@@ -1,14 +1,73 @@
+import { useState } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import NewsletterSignup from "@/components/NewsletterSignup";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Mail, MapPin, Clock, MessageCircle, Star } from "lucide-react";
+import { Phone, Mail, MapPin, Clock, MessageCircle, Star, Check } from "lucide-react";
 
 const Contact = () => {
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    service: '',
+    message: ''
+  });
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.id]: e.target.value
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setErrorMessage('');
+
+    try {
+      const response = await fetch('/.netlify/functions/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          phone: formData.phone,
+          message: `Service Interest: ${formData.service}\n\n${formData.message}`,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setShowSuccess(true);
+        // Scroll to success message
+        setTimeout(() => {
+          document.getElementById('success-message')?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      } else {
+        setErrorMessage(data.message || 'Failed to send message. Please try again.');
+      }
+    } catch (error) {
+      setErrorMessage('Failed to send message. Please check your connection and try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -17,9 +76,6 @@ const Contact = () => {
       <section className="py-20 bg-gradient-celestial">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <Badge className="mb-4 bg-gradient-mystical text-primary-foreground">
-              Get In Touch
-            </Badge>
             <h1 className="text-4xl md:text-5xl font-serif font-bold text-foreground mb-6">
               Book Your Reading Today
             </h1>
@@ -104,60 +160,145 @@ const Contact = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name *</Label>
-                    <Input id="firstName" placeholder="Your first name" required />
+                {!showSuccess ? (
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="firstName">First Name *</Label>
+                        <Input 
+                          id="firstName" 
+                          placeholder="Your first name" 
+                          value={formData.firstName}
+                          onChange={handleInputChange}
+                          required 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="lastName">Last Name *</Label>
+                        <Input 
+                          id="lastName" 
+                          placeholder="Your last name" 
+                          value={formData.lastName}
+                          onChange={handleInputChange}
+                          required 
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email Address *</Label>
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        placeholder="your@email.com" 
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        required 
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone Number</Label>
+                      <Input 
+                        id="phone" 
+                        type="tel" 
+                        placeholder="Your phone number" 
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="service">Service Interest</Label>
+                      <select 
+                        id="service" 
+                        className="w-full px-3 py-2 bg-background border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
+                        value={formData.service}
+                        onChange={handleInputChange}
+                      >
+                        <option value="">Select a service</option>
+                        <option value="One-to-One Reading">One-to-One Reading</option>
+                        <option value="Group Reading">Group Reading</option>
+                        <option value="Telephone/Video Reading">Telephone/Video Reading</option>
+                        <option value="Home Psychic Evening">Home Psychic Evening</option>
+                        <option value="Talk/Workshop">Talk/Workshop</option>
+                        <option value="General Inquiry">General Inquiry</option>
+                      </select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="message">Message *</Label>
+                      <Textarea 
+                        id="message" 
+                        placeholder="Tell me about what you're looking for or any questions you have..."
+                        rows={4}
+                        value={formData.message}
+                        onChange={handleInputChange}
+                        required 
+                      />
+                    </div>
+                    
+                    <Button 
+                      type="submit" 
+                      disabled={isSubmitting}
+                      className="w-full bg-gradient-to-r from-purple-900 to-black hover:from-black hover:to-gray-900 text-white font-medium shadow-lg disabled:opacity-50"
+                    >
+                      {isSubmitting ? 'Sending...' : 'Send Message'}
+                    </Button>
+                    
+                    {errorMessage && (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                        <p className="text-sm text-red-600">{errorMessage}</p>
+                      </div>
+                    )}
+                    
+                    <p className="text-sm text-muted-foreground text-center">
+                      I typically respond within 24 hours. For urgent matters, please call directly.
+                    </p>
+                  </form>
+                ) : (
+                  <div id="success-message" className="text-center space-y-6">
+                    <div className="flex justify-center">
+                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                        <Check className="w-8 h-8 text-green-600" />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-xl font-semibold text-foreground mb-2">
+                        Thank you, {formData.firstName}!
+                      </h3>
+                      <p className="text-muted-foreground">
+                        Your message has been sent successfully to Elizabeth. She will get back to you as soon as possible, usually within 24 hours.
+                      </p>
+                    </div>
+
+                    <div className="text-center p-4 bg-green-50 rounded-lg">
+                      <p className="text-sm text-green-600">
+                        <strong>Message delivered!</strong><br/>
+                        Check your email for a confirmation if you provided one.
+                      </p>
+                    </div>
+
+                    <Button 
+                      onClick={() => {
+                        setShowSuccess(false);
+                        setFormData({
+                          firstName: '',
+                          lastName: '',
+                          email: '',
+                          phone: '',
+                          service: '',
+                          message: ''
+                        });
+                      }}
+                      variant="ghost"
+                      className="text-primary"
+                    >
+                      Send Another Message
+                    </Button>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name *</Label>
-                    <Input id="lastName" placeholder="Your last name" required />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address *</Label>
-                  <Input id="email" type="email" placeholder="your@email.com" required />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input id="phone" type="tel" placeholder="Your phone number" />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="service">Service Interest</Label>
-                  <select 
-                    id="service" 
-                    className="w-full px-3 py-2 bg-background border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
-                  >
-                    <option value="">Select a service</option>
-                    <option value="one-to-one">One-to-One Reading</option>
-                    <option value="group">Group Reading</option>
-                    <option value="phone">Telephone/Video Reading</option>
-                    <option value="home-evening">Home Psychic Evening</option>
-                    <option value="talk">Talk/Workshop</option>
-                    <option value="general">General Inquiry</option>
-                  </select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="message">Message *</Label>
-                  <Textarea 
-                    id="message" 
-                    placeholder="Tell me about what you're looking for or any questions you have..."
-                    rows={4}
-                    required 
-                  />
-                </div>
-                
-                <Button className="w-full bg-gradient-mystical hover:opacity-90 text-primary-foreground">
-                  Send Message
-                </Button>
-                
-                <p className="text-sm text-muted-foreground text-center">
-                  I typically respond within 24 hours. For urgent matters, please call directly.
-                </p>
+                )}
               </CardContent>
             </Card>
 
@@ -216,23 +357,12 @@ const Contact = () => {
                 </CardContent>
               </Card>
 
-              {/* Emergency Contact */}
-              <Card className="bg-primary/5 border-primary/20">
-                <CardContent className="p-6">
-                  <h3 className="font-semibold text-foreground mb-3">Need Immediate Guidance?</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    For urgent spiritual guidance or crisis support, please call directly. 
-                    I understand that sometimes you need immediate connection and comfort.
-                  </p>
-                  <Button 
-                    size="sm" 
-                    className="bg-gradient-mystical hover:opacity-90 text-primary-foreground"
-                  >
-                    <Phone className="w-4 h-4 mr-2" />
-                    Call Now: 01865 361 786
-                  </Button>
-                </CardContent>
-              </Card>
+
+
+              {/* Newsletter Signup */}
+              <div className="mt-8">
+                <NewsletterSignup />
+              </div>
             </div>
           </div>
         </div>

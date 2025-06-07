@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, Quote, Phone, MapPin, Heart, Users, Award } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   // Quick testimonials for homepage
@@ -57,16 +58,24 @@ const Index = () => {
       <Services />
       
       {/* Quick Testimonials */}
-      <section className="py-20 bg-secondary/20">
-        <div className="container mx-auto px-4">
+      <section className="relative py-20 overflow-hidden">
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: "url('/images/floor.jpg')",
+          }}
+        />
+        
+        {/* Dark Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-black/95 via-black/92 to-black/95" />
+        
+        <div className="container mx-auto px-4 relative z-10">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <Badge className="mb-4 bg-gradient-mystical text-primary-foreground">
-              Client Experiences
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-4">
+            <h2 className="text-3xl md:text-4xl font-serif font-bold text-white mb-4">
               What People Say About Elizabeth
             </h2>
-            <p className="text-xl text-muted-foreground">
+            <p className="text-xl text-gray-200">
               Real experiences from clients throughout Oxford and Oxfordshire who have found 
               comfort, clarity, and healing through spiritual guidance.
             </p>
@@ -74,23 +83,23 @@ const Index = () => {
 
           <div className="grid md:grid-cols-3 gap-8">
             {quickTestimonials.map((testimonial, index) => (
-              <Card key={index} className="p-6 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300">
+              <Card key={index} className="p-6 bg-black/60 backdrop-blur-md border-purple-900/50 hover:border-gray-400/50 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300">
                 <CardContent className="p-0">
-                  <Quote className="w-6 h-6 text-primary mb-4" />
-                  <blockquote className="text-muted-foreground leading-relaxed mb-4">
+                  <Quote className="w-6 h-6 text-gray-400 mb-4" />
+                  <blockquote className="text-gray-200 leading-relaxed mb-4">
                     "{testimonial.text}"
                   </blockquote>
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-semibold text-foreground">{testimonial.name}</div>
-                      <div className="text-sm text-muted-foreground flex items-center space-x-1">
+                      <div className="font-semibold text-white">{testimonial.name}</div>
+                      <div className="text-sm text-gray-300 flex items-center space-x-1">
                         <MapPin className="w-3 h-3" />
                         <span>{testimonial.location}</span>
                       </div>
                     </div>
                     <div className="flex space-x-1">
                       {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                        <Star key={i} className="w-4 h-4 fill-gray-300 text-gray-300" />
                       ))}
                     </div>
                   </div>
@@ -100,9 +109,16 @@ const Index = () => {
           </div>
 
           <div className="text-center mt-12">
-            <Button variant="outline" size="lg">
-              Read More Testimonials
-            </Button>
+            <Link to="/testimonials">
+              <Button 
+                variant="outline" 
+                size="lg"
+                className="border-gray-400 text-gray-300 hover:bg-gray-300 hover:text-black bg-black/50 backdrop-blur-sm"
+                onClick={() => window.scrollTo(0, 0)}
+              >
+                Read More Testimonials
+              </Button>
+            </Link>
           </div>
         </div>
       </section>

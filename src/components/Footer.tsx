@@ -9,7 +9,11 @@ const Footer = () => {
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <Star className="h-8 w-8 text-primary animate-glow" />
+              <img 
+                src="/images/elizabeth-carol-logo-icon-trans.png" 
+                alt="Elizabeth Carol Logo" 
+                className="h-8 w-8"
+              />
               <div className="flex flex-col">
                 <span className="font-serif text-xl font-bold text-foreground">Elizabeth Carol</span>
                 <span className="text-sm text-muted-foreground">Clairvoyant & Psychic Medium</span>

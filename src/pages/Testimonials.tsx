@@ -83,10 +83,9 @@ const Testimonials = () => {
   ];
 
   const stats = [
-    { number: "1000+", label: "Happy Clients" },
+    { number: "100's", label: "Happy Clients" },
     { number: "35+", label: "Years Experience" },
-    { number: "5★", label: "Average Rating" },
-    { number: "98%", label: "Client Satisfaction" }
+    { number: "5★", label: "Average Rating" }
   ];
 
   return (
@@ -97,9 +96,6 @@ const Testimonials = () => {
       <section className="py-20 bg-gradient-celestial">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <Badge className="mb-4 bg-gradient-mystical text-primary-foreground">
-              Client Testimonials
-            </Badge>
             <h1 className="text-4xl md:text-5xl font-serif font-bold text-foreground mb-6">
               What My Clients Say
             </h1>
@@ -129,64 +125,13 @@ const Testimonials = () => {
         </div>
       </section>
 
-      {/* Featured Testimonials */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-serif font-bold text-foreground mb-12 text-center">
-            Featured Client Experiences
-          </h2>
-          
-          <div className="grid md:grid-cols-2 gap-8 mb-16">
-            {testimonials.filter(testimonial => testimonial.featured).map((testimonial) => (
-              <Card key={testimonial.id} className="relative p-8 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300">
-                <div className="absolute top-4 right-4">
-                  <Badge className="bg-gradient-mystical text-primary-foreground">
-                    <Heart className="w-3 h-3 mr-1" />
-                    Featured
-                  </Badge>
-                </div>
-                
-                <CardContent className="p-0">
-                  <Quote className="w-8 h-8 text-primary mb-4" />
-                  
-                  <blockquote className="text-lg leading-relaxed text-foreground mb-6">
-                    "{testimonial.text}"
-                  </blockquote>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-semibold text-foreground">{testimonial.name}</div>
-                      <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                        <div className="flex items-center space-x-1">
-                          <MapPin className="w-4 h-4" />
-                          <span>{testimonial.location}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="w-4 h-4" />
-                          <span>{testimonial.date}</span>
-                        </div>
-                      </div>
-                      <div className="text-sm text-primary mt-1">{testimonial.service}</div>
-                    </div>
-                    
-                    <div className="flex space-x-1">
-                      {[...Array(testimonial.rating)].map((_, i) => (
-                        <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+
 
       {/* All Testimonials */}
       <section className="py-20 bg-secondary/20">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-serif font-bold text-foreground mb-12 text-center">
-            More Client Reviews
+            Client Reviews
           </h2>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">

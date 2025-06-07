@@ -61,6 +61,19 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				gold: {
+					DEFAULT: 'hsl(45 100% 60%)',
+					50: 'hsl(45 100% 95%)',
+					100: 'hsl(45 100% 90%)',
+					200: 'hsl(45 100% 80%)',
+					300: 'hsl(45 100% 70%)',
+					400: 'hsl(45 100% 60%)',
+					500: 'hsl(45 90% 50%)',
+					600: 'hsl(45 80% 40%)',
+					700: 'hsl(45 70% 30%)',
+					800: 'hsl(45 60% 20%)',
+					900: 'hsl(45 50% 10%)'
 				}
 			},
 			backgroundImage: {

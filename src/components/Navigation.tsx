@@ -22,12 +22,16 @@ const Navigation = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="sticky top-0 z-50 w-full border-b border-border bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/80">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <Star className="h-8 w-8 text-primary animate-glow" />
+            <img 
+              src="/images/elizabeth-carol-logo-icon-trans.png" 
+              alt="Elizabeth Carol Logo" 
+              className="h-8 w-8"
+            />
             <div className="flex flex-col">
               <span className="font-serif text-xl font-bold text-foreground">Elizabeth Carol</span>
               <span className="text-xs text-muted-foreground">Clairvoyant & Psychic Medium</span>
