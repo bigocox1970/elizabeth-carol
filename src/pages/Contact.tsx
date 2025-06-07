@@ -35,21 +35,22 @@ const Contact = () => {
     setIsSubmitting(true);
     setErrorMessage('');
 
-    try {
-      const response = await fetch('/.netlify/functions/contact', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: `${formData.firstName} ${formData.lastName}`,
-          email: formData.email,
-          phone: formData.phone,
-          message: `Service Interest: ${formData.service}\n\n${formData.message}`,
-        }),
-      });
+    // Create form data for Netlify Forms
+    const formDataToSubmit = new FormData();
+    formDataToSubmit.append('form-name', 'contact-form');
+    formDataToSubmit.append('firstName', formData.firstName);
+    formDataToSubmit.append('lastName', formData.lastName);
+    formDataToSubmit.append('email', formData.email);
+    formDataToSubmit.append('phone', formData.phone);
+    formDataToSubmit.append('service', formData.service);
+    formDataToSubmit.append('message', formData.message);
 
-      const data = await response.json();
+    try {
+      const response = await fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams([...formDataToSubmit] as [string, string][]).toString()
+      });
 
       if (response.ok) {
         setShowSuccess(true);
@@ -58,7 +59,7 @@ const Contact = () => {
           document.getElementById('success-message')?.scrollIntoView({ behavior: 'smooth' });
         }, 100);
       } else {
-        setErrorMessage(data.message || 'Failed to send message. Please try again.');
+        setErrorMessage('Failed to send message. Please try again.');
       }
     } catch (error) {
       setErrorMessage('Failed to send message. Please check your connection and try again.');
@@ -161,12 +162,29 @@ const Contact = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 {!showSuccess ? (
-                  <form onSubmit={handleSubmit} className="space-y-6">
+                  <form 
+                    onSubmit={handleSubmit} 
+                    className="space-y-6"
+                    name="contact-form"
+                    method="POST"
+                    data-netlify="true"
+                    netlify-honeypot="bot-field"
+                  >
+                    {/* Hidden form name for Netlify */}
+                    <input type="hidden" name="form-name" value="contact-form" />
+                    
+                    {/* Honeypot field */}
+                    <div style={{ display: 'none' }}>
+                      <label>
+                        Don't fill this out if you're human: <input name="bot-field" />
+                      </label>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="firstName">First Name *</Label>
                         <Input 
                           id="firstName" 
+                          name="firstName"
                           placeholder="Your first name" 
                           value={formData.firstName}
                           onChange={handleInputChange}
@@ -177,6 +195,7 @@ const Contact = () => {
                         <Label htmlFor="lastName">Last Name *</Label>
                         <Input 
                           id="lastName" 
+                          name="lastName"
                           placeholder="Your last name" 
                           value={formData.lastName}
                           onChange={handleInputChange}
@@ -189,6 +208,7 @@ const Contact = () => {
                       <Label htmlFor="email">Email Address *</Label>
                       <Input 
                         id="email" 
+                        name="email"
                         type="email" 
                         placeholder="your@email.com" 
                         value={formData.email}
@@ -201,6 +221,7 @@ const Contact = () => {
                       <Label htmlFor="phone">Phone Number</Label>
                       <Input 
                         id="phone" 
+                        name="phone"
                         type="tel" 
                         placeholder="Your phone number" 
                         value={formData.phone}
@@ -212,6 +233,7 @@ const Contact = () => {
                       <Label htmlFor="service">Service Interest</Label>
                       <select 
                         id="service" 
+                        name="service"
                         className="w-full px-3 py-2 bg-background border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
                         value={formData.service}
                         onChange={handleInputChange}
@@ -230,6 +252,7 @@ const Contact = () => {
                       <Label htmlFor="message">Message *</Label>
                       <Textarea 
                         id="message" 
+                        name="message"
                         placeholder="Tell me about what you're looking for or any questions you have..."
                         rows={4}
                         value={formData.message}
