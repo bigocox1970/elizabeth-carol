@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star, Trash2, RefreshCw, Check, X } from "lucide-react";
+import { callNetlifyFunction } from "@/lib/api";
 
 interface Review {
   id: string;
@@ -32,11 +33,8 @@ const ReviewsList = ({ password }: ReviewsListProps) => {
     setIsLoading(true);
     try {
       console.log('Loading reviews...');
-      const response = await fetch('/.netlify/functions/manage-reviews', {
+      const response = await callNetlifyFunction('manage-reviews', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ 
           action: 'get-all-reviews',
           password: password
@@ -62,11 +60,8 @@ const ReviewsList = ({ password }: ReviewsListProps) => {
 
   const handleApproveReview = async (reviewId: string, approve: boolean) => {
     try {
-      const response = await fetch('/.netlify/functions/manage-reviews', {
+      const response = await callNetlifyFunction('manage-reviews', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           action: approve ? 'approve-review' : 'unapprove-review',
           password: password,
@@ -88,11 +83,8 @@ const ReviewsList = ({ password }: ReviewsListProps) => {
     if (!confirm('Are you sure you want to delete this review?')) return;
 
     try {
-      const response = await fetch('/.netlify/functions/manage-reviews', {
+      const response = await callNetlifyFunction('manage-reviews', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           action: 'delete-review',
           password: password,
