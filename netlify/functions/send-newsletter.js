@@ -134,6 +134,12 @@ exports.handler = async (event, context) => {
     }
 
     // Setup email transporter
+    console.log('=== EMAIL SETUP ===');
+    console.log('Email credentials:', {
+      user: process.env.EMAIL_USER ? 'SET' : 'MISSING',
+      pass: process.env.EMAIL_PASSWORD ? 'SET' : 'MISSING'
+    });
+    
     const transporter = nodemailer.createTransport({
       host: 'smtpout.secureserver.net',
       port: 587,
@@ -144,10 +150,29 @@ exports.handler = async (event, context) => {
       }
     });
 
+    // Test email connection
+    try {
+      await transporter.verify();
+      console.log('Email transporter verified successfully');
+    } catch (emailError) {
+      console.error('Email transporter verification failed:', emailError);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ 
+          message: 'Email configuration error',
+          error: emailError.message
+        })
+      };
+    }
+
     // Send emails
+    console.log('=== SENDING EMAILS ===');
+    console.log(`Attempting to send to ${subscribers.length} subscribers`);
+    
     let sentCount = 0;
-    const emailPromises = subscribers.map(async (subscriber) => {
+    const emailPromises = subscribers.map(async (subscriber, index) => {
       try {
+        console.log(`Sending email ${index + 1} to:`, subscriber.email);
         const personalizedMessage = message.replace(/\n/g, '<br>');
         
         const mailOptions = {
@@ -193,10 +218,12 @@ To unsubscribe, simply reply to this email with "unsubscribe" in the subject lin
           `
         };
 
-        await transporter.sendMail(mailOptions);
+        const result = await transporter.sendMail(mailOptions);
+        console.log(`Email sent successfully to ${subscriber.email}:`, result.messageId);
         sentCount++;
       } catch (error) {
-        console.error(`Failed to send to ${subscriber.email}:`, error);
+        console.error(`Failed to send to ${subscriber.email}:`, error.message);
+        console.error('Full error:', error);
       }
     });
 
