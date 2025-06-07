@@ -161,20 +161,8 @@ exports.handler = async (event, context) => {
       }
     });
 
-    // Test email connection
-    try {
-      await transporter.verify();
-      console.log('Email transporter verified successfully');
-    } catch (emailError) {
-      console.error('Email transporter verification failed:', emailError);
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ 
-          message: 'Email configuration error',
-          error: emailError.message
-        })
-      };
-    }
+    // Skip email verification for now - let individual sends handle errors
+    console.log('Email transporter created, will test with actual sends');
 
     // Send emails
     console.log('=== SENDING EMAILS ===');
