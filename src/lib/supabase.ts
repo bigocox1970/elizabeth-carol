@@ -18,8 +18,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // Create the Supabase client with available credentials
-// If they're undefined, Supabase will throw a clear error
-export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
+// If environment variables are missing, use a placeholder URL that will be replaced in production
+const fallbackUrl = 'https://placeholder-supabase-url.com';
+const fallbackKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24ifQ.placeholder';
+
+export const supabase = createClient(
+  supabaseUrl || fallbackUrl, 
+  supabaseAnonKey || fallbackKey
+);
 
 // Auth helper functions
 export const signUp = async (email: string, password: string, metadata: Record<string, unknown> = {}) => {

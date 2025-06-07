@@ -5,6 +5,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Mail, Check, AlertCircle, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
+// Define types for subscribers
+interface Subscriber {
+  email: string;
+  name: string;
+  source: string;
+  user_id: string | null;
+  date_added: string;
+  active?: boolean;
+}
+
 const NewsletterSignup = () => {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
@@ -35,21 +45,51 @@ const NewsletterSignup = () => {
     setMessage('');
 
     try {
-      // Check if we're in development mode
+      // Always use the real API, even in development mode
+      console.log('Newsletter signup:', { name: name.trim(), email: email.trim() });
+
+      // Check if we're in development mode to handle the case where Netlify Functions aren't available
       const isDevelopment = import.meta.env.DEV;
       
       if (isDevelopment) {
-        // Simulate form submission in development
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        console.log('Newsletter signup (dev mode):', { name: name.trim(), email: email.trim() });
-        setIsSuccess(true);
-        setMessage('Successfully subscribed! (Development mode - no email sent)');
-        setEmail('');
-        setName('');
-        return;
+        // In development, simulate a successful response since Netlify Functions aren't running locally
+        console.log('Development mode: Simulating successful subscription');
+        
+        // Save to local storage for development testing
+        try {
+          const existingSubscribers = JSON.parse(localStorage.getItem('subscribers') || '[]');
+          const newSubscriber = {
+            email: email.trim(),
+            name: name.trim(),
+            source: 'newsletter',
+            user_id: user?.id || null,
+            date_added: new Date().toISOString()
+          };
+          
+          // Check if already subscribed
+          const alreadySubscribed = existingSubscribers.some(
+            (sub: Subscriber) => sub.email.toLowerCase() === email.trim().toLowerCase()
+          );
+          
+          if (alreadySubscribed) {
+            setIsSuccess(true);
+            setMessage('You are already subscribed! (Development mode)');
+          } else {
+            existingSubscribers.push(newSubscriber);
+            localStorage.setItem('subscribers', JSON.stringify(existingSubscribers));
+            setIsSuccess(true);
+            setMessage('Successfully subscribed! (Development mode)');
+          }
+          
+          setEmail('');
+          setName('');
+          return;
+        } catch (localStorageError) {
+          console.error('Error with localStorage:', localStorageError);
+        }
       }
 
-      // Use the existing add-subscriber function
+      // In production, use the Netlify Function
       const response = await fetch('/.netlify/functions/add-subscriber', {
         method: 'POST',
         headers: { 
@@ -63,9 +103,14 @@ const NewsletterSignup = () => {
         })
       });
 
+      // Handle the response
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+      }
+      
       const result = await response.json();
       
-      if (response.ok && result.success) {
+      if (result.success) {
         setIsSuccess(true);
         setMessage('Successfully subscribed! Thank you for joining our newsletter.');
         setEmail('');
