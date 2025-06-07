@@ -19,13 +19,30 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 // Create the Supabase client with available credentials
 // If environment variables are missing, use a placeholder URL that will be replaced in production
-const fallbackUrl = 'https://placeholder-supabase-url.com';
+const fallbackUrl = 'https://xyzplaceholder.supabase.co';
 const fallbackKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24ifQ.placeholder';
 
-export const supabase = createClient(
-  supabaseUrl || fallbackUrl, 
-  supabaseAnonKey || fallbackKey
-);
+// Function to validate URL
+const isValidUrl = (urlString: string) => {
+  try {
+    new URL(urlString);
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
+
+// Use the URL only if it's valid
+const finalUrl = supabaseUrl && isValidUrl(supabaseUrl) ? supabaseUrl : fallbackUrl;
+const finalKey = supabaseAnonKey || fallbackKey;
+
+console.log('Supabase URL validation:', {
+  providedUrl: supabaseUrl,
+  isValid: supabaseUrl ? isValidUrl(supabaseUrl) : false,
+  usingUrl: finalUrl
+});
+
+export const supabase = createClient(finalUrl, finalKey);
 
 // Auth helper functions
 export const signUp = async (email: string, password: string, metadata: Record<string, unknown> = {}) => {
