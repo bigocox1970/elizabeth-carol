@@ -71,29 +71,13 @@ const Contact = () => {
     setErrorMessage('');
 
     try {
-      // Check if we're in development mode
-      const isDevelopment = import.meta.env.DEV;
-      
-      if (isDevelopment) {
-        // Simulate form submission in development
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        console.log('Contact form submission (dev mode):', formData);
-        setShowSuccess(true);
-        // Scroll to success message
-        setTimeout(() => {
-          document.getElementById('success-message')?.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
-        return;
-      }
-
-      // Use Netlify function for form submission
-      const response = await fetch('/.netlify/functions/submit-form', {
+      // Use the existing contact function
+      const response = await fetch('/.netlify/functions/contact', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          formName: 'contact-form',
           firstName: formData.firstName.trim(),
           lastName: formData.lastName.trim(),
           email: formData.email.trim(),

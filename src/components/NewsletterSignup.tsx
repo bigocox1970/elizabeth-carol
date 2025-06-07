@@ -47,16 +47,16 @@ const NewsletterSignup = () => {
         return;
       }
 
-      // Use Netlify function for form submission
-      const response = await fetch('/.netlify/functions/submit-form', {
+      // Use the existing add-subscriber function
+      const response = await fetch('/.netlify/functions/add-subscriber', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          formName: 'newsletter-signup',
           email: email.trim(),
-          name: name.trim()
+          name: name.trim(),
+          source: 'newsletter'
         })
       });
 
