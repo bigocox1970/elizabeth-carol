@@ -36,29 +36,39 @@ exports.handler = async (event, context) => {
           };
         }
 
-        const addReviewResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews`, {
-          method: 'POST',
-          headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${userToken}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
-          },
-          body: JSON.stringify({
-            name: reviewData.name,
-            email: reviewData.email || '',
-            location: reviewData.location || '',
-            service: reviewData.service || 'General',
-            rating: parseInt(reviewData.rating),
-            title: reviewData.title || '',
-            content: reviewData.comment,
-            user_id: reviewData.userId,
-            approved: false // Requires admin approval
-          })
-        });
+        console.log('Adding review for authenticated user:', reviewData.userId);
+        
+        let addReviewResponse;
+        try {
+          addReviewResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews`, {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${userToken}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify({
+              name: reviewData.name,
+              email: reviewData.email || '',
+              location: reviewData.location || '',
+              service: reviewData.service || 'General',
+              rating: parseInt(reviewData.rating),
+              title: reviewData.title || '',
+              content: reviewData.comment,
+              user_id: reviewData.userId,
+              approved: false // Requires admin approval
+            })
+          });
 
-        if (!addReviewResponse.ok) {
-          throw new Error(`Failed to add review: ${addReviewResponse.status}`);
+          if (!addReviewResponse.ok) {
+            const errorText = await addReviewResponse.text();
+            console.error('Review submission error details:', errorText);
+            throw new Error(`Failed to add review: ${addReviewResponse.status} - ${errorText}`);
+          }
+        } catch (error) {
+          console.error('Error in review submission:', error);
+          throw error;
         }
 
         const newReviews = await addReviewResponse.json();
