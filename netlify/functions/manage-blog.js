@@ -1,131 +1,291 @@
-const fs = require('fs').promises;
-const path = require('path');
+const SUPABASE_URL = 'https://itsxxdxyigsyqxkeonqr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0c3h4ZHh5aWdzeXF4a2VvbnFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMDQ1NjgsImV4cCI6MjA2NDg4MDU2OH0.YeWzqm0FsIBs8ojIdyMSkprWn1OA4SfFgB2DM3j2ko';
 
 exports.handler = async (event, context) => {
   const { httpMethod } = event;
   const { action, password, postId, postData } = JSON.parse(event.body || '{}');
 
   // Authentication check for write operations
-  if (['POST', 'PUT', 'DELETE'].includes(httpMethod) && password !== 'elizabeth2024') {
+  const isAdmin = password === 'elizabeth2024';
+  if (['create', 'update', 'delete'].includes(action) && !isAdmin) {
     return {
       statusCode: 401,
+      headers: { "Access-Control-Allow-Origin": "*" },
       body: JSON.stringify({ message: 'Unauthorized' })
     };
   }
 
-  const filePath = path.join(process.cwd(), 'data', 'blog-posts.json');
-
   try {
-    // Read existing posts
-    let posts = [];
-    try {
-      const data = await fs.readFile(filePath, 'utf8');
-      posts = JSON.parse(data);
-    } catch (err) {
-      posts = [];
-    }
-
     switch (action) {
       case 'get-all':
         // Return all posts, sorted by date (newest first)
+        const allResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?select=*&order=created_at.desc`, {
+          method: 'GET',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!allResponse.ok) {
+          throw new Error(`Database query failed: ${allResponse.status}`);
+        }
+
+        const allPosts = await allResponse.json();
+        
+        // Format posts for frontend
+        const formattedAllPosts = allPosts.map(post => ({
+          id: post.id.toString(),
+          title: post.title,
+          content: post.content,
+          excerpt: post.excerpt || post.content.substring(0, 200) + '...',
+          category: post.category,
+          published: post.published,
+          createdAt: post.created_at,
+          updatedAt: post.updated_at,
+          author: post.author
+        }));
+
         return {
           statusCode: 200,
-          body: JSON.stringify({ 
-            posts: posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-          })
+          headers: { "Access-Control-Allow-Origin": "*" },
+          body: JSON.stringify({ posts: formattedAllPosts })
         };
 
       case 'get-published':
         // Return only published posts for public view
-        const publishedPosts = posts
-          .filter(post => post.published)
-          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        const publishedResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?published=eq.true&select=*,blog_comments(*)&order=created_at.desc`, {
+          method: 'GET',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!publishedResponse.ok) {
+          throw new Error(`Database query failed: ${publishedResponse.status}`);
+        }
+
+        const publishedPosts = await publishedResponse.json();
+        
+        // Format posts for frontend
+        const formattedPublishedPosts = publishedPosts.map(post => ({
+          id: post.id.toString(),
+          title: post.title,
+          content: post.content,
+          excerpt: post.excerpt || post.content.substring(0, 200) + '...',
+          category: post.category,
+          published: post.published,
+          createdAt: post.created_at,
+          updatedAt: post.updated_at,
+          author: post.author,
+          reviews: post.blog_comments.filter(comment => comment.approved).map(comment => ({
+            id: comment.id.toString(),
+            name: comment.author_name,
+            email: comment.author_email,
+            comment: comment.content,
+            approved: comment.approved,
+            createdAt: comment.created_at,
+            rating: 5 // Default rating for comments
+          }))
+        }));
+
         return {
           statusCode: 200,
-          body: JSON.stringify({ posts: publishedPosts })
+          headers: { "Access-Control-Allow-Origin": "*" },
+          body: JSON.stringify({ posts: formattedPublishedPosts })
         };
 
       case 'get-single':
-        const post = posts.find(p => p.id === postId);
-        if (!post) {
+        // Get a single post by ID
+        const singleResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?id=eq.${postId}&select=*,blog_comments(*)`, {
+          method: 'GET',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!singleResponse.ok) {
+          throw new Error(`Database query failed: ${singleResponse.status}`);
+        }
+
+        const singlePosts = await singleResponse.json();
+        
+        if (singlePosts.length === 0) {
           return {
             statusCode: 404,
+            headers: { "Access-Control-Allow-Origin": "*" },
             body: JSON.stringify({ message: 'Post not found' })
           };
         }
+        
+        const post = singlePosts[0];
+        
+        // Format post for frontend
+        const formattedPost = {
+          id: post.id.toString(),
+          title: post.title,
+          content: post.content,
+          excerpt: post.excerpt || post.content.substring(0, 200) + '...',
+          category: post.category,
+          published: post.published,
+          createdAt: post.created_at,
+          updatedAt: post.updated_at,
+          author: post.author,
+          reviews: post.blog_comments.map(comment => ({
+            id: comment.id.toString(),
+            name: comment.author_name,
+            email: comment.author_email,
+            comment: comment.content,
+            approved: comment.approved,
+            createdAt: comment.created_at,
+            rating: 5 // Default rating for comments
+          }))
+        };
+
         return {
           statusCode: 200,
-          body: JSON.stringify({ post })
+          headers: { "Access-Control-Allow-Origin": "*" },
+          body: JSON.stringify({ post: formattedPost })
         };
 
       case 'create':
-        const newPost = {
-          id: Date.now().toString(),
-          title: postData.title,
-          content: postData.content,
-          excerpt: postData.excerpt || postData.content.substring(0, 200) + '...',
-          category: postData.category || 'Spiritual Guidance',
-          published: postData.published || false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          author: 'Elizabeth Carol',
+        // Create a new post
+        const createResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify({
+            title: postData.title,
+            content: postData.content,
+            excerpt: postData.excerpt || postData.content.substring(0, 200) + '...',
+            category: postData.category || 'Spiritual Guidance',
+            published: postData.published || false,
+            author: 'Elizabeth Carol'
+          })
+        });
+
+        if (!createResponse.ok) {
+          throw new Error(`Failed to create post: ${createResponse.status}`);
+        }
+
+        const newPosts = await createResponse.json();
+        const newPost = newPosts[0];
+        
+        // Format post for frontend
+        const formattedNewPost = {
+          id: newPost.id.toString(),
+          title: newPost.title,
+          content: newPost.content,
+          excerpt: newPost.excerpt,
+          category: newPost.category,
+          published: newPost.published,
+          createdAt: newPost.created_at,
+          updatedAt: newPost.updated_at,
+          author: newPost.author,
           reviews: []
         };
-        posts.push(newPost);
-        await fs.writeFile(filePath, JSON.stringify(posts, null, 2));
-        
+
         return {
           statusCode: 200,
+          headers: { "Access-Control-Allow-Origin": "*" },
           body: JSON.stringify({ 
             message: 'Post created successfully',
-            post: newPost
+            post: formattedNewPost
           })
         };
 
       case 'update':
-        const postIndex = posts.findIndex(p => p.id === postId);
-        if (postIndex === -1) {
+        // Update an existing post
+        const updateResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?id=eq.${postId}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify({
+            title: postData.title,
+            content: postData.content,
+            excerpt: postData.excerpt || postData.content.substring(0, 200) + '...',
+            category: postData.category,
+            published: postData.published,
+            updated_at: new Date().toISOString()
+          })
+        });
+
+        if (!updateResponse.ok) {
+          throw new Error(`Failed to update post: ${updateResponse.status}`);
+        }
+
+        const updatedPosts = await updateResponse.json();
+        
+        if (updatedPosts.length === 0) {
           return {
             statusCode: 404,
+            headers: { "Access-Control-Allow-Origin": "*" },
             body: JSON.stringify({ message: 'Post not found' })
           };
         }
         
-        posts[postIndex] = {
-          ...posts[postIndex],
-          ...postData,
-          updatedAt: new Date().toISOString()
-        };
-        await fs.writeFile(filePath, JSON.stringify(posts, null, 2));
+        const updatedPost = updatedPosts[0];
         
+        // Format post for frontend
+        const formattedUpdatedPost = {
+          id: updatedPost.id.toString(),
+          title: updatedPost.title,
+          content: updatedPost.content,
+          excerpt: updatedPost.excerpt,
+          category: updatedPost.category,
+          published: updatedPost.published,
+          createdAt: updatedPost.created_at,
+          updatedAt: updatedPost.updated_at,
+          author: updatedPost.author
+        };
+
         return {
           statusCode: 200,
+          headers: { "Access-Control-Allow-Origin": "*" },
           body: JSON.stringify({ 
             message: 'Post updated successfully',
-            post: posts[postIndex]
+            post: formattedUpdatedPost
           })
         };
 
       case 'delete':
-        const deleteIndex = posts.findIndex(p => p.id === postId);
-        if (deleteIndex === -1) {
-          return {
-            statusCode: 404,
-            body: JSON.stringify({ message: 'Post not found' })
-          };
+        // Delete a post
+        const deleteResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?id=eq.${postId}`, {
+          method: 'DELETE',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!deleteResponse.ok) {
+          throw new Error(`Failed to delete post: ${deleteResponse.status}`);
         }
-        
-        posts.splice(deleteIndex, 1);
-        await fs.writeFile(filePath, JSON.stringify(posts, null, 2));
-        
+
         return {
           statusCode: 200,
+          headers: { "Access-Control-Allow-Origin": "*" },
           body: JSON.stringify({ message: 'Post deleted successfully' })
         };
 
       default:
         return {
           statusCode: 400,
+          headers: { "Access-Control-Allow-Origin": "*" },
           body: JSON.stringify({ message: 'Invalid action' })
         };
     }
@@ -134,7 +294,8 @@ exports.handler = async (event, context) => {
     console.error('Error managing blog:', error);
     return {
       statusCode: 500,
+      headers: { "Access-Control-Allow-Origin": "*" },
       body: JSON.stringify({ message: 'Failed to manage blog posts' })
     };
   }
-}; 
+};

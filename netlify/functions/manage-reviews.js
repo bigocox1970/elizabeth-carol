@@ -1,5 +1,5 @@
-const fs = require('fs').promises;
-const path = require('path');
+const SUPABASE_URL = 'https://itsxxdxyigsyqxkeonqr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0c3h4ZHh5aWdzeXF4a2VvbnFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMDQ1NjgsImV4cCI6MjA2NDg4MDU2OH0.YeWzqm0FsIBs8ojIdyMSkprWn1OA4SfFgB2DM3j2ko';
 
 exports.handler = async (event, context) => {
   const { httpMethod } = event;
@@ -8,9 +8,6 @@ exports.handler = async (event, context) => {
   // Authentication check for admin operations
   const isAdmin = password === 'elizabeth2024';
 
-  const reviewsFilePath = path.join(process.cwd(), 'data', 'reviews.json');
-  const blogFilePath = path.join(process.cwd(), 'data', 'blog-posts.json');
-
   try {
     switch (action) {
       case 'add-general-review':
@@ -18,91 +15,135 @@ exports.handler = async (event, context) => {
         if (!reviewData.name || !reviewData.rating || !reviewData.comment) {
           return {
             statusCode: 400,
+            headers: { "Access-Control-Allow-Origin": "*" },
             body: JSON.stringify({ message: 'Name, rating, and comment are required' })
           };
         }
 
-        let reviews = [];
-        try {
-          const data = await fs.readFile(reviewsFilePath, 'utf8');
-          reviews = JSON.parse(data);
-        } catch (err) {
-          reviews = [];
+        // Add to reviews table
+        const addReviewResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify({
+            name: reviewData.name,
+            email: reviewData.email || '',
+            rating: parseInt(reviewData.rating),
+            title: reviewData.title || '',
+            content: reviewData.comment,
+            service: reviewData.service || 'General',
+            approved: false // Requires admin approval
+          })
+        });
+
+        if (!addReviewResponse.ok) {
+          throw new Error(`Failed to add review: ${addReviewResponse.status}`);
         }
 
-        const newReview = {
-          id: Date.now().toString(),
-          name: reviewData.name,
-          email: reviewData.email || '',
-          rating: parseInt(reviewData.rating),
-          comment: reviewData.comment,
-          service: reviewData.service || 'General',
-          approved: false, // Requires admin approval
-          createdAt: new Date().toISOString(),
-          type: 'general'
-        };
+        const newReviews = await addReviewResponse.json();
+        const newReview = newReviews[0];
 
-        reviews.push(newReview);
-        await fs.writeFile(reviewsFilePath, JSON.stringify(reviews, null, 2));
+        // Format review for frontend
+        const formattedNewReview = {
+          id: newReview.id.toString(),
+          name: newReview.name,
+          email: newReview.email,
+          rating: newReview.rating,
+          comment: newReview.content,
+          service: newReview.service,
+          approved: newReview.approved,
+          createdAt: newReview.created_at
+        };
 
         return {
           statusCode: 200,
+          headers: { "Access-Control-Allow-Origin": "*" },
           body: JSON.stringify({ 
             message: 'Thank you for your review! It will be published after approval.',
-            review: newReview
+            review: formattedNewReview
           })
         };
 
       case 'add-blog-review':
-        // Add a review to a specific blog post
-        if (!reviewData.name || !reviewData.rating || !reviewData.comment || !postId) {
+        // Add a comment to a specific blog post
+        if (!reviewData.name || !reviewData.comment || !postId) {
           return {
             statusCode: 400,
-            body: JSON.stringify({ message: 'Name, rating, comment, and post ID are required' })
+            headers: { "Access-Control-Allow-Origin": "*" },
+            body: JSON.stringify({ message: 'Name, comment, and post ID are required' })
           };
         }
 
-        let blogPosts = [];
-        try {
-          const data = await fs.readFile(blogFilePath, 'utf8');
-          blogPosts = JSON.parse(data);
-        } catch (err) {
+        // Check if post exists
+        const postCheckResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?id=eq.${postId}&select=id`, {
+          method: 'GET',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!postCheckResponse.ok) {
+          throw new Error(`Database query failed: ${postCheckResponse.status}`);
+        }
+
+        const existingPosts = await postCheckResponse.json();
+        
+        if (existingPosts.length === 0) {
           return {
             statusCode: 404,
+            headers: { "Access-Control-Allow-Origin": "*" },
             body: JSON.stringify({ message: 'Blog post not found' })
           };
         }
 
-        const postIndex = blogPosts.findIndex(p => p.id === postId);
-        if (postIndex === -1) {
-          return {
-            statusCode: 404,
-            body: JSON.stringify({ message: 'Blog post not found' })
-          };
+        // Add comment to blog_comments table
+        const addCommentResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_comments`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify({
+            post_id: postId,
+            author_name: reviewData.name,
+            author_email: reviewData.email || '',
+            content: reviewData.comment,
+            approved: false // Requires admin approval
+          })
+        });
+
+        if (!addCommentResponse.ok) {
+          throw new Error(`Failed to add comment: ${addCommentResponse.status}`);
         }
 
-        const blogReview = {
-          id: Date.now().toString(),
-          name: reviewData.name,
-          email: reviewData.email || '',
-          rating: parseInt(reviewData.rating),
-          comment: reviewData.comment,
-          approved: false,
-          createdAt: new Date().toISOString()
+        const newComments = await addCommentResponse.json();
+        const newComment = newComments[0];
+
+        // Format comment for frontend
+        const formattedNewComment = {
+          id: newComment.id.toString(),
+          name: newComment.author_name,
+          email: newComment.author_email,
+          comment: newComment.content,
+          approved: newComment.approved,
+          createdAt: newComment.created_at,
+          rating: reviewData.rating || 5 // Include rating if provided
         };
-
-        if (!blogPosts[postIndex].reviews) {
-          blogPosts[postIndex].reviews = [];
-        }
-        blogPosts[postIndex].reviews.push(blogReview);
-
-        await fs.writeFile(blogFilePath, JSON.stringify(blogPosts, null, 2));
 
         return {
           statusCode: 200,
+          headers: { "Access-Control-Allow-Origin": "*" },
           body: JSON.stringify({ 
             message: 'Thank you for your comment! It will be published after approval.',
-            review: blogReview
+            review: formattedNewComment
           })
         };
 
@@ -111,40 +152,81 @@ exports.handler = async (event, context) => {
         if (!isAdmin) {
           return {
             statusCode: 401,
+            headers: { "Access-Control-Allow-Origin": "*" },
             body: JSON.stringify({ message: 'Unauthorized' })
           };
         }
 
-        let allReviews = [];
-        try {
-          const data = await fs.readFile(reviewsFilePath, 'utf8');
-          allReviews = JSON.parse(data);
-        } catch (err) {
-          allReviews = [];
+        const allReviewsResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews?select=*&order=created_at.desc`, {
+          method: 'GET',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!allReviewsResponse.ok) {
+          throw new Error(`Database query failed: ${allReviewsResponse.status}`);
         }
+
+        const allReviews = await allReviewsResponse.json();
+
+        // Format reviews for frontend
+        const formattedAllReviews = allReviews.map(review => ({
+          id: review.id.toString(),
+          name: review.name,
+          email: review.email,
+          rating: review.rating,
+          title: review.title,
+          comment: review.content,
+          service: review.service,
+          approved: review.approved,
+          featured: review.featured,
+          createdAt: review.created_at
+        }));
 
         return {
           statusCode: 200,
-          body: JSON.stringify({ 
-            reviews: allReviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-          })
+          headers: { "Access-Control-Allow-Origin": "*" },
+          body: JSON.stringify({ reviews: formattedAllReviews })
         };
 
       case 'get-approved-reviews':
         // Get approved reviews for public display
-        let publicReviews = [];
-        try {
-          const data = await fs.readFile(reviewsFilePath, 'utf8');
-          publicReviews = JSON.parse(data).filter(review => review.approved);
-        } catch (err) {
-          publicReviews = [];
+        const approvedReviewsResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews?approved=eq.true&select=*&order=created_at.desc`, {
+          method: 'GET',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!approvedReviewsResponse.ok) {
+          throw new Error(`Database query failed: ${approvedReviewsResponse.status}`);
         }
+
+        const approvedReviews = await approvedReviewsResponse.json();
+
+        // Format reviews for frontend
+        const formattedApprovedReviews = approvedReviews.map(review => ({
+          id: review.id.toString(),
+          name: review.name,
+          email: review.email,
+          rating: review.rating,
+          title: review.title,
+          comment: review.content,
+          service: review.service,
+          approved: review.approved,
+          featured: review.featured,
+          createdAt: review.created_at
+        }));
 
         return {
           statusCode: 200,
-          body: JSON.stringify({ 
-            reviews: publicReviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-          })
+          headers: { "Access-Control-Allow-Origin": "*" },
+          body: JSON.stringify({ reviews: formattedApprovedReviews })
         };
 
       case 'approve-review':
@@ -152,35 +234,96 @@ exports.handler = async (event, context) => {
         if (!isAdmin) {
           return {
             statusCode: 401,
+            headers: { "Access-Control-Allow-Origin": "*" },
             body: JSON.stringify({ message: 'Unauthorized' })
           };
         }
 
-        let reviewsToApprove = [];
-        try {
-          const data = await fs.readFile(reviewsFilePath, 'utf8');
-          reviewsToApprove = JSON.parse(data);
-        } catch (err) {
-          return {
-            statusCode: 404,
-            body: JSON.stringify({ message: 'Reviews not found' })
-          };
-        }
+        const approveResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews?id=eq.${reviewId}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            approved: true
+          })
+        });
 
-        const reviewIndex = reviewsToApprove.findIndex(r => r.id === reviewId);
-        if (reviewIndex === -1) {
-          return {
-            statusCode: 404,
-            body: JSON.stringify({ message: 'Review not found' })
-          };
+        if (!approveResponse.ok) {
+          throw new Error(`Failed to approve review: ${approveResponse.status}`);
         }
-
-        reviewsToApprove[reviewIndex].approved = true;
-        await fs.writeFile(reviewsFilePath, JSON.stringify(reviewsToApprove, null, 2));
 
         return {
           statusCode: 200,
+          headers: { "Access-Control-Allow-Origin": "*" },
           body: JSON.stringify({ message: 'Review approved successfully' })
+        };
+
+      case 'approve-comment':
+        // Approve a blog comment (admin only)
+        if (!isAdmin) {
+          return {
+            statusCode: 401,
+            headers: { "Access-Control-Allow-Origin": "*" },
+            body: JSON.stringify({ message: 'Unauthorized' })
+          };
+        }
+
+        const approveCommentResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_comments?id=eq.${reviewId}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            approved: true
+          })
+        });
+
+        if (!approveCommentResponse.ok) {
+          throw new Error(`Failed to approve comment: ${approveCommentResponse.status}`);
+        }
+
+        return {
+          statusCode: 200,
+          headers: { "Access-Control-Allow-Origin": "*" },
+          body: JSON.stringify({ message: 'Comment approved successfully' })
+        };
+
+      case 'feature-review':
+        // Feature a review (admin only)
+        if (!isAdmin) {
+          return {
+            statusCode: 401,
+            headers: { "Access-Control-Allow-Origin": "*" },
+            body: JSON.stringify({ message: 'Unauthorized' })
+          };
+        }
+
+        const featureResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews?id=eq.${reviewId}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            featured: true,
+            approved: true // Also approve when featuring
+          })
+        });
+
+        if (!featureResponse.ok) {
+          throw new Error(`Failed to feature review: ${featureResponse.status}`);
+        }
+
+        return {
+          statusCode: 200,
+          headers: { "Access-Control-Allow-Origin": "*" },
+          body: JSON.stringify({ message: 'Review featured successfully' })
         };
 
       case 'delete-review':
@@ -188,40 +331,63 @@ exports.handler = async (event, context) => {
         if (!isAdmin) {
           return {
             statusCode: 401,
+            headers: { "Access-Control-Allow-Origin": "*" },
             body: JSON.stringify({ message: 'Unauthorized' })
           };
         }
 
-        let reviewsToDelete = [];
-        try {
-          const data = await fs.readFile(reviewsFilePath, 'utf8');
-          reviewsToDelete = JSON.parse(data);
-        } catch (err) {
-          return {
-            statusCode: 404,
-            body: JSON.stringify({ message: 'Reviews not found' })
-          };
-        }
+        const deleteResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews?id=eq.${reviewId}`, {
+          method: 'DELETE',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          }
+        });
 
-        const deleteIndex = reviewsToDelete.findIndex(r => r.id === reviewId);
-        if (deleteIndex === -1) {
-          return {
-            statusCode: 404,
-            body: JSON.stringify({ message: 'Review not found' })
-          };
+        if (!deleteResponse.ok) {
+          throw new Error(`Failed to delete review: ${deleteResponse.status}`);
         }
-
-        reviewsToDelete.splice(deleteIndex, 1);
-        await fs.writeFile(reviewsFilePath, JSON.stringify(reviewsToDelete, null, 2));
 
         return {
           statusCode: 200,
+          headers: { "Access-Control-Allow-Origin": "*" },
           body: JSON.stringify({ message: 'Review deleted successfully' })
+        };
+
+      case 'delete-comment':
+        // Delete a blog comment (admin only)
+        if (!isAdmin) {
+          return {
+            statusCode: 401,
+            headers: { "Access-Control-Allow-Origin": "*" },
+            body: JSON.stringify({ message: 'Unauthorized' })
+          };
+        }
+
+        const deleteCommentResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_comments?id=eq.${reviewId}`, {
+          method: 'DELETE',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!deleteCommentResponse.ok) {
+          throw new Error(`Failed to delete comment: ${deleteCommentResponse.status}`);
+        }
+
+        return {
+          statusCode: 200,
+          headers: { "Access-Control-Allow-Origin": "*" },
+          body: JSON.stringify({ message: 'Comment deleted successfully' })
         };
 
       default:
         return {
           statusCode: 400,
+          headers: { "Access-Control-Allow-Origin": "*" },
           body: JSON.stringify({ message: 'Invalid action' })
         };
     }
@@ -230,7 +396,8 @@ exports.handler = async (event, context) => {
     console.error('Error managing reviews:', error);
     return {
       statusCode: 500,
+      headers: { "Access-Control-Allow-Origin": "*" },
       body: JSON.stringify({ message: 'Failed to manage reviews' })
     };
   }
-}; 
+};

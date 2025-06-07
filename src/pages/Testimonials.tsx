@@ -1,12 +1,42 @@
+import { useState, useEffect } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, Quote, MapPin, Calendar, Heart } from "lucide-react";
+import { Star, Quote, MapPin, Calendar, Heart, Loader2 } from "lucide-react";
 
 const Testimonials = () => {
-  const testimonials = [
+  const [testimonials, setTestimonials] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadReviews();
+  }, []);
+
+  const loadReviews = async () => {
+    try {
+      const response = await fetch('/.netlify/functions/manage-reviews', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'get-approved-reviews' }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTestimonials(data.reviews || []);
+      }
+    } catch (error) {
+      console.error('Failed to load reviews:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fallback testimonials in case no reviews are in the database yet
+  const fallbackTestimonials = [
     {
       id: 1,
       name: "Sarah M.",
@@ -14,7 +44,7 @@ const Testimonials = () => {
       date: "December 2023",
       rating: 5,
       service: "One-to-One Reading",
-      text: "Elizabeth's reading was incredibly accurate and brought me such comfort. She connected with my late mother and shared details that only family would know. Her warmth and compassion made the experience truly healing.",
+      comment: "Elizabeth's reading was incredibly accurate and brought me such comfort. She connected with my late mother and shared details that only family would know. Her warmth and compassion made the experience truly healing.",
       featured: true
     },
     {
@@ -24,7 +54,7 @@ const Testimonials = () => {
       date: "November 2023",
       rating: 5,
       service: "Telephone Reading",
-      text: "Despite being over the phone, Elizabeth's connection was incredibly strong. She provided guidance about my career change that has proven to be spot on. I'm so grateful for her insights."
+      comment: "Despite being over the phone, Elizabeth's connection was incredibly strong. She provided guidance about my career change that has proven to be spot on. I'm so grateful for her insights."
     },
     {
       id: 3,
@@ -33,54 +63,12 @@ const Testimonials = () => {
       date: "October 2023",
       rating: 5,
       service: "Home Psychic Evening",
-      text: "Elizabeth hosted a wonderful evening for my birthday. All my friends were amazed by the accuracy of their readings. She created such a lovely atmosphere and everyone left feeling uplifted."
-    },
-    {
-      id: 4,
-      name: "David L.",
-      location: "Oxford",
-      date: "September 2023",
-      rating: 5,
-      service: "Group Reading",
-      text: "I was skeptical at first, but Elizabeth's reading changed my perspective completely. She brought through my grandfather with such specific details about our shared memories. Truly remarkable."
-    },
-    {
-      id: 5,
-      name: "Lisa K.",
-      location: "Didcot",
-      date: "August 2023",
-      rating: 5,
-      service: "One-to-One Reading",
-      text: "Elizabeth has been my spiritual guide for over 10 years. Her readings are always insightful and have helped me navigate some of life's most challenging moments. I can't recommend her highly enough."
-    },
-    {
-      id: 6,
-      name: "Robert C.",
-      location: "Abingdon",
-      date: "July 2023",
-      rating: 5,
-      service: "Video Reading",
-      text: "The convenience of a video reading without losing any of the spiritual connection. Elizabeth's gift is truly special, and her gentle approach made me feel completely at ease."
-    },
-    {
-      id: 7,
-      name: "Helen W.",
-      location: "Banbury",
-      date: "June 2023",
-      rating: 5,
-      service: "Workshop",
-      text: "Elizabeth's workshop on developing intuition was enlightening. Her teaching style is clear and supportive, and I learned so much about connecting with my own psychic abilities."
-    },
-    {
-      id: 8,
-      name: "Michael P.",
-      location: "Oxford",
-      date: "May 2023",
-      rating: 5,
-      service: "One-to-One Reading",
-      text: "After losing my wife, I was in a very dark place. Elizabeth's reading brought me the peace I desperately needed. She helped me understand that love transcends physical death."
+      comment: "Elizabeth hosted a wonderful evening for my birthday. All my friends were amazed by the accuracy of their readings. She created such a lovely atmosphere and everyone left feeling uplifted."
     }
   ];
+
+  // Use fallback testimonials if no reviews are loaded from the database
+  const displayTestimonials = testimonials.length > 0 ? testimonials : fallbackTestimonials;
 
   const stats = [
     { number: "100's", label: "Happy Clients" },
@@ -134,42 +122,60 @@ const Testimonials = () => {
             Client Reviews
           </h2>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {testimonials.map((testimonial) => (
-              <Card key={testimonial.id} className="p-6 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300">
-                <CardContent className="p-0">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex space-x-1">
-                      {[...Array(testimonial.rating)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      ))}
-                    </div>
-                    <Badge variant="outline" className="text-xs">
-                      {testimonial.service}
-                    </Badge>
-                  </div>
-                  
-                  <blockquote className="text-sm leading-relaxed text-muted-foreground mb-4">
-                    "{testimonial.text}"
-                  </blockquote>
-                  
-                  <div className="border-t border-border pt-4">
-                    <div className="font-semibold text-foreground text-sm">{testimonial.name}</div>
-                    <div className="flex items-center space-x-3 text-xs text-muted-foreground">
-                      <div className="flex items-center space-x-1">
-                        <MapPin className="w-3 h-3" />
-                        <span>{testimonial.location}</span>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-primary" />
+                <p className="text-muted-foreground">Loading reviews...</p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {displayTestimonials.map((testimonial) => (
+                <Card key={testimonial.id} className={`p-6 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 ${testimonial.featured ? 'border-primary/50' : ''}`}>
+                  <CardContent className="p-0">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex space-x-1">
+                        {[...Array(testimonial.rating)].map((_, i) => (
+                          <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                        ))}
                       </div>
-                      <div className="flex items-center space-x-1">
-                        <Calendar className="w-3 h-3" />
-                        <span>{testimonial.date}</span>
+                      <Badge variant={testimonial.featured ? "default" : "outline"} className="text-xs">
+                        {testimonial.service || 'Reading'}
+                      </Badge>
+                    </div>
+                    
+                    <blockquote className="text-sm leading-relaxed text-muted-foreground mb-4">
+                      "{testimonial.comment || testimonial.content}"
+                    </blockquote>
+                    
+                    <div className="border-t border-border pt-4">
+                      <div className="font-semibold text-foreground text-sm">{testimonial.name}</div>
+                      <div className="flex items-center space-x-3 text-xs text-muted-foreground">
+                        {testimonial.location && (
+                          <div className="flex items-center space-x-1">
+                            <MapPin className="w-3 h-3" />
+                            <span>{testimonial.location}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center space-x-1">
+                          <Calendar className="w-3 h-3" />
+                          <span>
+                            {testimonial.date || 
+                              (testimonial.createdAt ? 
+                                new Date(testimonial.createdAt).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'long'
+                                }) : 'Recent')}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
