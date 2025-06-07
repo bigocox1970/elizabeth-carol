@@ -49,17 +49,8 @@ const Services = () => {
   ];
 
   return (
-    <section className="relative py-24" id="services">
-      <div className="absolute inset-0">
-        <img 
-          src="/lovable-uploads/e91bac0e-aca1-4c4b-9add-0e742b5d5dc5.png" 
-          alt="Three tarot cards reading"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-background/90"></div>
-        <div className="absolute inset-0 bg-primary/20"></div>
-      </div>
-      <div className="container mx-auto px-4 relative z-10">
+    <section className="py-24 bg-background" id="services">
+      <div className="container mx-auto px-4">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-4">
             Spiritual Services in Oxford
