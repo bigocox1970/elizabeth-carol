@@ -38,6 +38,8 @@ exports.handler = async (event, context) => {
           body: JSON.stringify({
             name: reviewData.name,
             email: reviewData.email || '',
+            location: reviewData.location || '',
+            service: reviewData.service || 'General',
             rating: parseInt(reviewData.rating),
             title: reviewData.title || '',
             content: reviewData.comment,
@@ -58,6 +60,8 @@ exports.handler = async (event, context) => {
           id: newReview.id.toString(),
           name: newReview.name,
           email: newReview.email,
+          location: newReview.location,
+          service: newReview.service,
           rating: newReview.rating,
           comment: newReview.content,
           approved: newReview.approved,
@@ -155,7 +159,12 @@ exports.handler = async (event, context) => {
 
       case 'get-all-reviews':
         // Get all reviews for admin
+        console.log('get-all-reviews: isAdmin check', isAdmin);
+        console.log('get-all-reviews: password provided', !!password);
+        console.log('get-all-reviews: admin password env', !!process.env.ADMIN_PASSWORD);
+        
         if (!isAdmin) {
+          console.log('get-all-reviews: Authentication failed');
           return {
             statusCode: 401,
             headers: { "Access-Control-Allow-Origin": "*" },
@@ -163,6 +172,7 @@ exports.handler = async (event, context) => {
           };
         }
 
+        console.log('get-all-reviews: Fetching reviews from Supabase');
         const allReviewsResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews?select=*&order=created_at.desc`, {
           method: 'GET',
           headers: {
@@ -172,17 +182,24 @@ exports.handler = async (event, context) => {
           }
         });
 
+        console.log('get-all-reviews: Response status', allReviewsResponse.status);
+
         if (!allReviewsResponse.ok) {
-          throw new Error(`Database query failed: ${allReviewsResponse.status}`);
+          const errorText = await allReviewsResponse.text();
+          console.error('get-all-reviews: Response error', errorText);
+          throw new Error(`Database query failed: ${allReviewsResponse.status} - ${errorText}`);
         }
 
         const allReviews = await allReviewsResponse.json();
+        console.log('get-all-reviews: Found', allReviews.length, 'reviews');
 
         // Format reviews for frontend
         const formattedAllReviews = allReviews.map(review => ({
           id: review.id.toString(),
           name: review.name,
           email: review.email,
+          location: review.location,
+          service: review.service,
           rating: review.rating,
           title: review.title,
           comment: review.content,
@@ -191,6 +208,7 @@ exports.handler = async (event, context) => {
           createdAt: review.created_at
         }));
 
+        console.log('get-all-reviews: Returning', formattedAllReviews.length, 'formatted reviews');
         return {
           statusCode: 200,
           headers: { "Access-Control-Allow-Origin": "*" },
@@ -225,6 +243,8 @@ exports.handler = async (event, context) => {
             id: review.id.toString(),
             name: review.name,
             email: review.email,
+            location: review.location,
+            service: review.service,
             rating: review.rating,
             title: review.title,
             comment: review.content,

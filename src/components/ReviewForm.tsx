@@ -16,6 +16,8 @@ const ReviewForm = ({ onSuccess }: ReviewFormProps) => {
   const { user, session } = useAuth();
   const [name, setName] = useState(user?.user_metadata?.name || "");
   const [email, setEmail] = useState(user?.email || "");
+  const [location, setLocation] = useState("");
+  const [service, setService] = useState("");
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,8 +28,8 @@ const ReviewForm = ({ onSuccess }: ReviewFormProps) => {
     e.preventDefault();
     
     // Client-side validation
-    if (!name.trim() || !comment.trim()) {
-      setMessage("Please provide your name and review.");
+    if (!name.trim() || !comment.trim() || !location.trim() || !service) {
+      setMessage("Please provide your name, location, service type, and review.");
       return;
     }
 
@@ -46,6 +48,8 @@ const ReviewForm = ({ onSuccess }: ReviewFormProps) => {
           reviewData: {
             name: name.trim(),
             email: email.trim(),
+            location: location.trim(),
+            service: service,
             rating,
             comment: comment.trim(),
             userId: user?.id || null,
@@ -65,6 +69,8 @@ const ReviewForm = ({ onSuccess }: ReviewFormProps) => {
           setName("");
           setEmail("");
         }
+        setLocation("");
+        setService("");
         setRating(5);
         setComment("");
         
@@ -109,9 +115,34 @@ const ReviewForm = ({ onSuccess }: ReviewFormProps) => {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
+                placeholder="e.g. Birmingham, UK"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                disabled={isSubmitting}
+                required
+              />
+            </div>
 
-
-
+            <div className="space-y-2">
+              <Label htmlFor="service">Service Type</Label>
+              <Select value={service} onValueChange={setService} disabled={isSubmitting}>
+                <SelectTrigger id="service">
+                  <SelectValue placeholder="Select a service" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="One-to-One Reading">One-to-One Reading</SelectItem>
+                  <SelectItem value="Group Reading">Group Reading</SelectItem>
+                  <SelectItem value="Telephone Reading">Telephone Reading</SelectItem>
+                  <SelectItem value="Home Psychic Evening">Home Psychic Evening</SelectItem>
+                  <SelectItem value="Workshop">Workshop</SelectItem>
+                  <SelectItem value="General">General</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
             <div className="space-y-2">
               <Label>Rating</Label>
@@ -152,7 +183,7 @@ const ReviewForm = ({ onSuccess }: ReviewFormProps) => {
             <Button
               type="submit"
               className="w-full"
-              disabled={isSubmitting || !name.trim() || !comment.trim()}
+              disabled={isSubmitting || !name.trim() || !comment.trim() || !location.trim() || !service}
             >
               {isSubmitting ? (
                 <>

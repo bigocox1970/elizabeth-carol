@@ -30,6 +30,7 @@ interface Review {
   approved: boolean;
   created_at: string;
   service: string;
+  location?: string;
 }
 
 const UserProfile = () => {

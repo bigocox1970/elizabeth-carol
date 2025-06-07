@@ -8,6 +8,8 @@ interface Review {
   id: string;
   name: string;
   email: string;
+  location?: string;
+  service?: string;
   rating: number;
   comment: string;
   approved: boolean;
@@ -29,6 +31,7 @@ const ReviewsList = ({ password }: ReviewsListProps) => {
   const loadReviews = async () => {
     setIsLoading(true);
     try {
+      console.log('Loading reviews...');
       const response = await fetch('/.netlify/functions/manage-reviews', {
         method: 'POST',
         headers: {
@@ -40,9 +43,15 @@ const ReviewsList = ({ password }: ReviewsListProps) => {
         }),
       });
 
+      console.log('Reviews response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('Reviews data received:', data);
         setReviews(data.reviews || []);
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to load reviews:', response.status, errorData);
       }
     } catch (error) {
       console.error('Failed to load reviews:', error);
@@ -143,6 +152,12 @@ const ReviewsList = ({ password }: ReviewsListProps) => {
                   <div>
                     <h3 className="font-medium">{review.name}</h3>
                     <p className="text-xs text-muted-foreground">{review.email}</p>
+                    {review.location && (
+                      <p className="text-xs text-muted-foreground">📍 {review.location}</p>
+                    )}
+                    {review.service && (
+                      <p className="text-xs text-blue-600 font-medium">🔮 {review.service}</p>
+                    )}
                   </div>
                   <div className="flex space-x-2">
                     {!review.approved && (
