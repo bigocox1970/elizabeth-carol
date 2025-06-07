@@ -13,6 +13,7 @@ exports.handler = async (event, context) => {
     console.log('Starting manage-reviews function');
     console.log('SUPABASE_URL:', SUPABASE_URL ? 'Exists' : 'Missing');
     console.log('SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? 'Exists' : 'Missing');
+    console.log('SUPABASE_SERVICE_ROLE_KEY:', SUPABASE_SERVICE_ROLE_KEY ? 'Exists' : 'Missing');
     console.log('Action:', action);
     
     switch (action) {
