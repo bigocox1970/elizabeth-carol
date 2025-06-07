@@ -1,5 +1,21 @@
+// Get Supabase credentials from environment variables
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+
+// Validate the Supabase URL to prevent "Failed to construct URL" errors
+const isValidUrl = (urlString) => {
+  try {
+    new URL(urlString);
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
+
+// Check if Supabase credentials are valid
+const hasValidSupabaseCredentials = SUPABASE_URL && 
+                                   SUPABASE_ANON_KEY && 
+                                   isValidUrl(SUPABASE_URL);
 
 exports.handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
@@ -12,8 +28,12 @@ exports.handler = async (event, context) => {
 
   try {
     console.log('Starting add-subscriber function');
-    console.log('SUPABASE_URL:', SUPABASE_URL ? 'Exists' : 'Missing');
-    console.log('SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? 'Exists' : 'Missing');
+    console.log('Supabase credentials check:', {
+      supabaseUrl: SUPABASE_URL ? 'Provided' : 'Missing',
+      supabaseKey: SUPABASE_ANON_KEY ? 'Provided' : 'Missing',
+      isValidUrl: SUPABASE_URL ? isValidUrl(SUPABASE_URL) : false,
+      usingSupabase: hasValidSupabaseCredentials
+    });
     
     const { email, name, source = 'newsletter', user_id = null } = JSON.parse(event.body);
     console.log('Parsed request body:', { email, name, source, user_id });
@@ -29,6 +49,12 @@ exports.handler = async (event, context) => {
       };
     }
 
+    // Skip Supabase operations if credentials are invalid
+    if (!hasValidSupabaseCredentials) {
+      console.log('Invalid Supabase credentials, skipping Supabase operations');
+      throw new Error('Invalid Supabase credentials');
+    }
+    
     // Use a nested try-catch for Supabase operations, similar to contact.js
     try {
       // Check if email already exists

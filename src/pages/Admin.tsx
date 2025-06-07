@@ -27,13 +27,28 @@ const Admin = () => {
   }, [isAuthenticated]);
 
   const handleLogin = (enteredPassword: string) => {
-    // Simple password check - in a real app, this would be a secure authentication system
-    if (enteredPassword === 'elizabeth2024') { // Using hardcoded password for frontend since env vars aren't accessible
-      setIsAuthenticated(true);
-      setPassword(enteredPassword);
-    } else {
-      alert('Incorrect password');
-    }
+    // Always verify the password on the server side
+    // This way we don't expose the password in the frontend code
+    fetch('/.netlify/functions/verify-admin', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ password: enteredPassword }),
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        setIsAuthenticated(true);
+        setPassword(enteredPassword);
+      } else {
+        alert(data.message || 'Incorrect password');
+      }
+    })
+    .catch(error => {
+      console.error('Error verifying password:', error);
+      alert('Error verifying password. Please try again.');
+    });
   };
 
   const loadSubscribers = async () => {

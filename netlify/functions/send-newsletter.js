@@ -12,8 +12,29 @@ exports.handler = async (event, context) => {
 
   const { subject, message, password } = JSON.parse(event.body);
 
+  // Get admin password from environment variable
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  
+  console.log('Password check:', {
+    providedPassword: password ? 'Provided' : 'Missing',
+    envPassword: process.env.ADMIN_PASSWORD ? 'Set' : 'Not set'
+  });
+
+  // For development and testing, use a fallback password if the environment variable is not set
+  // In production, this should be properly set in the Netlify dashboard
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+  const usePassword = adminPassword || (isDevelopment ? 'elizabeth2024' : null);
+  
+  if (!usePassword) {
+    console.error('ADMIN_PASSWORD environment variable is not set in production');
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ message: 'Server configuration error: Admin password not set' })
+    };
+  }
+
   // Simple password verification
-  if (password !== process.env.ADMIN_PASSWORD) {
+  if (password !== usePassword) {
     return {
       statusCode: 401,
       body: JSON.stringify({ message: 'Unauthorized' })
