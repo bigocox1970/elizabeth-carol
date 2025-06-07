@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Menu, Phone, Star } from "lucide-react";
 
 const Navigation = () => {
@@ -76,6 +77,14 @@ const Navigation = () => {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+                <SheetHeader>
+                  <VisuallyHidden>
+                    <SheetTitle>Navigation Menu</SheetTitle>
+                    <SheetDescription>
+                      Main navigation menu for Elizabeth Carol's website
+                    </SheetDescription>
+                  </VisuallyHidden>
+                </SheetHeader>
                 <div className="flex flex-col space-y-4 mt-8">
                   {navItems.map((item) => (
                     <Link
