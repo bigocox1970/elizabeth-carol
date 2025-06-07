@@ -2,6 +2,10 @@ const nodemailer = require('nodemailer');
 const fs = require('fs').promises;
 const path = require('path');
 
+// Get Supabase credentials from environment variables
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+
 exports.handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
     return {
@@ -50,18 +54,54 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    // Get subscribers
-    const filePath = path.join(process.cwd(), 'data', 'subscribers.json');
+    // Get subscribers from Supabase
     let subscribers = [];
     
     try {
-      const data = await fs.readFile(filePath, 'utf8');
-      subscribers = JSON.parse(data).filter(sub => sub.active);
-    } catch (err) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ message: 'No subscribers found' })
-      };
+      console.log('Fetching subscribers from Supabase...');
+      const url = `${SUPABASE_URL}/rest/v1/subscribers?select=*&active=eq.true`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Supabase fetch error:', errorText);
+        throw new Error(`Failed to fetch subscribers: ${response.status} - ${errorText}`);
+      }
+
+      const supabaseSubscribers = await response.json();
+      subscribers = supabaseSubscribers.map(sub => ({
+        email: sub.email,
+        name: sub.name,
+        active: sub.active
+      }));
+      
+      console.log(`Found ${subscribers.length} active subscribers in Supabase`);
+      
+    } catch (supabaseError) {
+      console.error('Failed to get subscribers from Supabase:', supabaseError);
+      
+      // Fall back to local JSON file as backup
+      console.log('Falling back to local JSON file...');
+      try {
+        const filePath = path.join(process.cwd(), 'data', 'subscribers.json');
+        const data = await fs.readFile(filePath, 'utf8');
+        subscribers = JSON.parse(data).filter(sub => sub.active);
+        console.log(`Found ${subscribers.length} active subscribers in local file`);
+      } catch (fileError) {
+        console.error('Failed to read local subscribers file:', fileError);
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ message: 'No subscribers found' })
+        };
+      }
     }
 
     if (subscribers.length === 0) {
