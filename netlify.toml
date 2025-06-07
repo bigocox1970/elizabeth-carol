@@ -5,6 +5,9 @@
 
 [build.environment]
   NODE_VERSION = "18"
+  # Note: Sensitive environment variables like SUPABASE_URL, SUPABASE_ANON_KEY, 
+  # EMAIL_USER, EMAIL_PASSWORD, and ADMIN_PASSWORD should be set in the Netlify 
+  # dashboard under Site settings > Build & deploy > Environment variables
 
 # Enable Netlify Forms
 [forms]
@@ -13,4 +16,4 @@
 [[redirects]]
   from = "/*"
   to = "/index.html"
-  status = 200 
+  status = 200

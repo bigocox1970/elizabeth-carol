@@ -1,4 +1,46 @@
 # Welcome to your Lovable project
+# Elizabeth Carol Website
+
+This is the website for Elizabeth Carol, a psychic medium and spiritual guide. The website includes features for building an email list, managing a blog with comments, and collecting customer reviews.
+
+## Features
+
+- Email newsletter subscription
+- Blog with commenting functionality
+- Customer reviews and testimonials
+- Admin panel for managing all content
+
+## Environment Variables
+
+The following environment variables need to be set in the Netlify dashboard:
+
+```
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
+EMAIL_USER=your_email_user
+EMAIL_PASSWORD=your_email_password
+ADMIN_PASSWORD=your_admin_password
+```
+
+To set these variables in Netlify:
+1. Go to the Netlify dashboard
+2. Navigate to Site settings > Build & deploy > Environment variables
+3. Add each variable with its corresponding value
+
+## Local Development
+
+1. Clone the repository
+2. Create a `.env` file in the root directory with the environment variables listed above
+3. Install dependencies: `npm install`
+4. Start the development server: `npm run dev`
+
+## Deployment
+
+The site is automatically deployed to Netlify when changes are pushed to the main branch.
+
+## Database Setup
+
+The database is hosted on Supabase. The SQL migrations are in the `supabase/migrations` directory.
 
 ## Project info
 
@@ -69,5 +111,3 @@ Simply open [Lovable](https://lovable.dev/projects/1afd297e-bcf2-4032-a859-b34f4
 Yes, you can!
 
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)

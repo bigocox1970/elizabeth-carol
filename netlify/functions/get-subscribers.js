@@ -1,5 +1,5 @@
-const SUPABASE_URL = 'https://itsxxdxyigsyqxkeonqr.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0c3h4ZHh5aWdzeXF4a2VvbnFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMDQ1NjgsImV4cCI6MjA2NDg4MDU2OH0.YeWzqm0FsIBs8ojIdyMSkprWn1OA4SfFgB2DM3j2ko';
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
 exports.handler = async (event, context) => {
   if (event.httpMethod !== 'GET') {
@@ -61,4 +61,4 @@ exports.handler = async (event, context) => {
       body: JSON.stringify({ message: 'Failed to get subscribers' })
     };
   }
-}; 
+};

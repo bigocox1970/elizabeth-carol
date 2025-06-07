@@ -13,7 +13,7 @@ exports.handler = async (event, context) => {
   const { subject, message, password } = JSON.parse(event.body);
 
   // Simple password verification
-  if (password !== 'elizabeth2024') {
+  if (password !== process.env.ADMIN_PASSWORD) {
     return {
       statusCode: 401,
       body: JSON.stringify({ message: 'Unauthorized' })
@@ -51,7 +51,7 @@ exports.handler = async (event, context) => {
     }
 
     // Setup email transporter
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       host: 'smtpout.secureserver.net',
       port: 587,
       secure: false,
@@ -135,4 +135,4 @@ To unsubscribe, simply reply to this email with "unsubscribe" in the subject lin
       body: JSON.stringify({ message: 'Failed to send newsletter' })
     };
   }
-}; 
+};

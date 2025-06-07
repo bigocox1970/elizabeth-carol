@@ -27,8 +27,8 @@ const Admin = () => {
   }, [isAuthenticated]);
 
   const handleLogin = (enteredPassword: string) => {
-    // Simple password check
-    if (enteredPassword === 'elizabeth2024') {
+    // Simple password check - in a real app, this would be a secure authentication system
+    if (enteredPassword === 'elizabeth2024') { // Using hardcoded password for frontend since env vars aren't accessible
       setIsAuthenticated(true);
       setPassword(enteredPassword);
     } else {

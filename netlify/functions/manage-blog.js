@@ -1,12 +1,12 @@
-const SUPABASE_URL = 'https://itsxxdxyigsyqxkeonqr.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0c3h4ZHh5aWdzeXF4a2VvbnFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMDQ1NjgsImV4cCI6MjA2NDg4MDU2OH0.YeWzqm0FsIBs8ojIdyMSkprWn1OA4SfFgB2DM3j2ko';
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
 exports.handler = async (event, context) => {
   const { httpMethod } = event;
   const { action, password, postId, postData } = JSON.parse(event.body || '{}');
 
   // Authentication check for write operations
-  const isAdmin = password === 'elizabeth2024';
+  const isAdmin = password === process.env.ADMIN_PASSWORD;
   if (['create', 'update', 'delete'].includes(action) && !isAdmin) {
     return {
       statusCode: 401,
