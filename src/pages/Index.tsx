@@ -57,8 +57,17 @@ const Index = () => {
       <Services />
       
       {/* Quick Testimonials */}
-      <section className="py-20 bg-secondary/20">
-        <div className="container mx-auto px-4">
+      <section className="relative py-20">
+        <div className="absolute inset-0">
+          <img 
+            src="/lovable-uploads/e922b8dc-2dad-469c-adc1-57b7966470f8.png" 
+            alt="Tarot cards spread"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-primary/70"></div>
+          <div className="absolute inset-0 bg-secondary/30"></div>
+        </div>
+        <div className="container mx-auto px-4 relative z-10">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <Badge className="mb-4 bg-gradient-mystical text-primary-foreground">
               Client Experiences
@@ -144,8 +153,17 @@ const Index = () => {
       </section>
 
       {/* Local SEO Section */}
-      <section className="py-20 bg-gradient-celestial">
-        <div className="container mx-auto px-4">
+      <section className="relative py-20">
+        <div className="absolute inset-0">
+          <img 
+            src="/lovable-uploads/ecdd9e87-ea52-4b87-b38f-dd42c7611178.png" 
+            alt="Mystical compass star design"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-primary/75"></div>
+          <div className="absolute inset-0 bg-gradient-celestial/40"></div>
+        </div>
+        <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-6">
               Oxford's Trusted Psychic Medium
