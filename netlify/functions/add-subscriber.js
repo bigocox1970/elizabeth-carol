@@ -133,92 +133,16 @@ exports.handler = async (event, context) => {
 
       console.log('NEW SUBSCRIBER:', email, name, new Date().toISOString());
     } catch (supabaseError) {
-      console.error('Supabase operation error:', supabaseError);
-      console.error('Supabase error stack:', supabaseError.stack);
-      
-      // Fall back to saving to the local JSON file if Supabase fails
-      console.log('Falling back to local JSON file storage');
-      
-      try {
-        const fs = require('fs').promises;
-        const path = require('path');
-        
-        // Path to the local subscribers JSON file
-        const filePath = path.join(process.cwd(), 'data', 'subscribers.json');
-        
-        // Read existing subscribers
-        let subscribers = [];
-        try {
-          const data = await fs.readFile(filePath, 'utf8');
-          subscribers = JSON.parse(data);
-        } catch (readError) {
-          console.error('Error reading subscribers file:', readError);
-          // If file doesn't exist or can't be read, we'll create a new one
-        }
-        
-        // Check if email already exists in local file
-        const existingSubscriber = subscribers.find(sub => 
-          sub.email.toLowerCase() === email.toLowerCase()
-        );
-        
-        if (existingSubscriber) {
-          return {
-            statusCode: 200,
-            headers: { "Access-Control-Allow-Origin": "*" },
-            body: JSON.stringify({ 
-              success: true,
-              message: 'You are already subscribed!',
-              isNew: false,
-              note: 'Using local storage'
-            })
-          };
-        }
-        
-        // Add new subscriber
-        const newSubscriber = {
-          email: email.toLowerCase(),
-          name: name || '',
-          source: source,
-          dateAdded: new Date().toISOString(),
-          active: true
-        };
-        
-        // Only add user_id if it exists
-        if (user_id) {
-          newSubscriber.user_id = user_id;
-        }
-        
-        subscribers.push(newSubscriber);
-        
-        // Write updated subscribers back to file
-        await fs.writeFile(filePath, JSON.stringify(subscribers, null, 2), 'utf8');
-        
-        console.log('Saved to local JSON file:', newSubscriber);
-        
-        return {
-          statusCode: 200,
-          headers: { "Access-Control-Allow-Origin": "*" },
-          body: JSON.stringify({ 
-            success: true,
-            message: 'Successfully subscribed!',
-            isNew: true,
-            note: 'Using local storage'
-          })
-        };
-      } catch (fallbackError) {
-        console.error('Error with fallback storage:', fallbackError);
-        // Even if fallback fails, return success to user
-        return {
-          statusCode: 200,
-          headers: { "Access-Control-Allow-Origin": "*" },
-          body: JSON.stringify({ 
-            success: true,
-            message: 'Successfully subscribed!',
-            isNew: true,
-            note: 'Subscription recorded'
-          })
-        };
-      }
+      console.error('Failed to add subscriber to Supabase:', supabaseError);
+      return {
+        statusCode: 500,
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify({ 
+          success: false,
+          message: 'Failed to subscribe. Please try again.',
+          error: supabaseError.message
+        })
+      };
     }
     
     return {
