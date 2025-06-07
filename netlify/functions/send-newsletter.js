@@ -59,7 +59,7 @@ exports.handler = async (event, context) => {
     
     try {
       console.log('Fetching subscribers from Supabase...');
-      const url = `${SUPABASE_URL}/rest/v1/subscribers?select=*&active=eq.true`;
+      const url = `${SUPABASE_URL}/rest/v1/subscribers?select=*`;
       
       const response = await fetch(url, {
         method: 'GET',
@@ -77,7 +77,13 @@ exports.handler = async (event, context) => {
       }
 
       const supabaseSubscribers = await response.json();
-      subscribers = supabaseSubscribers.map(sub => ({
+      console.log('Raw subscribers from Supabase:', supabaseSubscribers);
+      
+      // Filter for active subscribers
+      const activeSubscribers = supabaseSubscribers.filter(sub => sub.active === true);
+      console.log(`Total subscribers: ${supabaseSubscribers.length}, Active: ${activeSubscribers.length}`);
+      
+      subscribers = activeSubscribers.map(sub => ({
         email: sub.email,
         name: sub.name,
         active: sub.active

@@ -63,52 +63,18 @@ exports.handler = async (event, context) => {
         })
       };
     } catch (supabaseError) {
-      console.error('Supabase operation error:', supabaseError);
-      console.error('Supabase error stack:', supabaseError.stack);
-      
-      // Fall back to reading from the local JSON file
-      console.log('Falling back to local JSON file');
-      
-      try {
-        const fs = require('fs').promises;
-        const path = require('path');
-        
-        // Path to the local subscribers JSON file
-        const filePath = path.join(process.cwd(), 'data', 'subscribers.json');
-        
-        // Read existing subscribers
-        const data = await fs.readFile(filePath, 'utf8');
-        const subscribers = JSON.parse(data);
-        
-        console.log(`Read ${subscribers.length} subscribers from local file`);
-        
-        return {
-          statusCode: 200,
-          headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Headers": "Content-Type",
-          },
-          body: JSON.stringify({ 
-            subscribers: subscribers,
-            source: 'local_file'
-          })
-        };
-      } catch (fallbackError) {
-        console.error('Error with fallback storage:', fallbackError);
-        // If even the fallback fails, return an empty array
-        return {
-          statusCode: 200,
-          headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Headers": "Content-Type",
-          },
-          body: JSON.stringify({ 
-            subscribers: [],
-            source: 'empty_fallback',
-            message: 'Could not retrieve subscribers from any source'
-          })
-        };
-      }
+      console.error('Error getting subscribers from Supabase:', supabaseError);
+      return {
+        statusCode: 500,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "Content-Type",
+        },
+        body: JSON.stringify({ 
+          message: 'Failed to retrieve subscribers from database',
+          error: supabaseError.message
+        })
+      };
     }
 
   } catch (error) {
