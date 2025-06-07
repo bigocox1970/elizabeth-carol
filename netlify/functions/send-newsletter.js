@@ -100,20 +100,31 @@ exports.handler = async (event, context) => {
       console.log('Number of subscribers found:', supabaseSubscribers.length);
       
       if (supabaseSubscribers.length > 0) {
-        console.log('First subscriber sample:', supabaseSubscribers[0]);
+        console.log('First subscriber raw data:', JSON.stringify(supabaseSubscribers[0], null, 2));
+        console.log('All subscribers raw data:', JSON.stringify(supabaseSubscribers, null, 2));
       }
       
       // Just use all subscribers for now to test
       const activeSubscribers = supabaseSubscribers;
       console.log(`Total subscribers: ${supabaseSubscribers.length}, Active: ${activeSubscribers.length}`);
       
-      subscribers = activeSubscribers.map(sub => ({
-        email: sub.email,
-        name: sub.name,
-        active: sub.active
-      }));
+      // Debug the mapping process
+      subscribers = activeSubscribers.map(sub => {
+        const mappedSubscriber = {
+          email: sub.email,
+          name: sub.name,
+          active: sub.active
+        };
+        console.log('Mapped subscriber:', mappedSubscriber);
+        return mappedSubscriber;
+      });
       
-      console.log(`Found ${subscribers.length} active subscribers in Supabase`);
+      // Filter out any subscribers without email addresses
+      const validSubscribers = subscribers.filter(sub => sub.email && sub.email.trim() !== '');
+      console.log(`Subscribers with valid emails: ${validSubscribers.length} out of ${subscribers.length}`);
+      
+      subscribers = validSubscribers;
+      console.log(`Found ${subscribers.length} valid subscribers for email sending`);
       
          } catch (supabaseError) {
        console.error('Failed to get subscribers from Supabase:', supabaseError);
