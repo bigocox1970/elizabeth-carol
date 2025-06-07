@@ -7,53 +7,72 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
 exports.handler = async (event, context) => {
+  console.log('=== NEWSLETTER FUNCTION START ===');
+  console.log('Environment check:', {
+    SUPABASE_URL: SUPABASE_URL ? 'SET' : 'MISSING',
+    SUPABASE_ANON_KEY: SUPABASE_ANON_KEY ? 'SET' : 'MISSING',
+    ADMIN_PASSWORD: process.env.ADMIN_PASSWORD ? 'SET' : 'MISSING'
+  });
+
   if (event.httpMethod !== 'POST') {
+    console.log('Method not allowed:', event.httpMethod);
     return {
       statusCode: 405,
       body: JSON.stringify({ message: 'Method not allowed' })
     };
   }
 
-  const { subject, message, password } = JSON.parse(event.body);
-
-  // Get admin password from environment variable
-  const adminPassword = process.env.ADMIN_PASSWORD;
+  console.log('Request body:', event.body);
   
-  console.log('Password check:', {
-    providedPassword: password ? 'Provided' : 'Missing',
-    envPassword: process.env.ADMIN_PASSWORD ? 'Set' : 'Not set'
-  });
-
-  // For development and testing, use a fallback password if the environment variable is not set
-  // In production, this should be properly set in the Netlify dashboard
-  const isDevelopment = process.env.NODE_ENV !== 'production';
-  const usePassword = adminPassword || (isDevelopment ? 'elizabeth2024' : null);
-  
-  if (!usePassword) {
-    console.error('ADMIN_PASSWORD environment variable is not set in production');
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ message: 'Server configuration error: Admin password not set' })
-    };
-  }
-
-  // Simple password verification
-  if (password !== usePassword) {
-    return {
-      statusCode: 401,
-      body: JSON.stringify({ message: 'Unauthorized' })
-    };
-  }
-
-  // Basic validation
-  if (!subject || !message) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ message: 'Subject and message are required' })
-    };
-  }
-
   try {
+    const { subject, message, password } = JSON.parse(event.body);
+    console.log('Parsed request:', {
+      subject: subject ? 'PROVIDED' : 'MISSING',
+      message: message ? 'PROVIDED' : 'MISSING', 
+      password: password ? 'PROVIDED' : 'MISSING'
+    });
+
+    // Get admin password from environment variable
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    
+    console.log('Password check:', {
+      providedPassword: password ? 'Provided' : 'Missing',
+      envPassword: process.env.ADMIN_PASSWORD ? 'Set' : 'Not set'
+    });
+
+    // For development and testing, use a fallback password if the environment variable is not set
+    // In production, this should be properly set in the Netlify dashboard
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+    const usePassword = adminPassword || (isDevelopment ? 'elizabeth2024' : null);
+    
+    if (!usePassword) {
+      console.error('ADMIN_PASSWORD environment variable is not set in production');
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ message: 'Server configuration error: Admin password not set' })
+      };
+    }
+
+    // Simple password verification
+    if (password !== usePassword) {
+      console.log('Password mismatch');
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ message: 'Unauthorized' })
+      };
+    }
+
+    // Basic validation
+    if (!subject || !message) {
+      console.log('Missing subject or message');
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ message: 'Subject and message are required' })
+      };
+    }
+
+    console.log('=== STARTING SUBSCRIBER FETCH ===');
+
     // Get subscribers from Supabase
     let subscribers = [];
     
@@ -77,31 +96,15 @@ exports.handler = async (event, context) => {
       }
 
       const supabaseSubscribers = await response.json();
-      console.log('Raw subscribers from Supabase:', JSON.stringify(supabaseSubscribers, null, 2));
+      console.log('=== SUPABASE RESPONSE SUCCESS ===');
+      console.log('Number of subscribers found:', supabaseSubscribers.length);
       
-      // Debug each subscriber
-      supabaseSubscribers.forEach((sub, index) => {
-        console.log(`Subscriber ${index + 1}:`, {
-          email: sub.email,
-          name: sub.name,
-          active: sub.active,
-          activeType: typeof sub.active,
-          activeValue: JSON.stringify(sub.active)
-        });
-      });
+      if (supabaseSubscribers.length > 0) {
+        console.log('First subscriber sample:', supabaseSubscribers[0]);
+      }
       
-      // Try different ways to filter for active subscribers
-      const activeSubscribers1 = supabaseSubscribers.filter(sub => sub.active === true);
-      const activeSubscribers2 = supabaseSubscribers.filter(sub => sub.active === 'true');
-      const activeSubscribers3 = supabaseSubscribers.filter(sub => Boolean(sub.active));
-      
-      console.log(`Filtering results:`);
-      console.log(`- active === true: ${activeSubscribers1.length}`);
-      console.log(`- active === 'true': ${activeSubscribers2.length}`);
-      console.log(`- Boolean(active): ${activeSubscribers3.length}`);
-      
-      // Use the boolean filter as it's most likely to work
-      const activeSubscribers = activeSubscribers3;
+      // Just use all subscribers for now to test
+      const activeSubscribers = supabaseSubscribers;
       console.log(`Total subscribers: ${supabaseSubscribers.length}, Active: ${activeSubscribers.length}`);
       
       subscribers = activeSubscribers.map(sub => ({
