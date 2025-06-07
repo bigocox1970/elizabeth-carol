@@ -33,11 +33,12 @@ const NewsletterSignup = () => {
     setMessage('');
 
     try {
-      // Create form data for Netlify Forms
-      const formData = new FormData();
-      formData.append('form-name', 'newsletter-signup');
-      formData.append('email', email.trim());
-      formData.append('name', name.trim());
+      // Create form data for Netlify Forms - use the most reliable method
+      const formDataString = new URLSearchParams({
+        'form-name': 'newsletter-signup',
+        'email': email.trim(),
+        'name': name.trim()
+      }).toString();
 
       // Check if we're in development mode
       const isDevelopment = import.meta.env.DEV;
@@ -53,10 +54,10 @@ const NewsletterSignup = () => {
         return;
       }
 
-      const response = await fetch(window.location.pathname, {
+      const response = await fetch('/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams([...formData] as [string, string][]).toString()
+        body: formDataString
       });
 
       if (response.ok) {

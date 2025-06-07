@@ -71,15 +71,16 @@ const Contact = () => {
     setErrorMessage('');
 
     try {
-      // Create form data for Netlify Forms
-      const formDataToSubmit = new FormData();
-      formDataToSubmit.append('form-name', 'contact-form');
-      formDataToSubmit.append('firstName', formData.firstName.trim());
-      formDataToSubmit.append('lastName', formData.lastName.trim());
-      formDataToSubmit.append('email', formData.email.trim());
-      formDataToSubmit.append('phone', formData.phone.trim());
-      formDataToSubmit.append('service', formData.service);
-      formDataToSubmit.append('message', formData.message.trim());
+      // Create form data for Netlify Forms - use the most reliable method
+      const formDataString = new URLSearchParams({
+        'form-name': 'contact-form',
+        'firstName': formData.firstName.trim(),
+        'lastName': formData.lastName.trim(),
+        'email': formData.email.trim(),
+        'phone': formData.phone.trim(),
+        'service': formData.service,
+        'message': formData.message.trim()
+      }).toString();
 
       // Check if we're in development mode
       const isDevelopment = import.meta.env.DEV;
@@ -96,10 +97,10 @@ const Contact = () => {
         return;
       }
 
-      const response = await fetch(window.location.pathname, {
+      const response = await fetch('/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams([...formDataToSubmit] as [string, string][]).toString()
+        body: formDataString
       });
 
       if (response.ok) {

@@ -6,6 +6,10 @@
 [build.environment]
   NODE_VERSION = "18"
 
+# Enable Netlify Forms
+[forms]
+  processing = true
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
