@@ -1,0 +1,149 @@
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Users, Phone, Home, Presentation, Clock, Star } from "lucide-react";
+
+const Services = () => {
+  const services = [
+    {
+      icon: Star,
+      title: "One-to-One Readings",
+      description: "Personal spiritual guidance sessions in a comfortable, confidential setting. Connect with loved ones who have passed and receive insight into your life's path.",
+      duration: "60-90 minutes",
+      price: "From £50",
+      features: ["Mediumship", "Clairvoyant guidance", "Tarot reading", "Spirit communication"],
+      popular: true
+    },
+    {
+      icon: Users,
+      title: "Group Readings", 
+      description: "Share the spiritual experience with friends or family. Perfect for special occasions or group exploration of spiritual connections.",
+      duration: "2-3 hours",
+      price: "From £20 per person",
+      features: ["Small groups (4-8 people)", "Shared messages", "Group energy", "Social spiritual experience"]
+    },
+    {
+      icon: Phone,
+      title: "Telephone & Video Readings",
+      description: "Distance is no barrier to spiritual connection. Receive the same quality guidance from the comfort of your own home via phone or video call.",
+      duration: "45-60 minutes", 
+      price: "From £40",
+      features: ["Remote sessions", "Flexible timing", "Recording available", "Same spiritual connection"]
+    },
+    {
+      icon: Presentation,
+      title: "Talks & Workshops",
+      description: "Educational presentations about psychic development, mediumship, and spiritual awareness for groups, societies, and organizations.",
+      duration: "1-2 hours",
+      price: "Contact for pricing",
+      features: ["Educational content", "Group presentations", "Q&A sessions", "Customizable topics"]
+    },
+    {
+      icon: Home,
+      title: "Home Psychic Evenings",
+      description: "Host an intimate psychic evening in your own home. Elizabeth will provide readings for you and your guests in a relaxed, familiar environment.",
+      duration: "3-4 hours",
+      price: "From £200",
+      features: ["In your home", "Multiple readings", "Social atmosphere", "Memorable experience"]
+    }
+  ];
+
+  return (
+    <section className="py-24 bg-background" id="services">
+      <div className="container mx-auto px-4">
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-4">
+            Spiritual Services in Oxford
+          </h2>
+          <p className="text-xl text-muted-foreground">
+            Professional psychic and mediumship services tailored to your needs. Whether seeking personal guidance, 
+            group experiences, or spiritual education, Elizabeth offers compassionate insight with over 35 years of experience.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {services.map((service, index) => {
+            const Icon = service.icon;
+            return (
+              <Card 
+                key={index} 
+                className={`relative group hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 ${
+                  service.popular ? 'border-primary' : ''
+                }`}
+              >
+                {service.popular && (
+                  <Badge className="absolute -top-3 left-6 bg-gradient-mystical text-primary-foreground">
+                    Most Popular
+                  </Badge>
+                )}
+                
+                <CardHeader className="space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-gradient-mystical flex items-center justify-center mx-auto group-hover:animate-glow">
+                    <Icon className="w-8 h-8 text-primary-foreground" />
+                  </div>
+                  <div className="text-center">
+                    <CardTitle className="text-xl font-serif mb-2">{service.title}</CardTitle>
+                    <div className="flex items-center justify-center space-x-4 text-sm text-muted-foreground">
+                      <div className="flex items-center space-x-1">
+                        <Clock className="w-4 h-4" />
+                        <span>{service.duration}</span>
+                      </div>
+                      <span className="font-semibold text-primary">{service.price}</span>
+                    </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="space-y-6">
+                  <CardDescription className="text-center leading-relaxed">
+                    {service.description}
+                  </CardDescription>
+
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm text-foreground">Includes:</h4>
+                    <ul className="space-y-1">
+                      {service.features.map((feature, idx) => (
+                        <li key={idx} className="text-sm text-muted-foreground flex items-center space-x-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <Button 
+                    className="w-full bg-gradient-mystical hover:opacity-90 text-primary-foreground"
+                    size="sm"
+                  >
+                    Book This Service
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        <div className="text-center mt-16">
+          <div className="bg-card/50 rounded-lg p-8 max-w-2xl mx-auto">
+            <h3 className="text-2xl font-serif font-bold text-foreground mb-4">
+              Not Sure Which Service is Right for You?
+            </h3>
+            <p className="text-muted-foreground mb-6">
+              Elizabeth is happy to discuss your needs and recommend the most suitable type of reading or service.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" className="bg-gradient-mystical hover:opacity-90 text-primary-foreground">
+                <Phone className="w-4 h-4 mr-2" />
+                Call 01865 361 786
+              </Button>
+              <Button size="lg" variant="outline">
+                Send a Message
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default Services;
