@@ -10,8 +10,8 @@
   # dashboard under Site settings > Build & deploy > Environment variables
   
   # Frontend environment variables need to be prefixed with VITE_
-  VITE_SUPABASE_URL = "${SUPABASE_URL}"
-  VITE_SUPABASE_ANON_KEY = "${SUPABASE_ANON_KEY}"
+  VITE_SUPABASE_URL = "https://itsxxdxyigsyqxkeonqr.supabase.co"
+  VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0c3h4ZHh5aWdzeXF4a2VvbnFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMDQ1NjgsImV4cCI6MjA2NDg4MDU2OH0.YeWzwqm0FsIBs8ojIdyMSkprWn1OA4SfFgB2DM3j2ko"
 
 # Enable Netlify Forms
 [forms]
