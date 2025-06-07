@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import LoginForm from "@/components/auth/LoginForm";
 import RegisterForm from "@/components/auth/RegisterForm";
@@ -10,10 +10,12 @@ const Auth = () => {
   const [mode, setMode] = useState<"login" | "register">("login");
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/profile";
 
-  // If user is already logged in, redirect to profile
+  // If user is already logged in, redirect to intended page
   if (user) {
-    navigate("/profile");
+    navigate(redirectTo);
     return null;
   }
 
@@ -24,7 +26,7 @@ const Auth = () => {
         <div className="max-w-md mx-auto">
           {mode === "login" ? (
             <LoginForm 
-              onSuccess={() => navigate("/profile")} 
+              onSuccess={() => navigate(redirectTo)} 
               onRegisterClick={() => setMode("register")} 
             />
           ) : (

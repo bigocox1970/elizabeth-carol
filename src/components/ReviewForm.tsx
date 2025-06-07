@@ -105,21 +105,12 @@ const ReviewForm = ({ onSuccess }: ReviewFormProps) => {
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                disabled={isSubmitting || !!user}
+                disabled={isSubmitting}
                 required
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email (optional)</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isSubmitting || !!user}
-              />
-            </div>
+
 
             <div className="space-y-2">
               <Label htmlFor="service">Service</Label>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, Quote, MapPin, Calendar, Heart, Loader2 } from "lucide-react";
 import ReviewForm from "@/components/ReviewForm";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Testimonial {
   id: number | string;
@@ -23,6 +25,8 @@ interface Testimonial {
 const Testimonials = () => {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadReviews();
@@ -137,8 +141,11 @@ const Testimonials = () => {
             </h2>
             <Button 
               onClick={() => {
-                const reviewSection = document.getElementById('review-form-section');
-                reviewSection?.scrollIntoView({ behavior: 'smooth' });
+                if (user) {
+                  navigate('/add-review');
+                } else {
+                  navigate('/auth?redirect=/add-review');
+                }
               }}
               className="bg-gradient-mystical hover:opacity-90 text-primary-foreground"
             >
@@ -204,17 +211,7 @@ const Testimonials = () => {
         </div>
       </section>
 
-      {/* Leave a Review Section */}
-      <section id="review-form-section" className="py-20 bg-background">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-serif font-bold text-foreground mb-12 text-center">
-            Share Your Experience
-          </h2>
-          <div className="max-w-md mx-auto">
-            <ReviewForm onSuccess={() => loadReviews()} />
-          </div>
-        </div>
-      </section>
+
 
       {/* CTA Section */}
       <section className="py-20">
