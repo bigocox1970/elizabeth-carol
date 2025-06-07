@@ -285,6 +285,38 @@ exports.handler = async (event, context) => {
           body: JSON.stringify({ message: 'Review approved successfully' })
         };
 
+      case 'unapprove-review':
+        // Unapprove a review (admin only)
+        if (!isAdmin) {
+          return {
+            statusCode: 401,
+            headers: { "Access-Control-Allow-Origin": "*" },
+            body: JSON.stringify({ message: 'Unauthorized' })
+          };
+        }
+
+        const unapproveResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews?id=eq.${reviewId}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            approved: false
+          })
+        });
+
+        if (!unapproveResponse.ok) {
+          throw new Error(`Failed to unapprove review: ${unapproveResponse.status}`);
+        }
+
+        return {
+          statusCode: 200,
+          headers: { "Access-Control-Allow-Origin": "*" },
+          body: JSON.stringify({ message: 'Review unapproved successfully' })
+        };
+
       case 'approve-comment':
         // Approve a blog comment (admin only)
         if (!isAdmin) {

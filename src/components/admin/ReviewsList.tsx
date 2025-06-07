@@ -35,7 +35,7 @@ const ReviewsList = ({ password }: ReviewsListProps) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          action: 'get-all',
+          action: 'get-all-reviews',
           password: password
         }),
       });
@@ -59,10 +59,9 @@ const ReviewsList = ({ password }: ReviewsListProps) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: 'update',
+          action: approve ? 'approve-review' : 'unapprove-review',
           password: password,
-          reviewId: reviewId,
-          reviewData: { approved: approve }
+          reviewId: reviewId
         }),
       });
 
@@ -86,7 +85,7 @@ const ReviewsList = ({ password }: ReviewsListProps) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: 'delete',
+          action: 'delete-review',
           password: password,
           reviewId: reviewId
         }),
