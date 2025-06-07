@@ -243,49 +243,15 @@ exports.handler = async (event, context) => {
             })
           };
         } catch (supabaseError) {
-          console.error('Supabase operation error:', supabaseError);
-          console.error('Supabase error stack:', supabaseError.stack);
-          
-          // Fall back to reading from the local JSON file
-          console.log('Falling back to local JSON file for reviews');
-          
-          try {
-            const fs = require('fs').promises;
-            const path = require('path');
-            
-            // Path to the local reviews JSON file
-            const filePath = path.join(process.cwd(), 'data', 'reviews.json');
-            
-            // Read existing reviews
-            const data = await fs.readFile(filePath, 'utf8');
-            const localReviews = JSON.parse(data);
-            
-            // Filter to only approved reviews
-            const approvedReviews = localReviews.filter(review => review.approved);
-            
-            console.log(`Read ${approvedReviews.length} approved reviews from local file`);
-            
-            return {
-              statusCode: 200,
-              headers: { "Access-Control-Allow-Origin": "*" },
-              body: JSON.stringify({ 
-                reviews: approvedReviews,
-                source: 'local_file'
-              })
-            };
-          } catch (fallbackError) {
-            console.error('Error with fallback storage:', fallbackError);
-            // If even the fallback fails, return an empty array
-            return {
-              statusCode: 200,
-              headers: { "Access-Control-Allow-Origin": "*" },
-              body: JSON.stringify({ 
-                reviews: [],
-                source: 'empty_fallback',
-                message: 'Could not retrieve reviews from any source'
-              })
-            };
-          }
+          console.error('Error getting approved reviews from Supabase:', supabaseError);
+          return {
+            statusCode: 500,
+            headers: { "Access-Control-Allow-Origin": "*" },
+            body: JSON.stringify({ 
+              message: 'Failed to retrieve reviews from database',
+              error: supabaseError.message
+            })
+          };
         }
 
       case 'approve-review':
@@ -453,38 +419,6 @@ exports.handler = async (event, context) => {
 
   } catch (error) {
     console.error('Error managing reviews:', error);
-    console.error('Error stack:', error.stack);
-    
-    // For certain actions, try to provide a fallback response
-    if (action === 'get-approved-reviews') {
-      try {
-        const fs = require('fs').promises;
-        const path = require('path');
-        
-        // Path to the local reviews JSON file
-        const filePath = path.join(process.cwd(), 'data', 'reviews.json');
-        
-        // Read existing reviews
-        const data = await fs.readFile(filePath, 'utf8');
-        const localReviews = JSON.parse(data);
-        
-        // Filter to only approved reviews
-        const approvedReviews = localReviews.filter(review => review.approved);
-        
-        console.log(`Emergency fallback: Read ${approvedReviews.length} approved reviews from local file`);
-        
-        return {
-          statusCode: 200,
-          headers: { "Access-Control-Allow-Origin": "*" },
-          body: JSON.stringify({ 
-            reviews: approvedReviews,
-            source: 'emergency_fallback'
-          })
-        };
-      } catch (fallbackError) {
-        console.error('Error with emergency fallback:', fallbackError);
-      }
-    }
     
     return {
       statusCode: 500,

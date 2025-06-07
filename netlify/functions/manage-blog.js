@@ -112,49 +112,15 @@ exports.handler = async (event, context) => {
             })
           };
         } catch (supabaseError) {
-          console.error('Supabase operation error:', supabaseError);
-          console.error('Supabase error stack:', supabaseError.stack);
-          
-          // Fall back to reading from the local JSON file
-          console.log('Falling back to local JSON file for blog posts');
-          
-          try {
-            const fs = require('fs').promises;
-            const path = require('path');
-            
-            // Path to the local blog posts JSON file
-            const filePath = path.join(process.cwd(), 'data', 'blog-posts.json');
-            
-            // Read existing blog posts
-            const data = await fs.readFile(filePath, 'utf8');
-            const localPosts = JSON.parse(data);
-            
-            // Filter to only published posts
-            const publishedPosts = localPosts.filter(post => post.published);
-            
-            console.log(`Read ${publishedPosts.length} published posts from local file`);
-            
-            return {
-              statusCode: 200,
-              headers: { "Access-Control-Allow-Origin": "*" },
-              body: JSON.stringify({ 
-                posts: publishedPosts,
-                source: 'local_file'
-              })
-            };
-          } catch (fallbackError) {
-            console.error('Error with fallback storage:', fallbackError);
-            // If even the fallback fails, return an empty array
-            return {
-              statusCode: 200,
-              headers: { "Access-Control-Allow-Origin": "*" },
-              body: JSON.stringify({ 
-                posts: [],
-                source: 'empty_fallback',
-                message: 'Could not retrieve blog posts from any source'
-              })
-            };
-          }
+          console.error('Error getting blog posts from Supabase:', supabaseError);
+          return {
+            statusCode: 500,
+            headers: { "Access-Control-Allow-Origin": "*" },
+            body: JSON.stringify({ 
+              message: 'Failed to retrieve blog posts from database',
+              error: supabaseError.message
+            })
+          };
         }
 
       case 'get-single':
@@ -351,40 +317,6 @@ exports.handler = async (event, context) => {
 
   } catch (error) {
     console.error('Error managing blog:', error);
-    console.error('Error stack:', error.stack);
-    
-    // For certain actions, try to provide a fallback response
-    if (action === 'get-published' || action === 'get-all') {
-      try {
-        const fs = require('fs').promises;
-        const path = require('path');
-        
-        // Path to the local blog posts JSON file
-        const filePath = path.join(process.cwd(), 'data', 'blog-posts.json');
-        
-        // Read existing blog posts
-        const data = await fs.readFile(filePath, 'utf8');
-        const localPosts = JSON.parse(data);
-        
-        // Filter if needed
-        const posts = action === 'get-published' 
-          ? localPosts.filter(post => post.published)
-          : localPosts;
-        
-        console.log(`Emergency fallback: Read ${posts.length} posts from local file`);
-        
-        return {
-          statusCode: 200,
-          headers: { "Access-Control-Allow-Origin": "*" },
-          body: JSON.stringify({ 
-            posts: posts,
-            source: 'emergency_fallback'
-          })
-        };
-      } catch (fallbackError) {
-        console.error('Error with emergency fallback:', fallbackError);
-      }
-    }
     
     return {
       statusCode: 500,

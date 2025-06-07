@@ -85,24 +85,16 @@ exports.handler = async (event, context) => {
       
       console.log(`Found ${subscribers.length} active subscribers in Supabase`);
       
-    } catch (supabaseError) {
-      console.error('Failed to get subscribers from Supabase:', supabaseError);
-      
-      // Fall back to local JSON file as backup
-      console.log('Falling back to local JSON file...');
-      try {
-        const filePath = path.join(process.cwd(), 'data', 'subscribers.json');
-        const data = await fs.readFile(filePath, 'utf8');
-        subscribers = JSON.parse(data).filter(sub => sub.active);
-        console.log(`Found ${subscribers.length} active subscribers in local file`);
-      } catch (fileError) {
-        console.error('Failed to read local subscribers file:', fileError);
-        return {
-          statusCode: 400,
-          body: JSON.stringify({ message: 'No subscribers found' })
-        };
-      }
-    }
+         } catch (supabaseError) {
+       console.error('Failed to get subscribers from Supabase:', supabaseError);
+       return {
+         statusCode: 500,
+         body: JSON.stringify({ 
+           message: 'Failed to retrieve subscribers from database',
+           error: supabaseError.message
+         })
+       };
+     }
 
     if (subscribers.length === 0) {
       return {
