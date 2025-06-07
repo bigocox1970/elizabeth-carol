@@ -116,8 +116,8 @@ const Index = () => {
                 className="border-gray-400 text-gray-300 hover:bg-gray-300 hover:text-black bg-black/50 backdrop-blur-sm"
                 onClick={() => window.scrollTo(0, 0)}
               >
-                Read More Testimonials
-              </Button>
+              Read More Testimonials
+            </Button>
             </Link>
           </div>
         </div>

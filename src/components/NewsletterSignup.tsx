@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mail, Check, AlertCircle } from "lucide-react";
+import { Mail, Check, AlertCircle, Loader2 } from "lucide-react";
 
 const NewsletterSignup = () => {
   const [email, setEmail] = useState('');
@@ -11,18 +11,34 @@ const NewsletterSignup = () => {
   const [message, setMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
 
+  const validateEmail = (email: string) => {
+    return email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Client-side validation
+    if (!email.trim()) {
+      setMessage('Please enter your email address.');
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      setMessage('Please enter a valid email address.');
+      return;
+    }
+
     setIsSubmitting(true);
     setMessage('');
 
-    // Create form data for Netlify Forms
-    const formData = new FormData();
-    formData.append('form-name', 'newsletter-signup');
-    formData.append('email', email);
-    formData.append('name', name);
-
     try {
+      // Create form data for Netlify Forms
+      const formData = new FormData();
+      formData.append('form-name', 'newsletter-signup');
+      formData.append('email', email.trim());
+      formData.append('name', name.trim());
+
       const response = await fetch('/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -35,13 +51,28 @@ const NewsletterSignup = () => {
         setEmail('');
         setName('');
       } else {
-        setMessage('Failed to subscribe. Please try again.');
+        // Handle different error responses
+        if (response.status === 400) {
+          setMessage('Please check your information and try again.');
+        } else if (response.status >= 500) {
+          setMessage('Server error. Please try again in a moment.');
+        } else {
+          setMessage('Failed to subscribe. Please try again.');
+        }
       }
     } catch (error) {
-      setMessage('Failed to subscribe. Please check your connection and try again.');
+      console.error('Newsletter signup error:', error);
+      setMessage('Connection error. Please check your internet connection and try again.');
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const resetForm = () => {
+    setIsSuccess(false);
+    setMessage('');
+    setEmail('');
+    setName('');
   };
 
   return (
@@ -86,6 +117,7 @@ const NewsletterSignup = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="bg-background"
+                disabled={isSubmitting}
               />
             </div>
             <div>
@@ -97,19 +129,27 @@ const NewsletterSignup = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="bg-background"
+                disabled={isSubmitting}
               />
             </div>
             <Button 
               type="submit" 
-              disabled={isSubmitting}
+              disabled={isSubmitting || !email.trim()}
               className="w-full bg-gradient-to-r from-purple-900 to-black hover:from-black hover:to-gray-900 text-white disabled:opacity-50"
             >
-              {isSubmitting ? 'Subscribing...' : 'Subscribe for Updates'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Subscribing...
+                </>
+              ) : (
+                'Subscribe for Updates'
+              )}
             </Button>
             
             {message && !isSuccess && (
-              <div className="flex items-center space-x-2 p-3 bg-red-50 border border-red-200 rounded-md">
-                <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+              <div className="flex items-start space-x-2 p-3 bg-red-50 border border-red-200 rounded-md">
+                <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-red-600">{message}</p>
               </div>
             )}
@@ -124,10 +164,7 @@ const NewsletterSignup = () => {
               Thank you for subscribing! You'll hear from Elizabeth soon.
             </p>
             <Button 
-              onClick={() => {
-                setIsSuccess(false);
-                setMessage('');
-              }}
+              onClick={resetForm}
               variant="ghost"
               size="sm"
               className="text-primary"

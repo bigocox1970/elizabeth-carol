@@ -101,41 +101,41 @@ const Blog = () => {
                 <Link to="/contact">
                   <Button className="bg-gradient-to-r from-purple-900 to-black hover:from-black hover:to-gray-900 text-white">
                     Subscribe for Updates
-                  </Button>
+              </Button>
                 </Link>
-              </div>
+          </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {posts.map((post) => (
                   <Card key={post.id} className="hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 group">
-                    <CardHeader>
+                <CardHeader>
                       <div className="flex items-center justify-between mb-2">
                         <Badge variant="secondary" className="text-xs">
                           {post.category}
-                        </Badge>
+                    </Badge>
                         <div className="flex items-center text-xs text-muted-foreground">
                           <Calendar className="w-3 h-3 mr-1" />
                           {formatDate(post.createdAt)}
                         </div>
-                      </div>
+                  </div>
                       <CardTitle className="text-xl font-semibold group-hover:text-primary transition-colors">
-                        {post.title}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                    {post.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
                       <CardDescription className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                        {post.excerpt}
-                      </CardDescription>
+                    {post.excerpt}
+                  </CardDescription>
                       
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center text-xs text-muted-foreground">
                           <User className="w-3 h-3 mr-1" />
                           {post.author}
-                        </div>
+                    </div>
                         <div className="flex items-center text-xs text-muted-foreground">
                           {getReadTime(post.content)}
-                        </div>
-                      </div>
+          </div>
+        </div>
 
                       {/* Review Summary */}
                       {post.reviews && post.reviews.length > 0 && (
@@ -147,8 +147,8 @@ const Blog = () => {
                               <Star className="w-3 h-3 ml-2 mr-1 fill-yellow-400 text-yellow-400" />
                               {(post.reviews.filter(r => r.approved).reduce((sum, r) => sum + r.rating, 0) / post.reviews.filter(r => r.approved).length).toFixed(1)}
                             </>
-                          )}
-                        </div>
+                    )}
+                  </div>
                       )}
                       
                       <div className="pt-4 border-t border-border">
@@ -156,13 +156,13 @@ const Blog = () => {
                           <div className="flex items-center text-primary group-hover:text-primary/80 transition-colors cursor-pointer">
                             <span className="text-sm font-medium">Read More</span>
                             <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                          </div>
+                    </div>
                         </Link>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
             )}
           </div>
         </div>

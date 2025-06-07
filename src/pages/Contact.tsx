@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Mail, MapPin, Clock, MessageCircle, Star, Check } from "lucide-react";
+import { Phone, Mail, MapPin, Clock, MessageCircle, Star, Check, AlertCircle, Loader2 } from "lucide-react";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -23,29 +23,64 @@ const Contact = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  const validateEmail = (email: string) => {
+    return email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
       [e.target.id]: e.target.value
     });
+    // Clear error message when user starts typing
+    if (errorMessage) {
+      setErrorMessage('');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Client-side validation
+    if (!formData.firstName.trim()) {
+      setErrorMessage('Please enter your first name.');
+      return;
+    }
+
+    if (!formData.lastName.trim()) {
+      setErrorMessage('Please enter your last name.');
+      return;
+    }
+
+    if (!formData.email.trim()) {
+      setErrorMessage('Please enter your email address.');
+      return;
+    }
+
+    if (!validateEmail(formData.email)) {
+      setErrorMessage('Please enter a valid email address.');
+      return;
+    }
+
+    if (!formData.message.trim()) {
+      setErrorMessage('Please enter your message.');
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMessage('');
 
-    // Create form data for Netlify Forms
-    const formDataToSubmit = new FormData();
-    formDataToSubmit.append('form-name', 'contact-form');
-    formDataToSubmit.append('firstName', formData.firstName);
-    formDataToSubmit.append('lastName', formData.lastName);
-    formDataToSubmit.append('email', formData.email);
-    formDataToSubmit.append('phone', formData.phone);
-    formDataToSubmit.append('service', formData.service);
-    formDataToSubmit.append('message', formData.message);
-
     try {
+      // Create form data for Netlify Forms
+      const formDataToSubmit = new FormData();
+      formDataToSubmit.append('form-name', 'contact-form');
+      formDataToSubmit.append('firstName', formData.firstName.trim());
+      formDataToSubmit.append('lastName', formData.lastName.trim());
+      formDataToSubmit.append('email', formData.email.trim());
+      formDataToSubmit.append('phone', formData.phone.trim());
+      formDataToSubmit.append('service', formData.service);
+      formDataToSubmit.append('message', formData.message.trim());
+
       const response = await fetch('/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -59,10 +94,18 @@ const Contact = () => {
           document.getElementById('success-message')?.scrollIntoView({ behavior: 'smooth' });
         }, 100);
       } else {
-        setErrorMessage('Failed to send message. Please try again.');
+        // Handle different error responses
+        if (response.status === 400) {
+          setErrorMessage('Please check your information and try again.');
+        } else if (response.status >= 500) {
+          setErrorMessage('Server error. Please try again in a moment.');
+        } else {
+          setErrorMessage('Failed to send message. Please try again.');
+        }
       }
     } catch (error) {
-      setErrorMessage('Failed to send message. Please check your connection and try again.');
+      console.error('Contact form error:', error);
+      setErrorMessage('Connection error. Please check your internet connection and try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -179,9 +222,9 @@ const Contact = () => {
                         Don't fill this out if you're human: <input name="bot-field" />
                       </label>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="firstName">First Name *</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name *</Label>
                         <Input 
                           id="firstName" 
                           name="firstName"
@@ -189,10 +232,11 @@ const Contact = () => {
                           value={formData.firstName}
                           onChange={handleInputChange}
                           required 
+                          disabled={isSubmitting}
                         />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="lastName">Last Name *</Label>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name *</Label>
                         <Input 
                           id="lastName" 
                           name="lastName"
@@ -200,12 +244,13 @@ const Contact = () => {
                           value={formData.lastName}
                           onChange={handleInputChange}
                           required 
+                          disabled={isSubmitting}
                         />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email Address *</Label>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address *</Label>
                       <Input 
                         id="email" 
                         name="email"
@@ -214,11 +259,12 @@ const Contact = () => {
                         value={formData.email}
                         onChange={handleInputChange}
                         required 
+                        disabled={isSubmitting}
                       />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
                       <Input 
                         id="phone" 
                         name="phone"
@@ -226,58 +272,69 @@ const Contact = () => {
                         placeholder="Your phone number" 
                         value={formData.phone}
                         onChange={handleInputChange}
+                        disabled={isSubmitting}
                       />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="service">Service Interest</Label>
-                      <select 
-                        id="service" 
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="service">Service Interest</Label>
+                  <select 
+                    id="service" 
                         name="service"
-                        className="w-full px-3 py-2 bg-background border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full px-3 py-2 bg-background border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
                         value={formData.service}
                         onChange={handleInputChange}
-                      >
-                        <option value="">Select a service</option>
+                        disabled={isSubmitting}
+                  >
+                    <option value="">Select a service</option>
                         <option value="One-to-One Reading">One-to-One Reading</option>
                         <option value="Group Reading">Group Reading</option>
                         <option value="Telephone/Video Reading">Telephone/Video Reading</option>
                         <option value="Home Psychic Evening">Home Psychic Evening</option>
                         <option value="Talk/Workshop">Talk/Workshop</option>
                         <option value="General Inquiry">General Inquiry</option>
-                      </select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="message">Message *</Label>
-                      <Textarea 
-                        id="message" 
+                  </select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="message">Message *</Label>
+                  <Textarea 
+                    id="message" 
                         name="message"
-                        placeholder="Tell me about what you're looking for or any questions you have..."
-                        rows={4}
+                    placeholder="Tell me about what you're looking for or any questions you have..."
+                    rows={4}
                         value={formData.message}
                         onChange={handleInputChange}
-                        required 
-                      />
-                    </div>
-                    
+                    required 
+                    disabled={isSubmitting}
+                  />
+                </div>
+                
                     <Button 
                       type="submit" 
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || !formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim() || !formData.message.trim()}
                       className="w-full bg-gradient-to-r from-purple-900 to-black hover:from-black hover:to-gray-900 text-white font-medium shadow-lg disabled:opacity-50"
                     >
-                      {isSubmitting ? 'Sending...' : 'Send Message'}
-                    </Button>
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        'Send Message'
+                      )}
+                </Button>
                     
                     {errorMessage && (
-                      <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                      <div className="flex items-start space-x-2 p-3 bg-red-50 border border-red-200 rounded-md">
+                        <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
                         <p className="text-sm text-red-600">{errorMessage}</p>
                       </div>
                     )}
-                    
-                    <p className="text-sm text-muted-foreground text-center">
-                      I typically respond within 24 hours. For urgent matters, please call directly.
-                    </p>
+                
+                <p className="text-sm text-muted-foreground text-center">
+                  I typically respond within 24 hours. For urgent matters, please call directly.
+                </p>
                   </form>
                 ) : (
                   <div id="success-message" className="text-center space-y-6">
