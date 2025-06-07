@@ -13,11 +13,10 @@ interface ReviewFormProps {
 }
 
 const ReviewForm = ({ onSuccess }: ReviewFormProps) => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [name, setName] = useState(user?.user_metadata?.name || "");
   const [email, setEmail] = useState(user?.email || "");
   const [rating, setRating] = useState(5);
-  const [service, setService] = useState("");
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -48,10 +47,10 @@ const ReviewForm = ({ onSuccess }: ReviewFormProps) => {
             name: name.trim(),
             email: email.trim(),
             rating,
-            service,
             comment: comment.trim(),
             userId: user?.id || null,
           },
+          userToken: session?.access_token || null,
         }),
       });
 
@@ -67,7 +66,6 @@ const ReviewForm = ({ onSuccess }: ReviewFormProps) => {
           setEmail("");
         }
         setRating(5);
-        setService("");
         setComment("");
         
         if (onSuccess) {
@@ -113,22 +111,7 @@ const ReviewForm = ({ onSuccess }: ReviewFormProps) => {
 
 
 
-            <div className="space-y-2">
-              <Label htmlFor="service">Service</Label>
-              <Select value={service} onValueChange={setService} disabled={isSubmitting}>
-                <SelectTrigger id="service">
-                  <SelectValue placeholder="Select a service" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="One-to-One Reading">One-to-One Reading</SelectItem>
-                  <SelectItem value="Group Reading">Group Reading</SelectItem>
-                  <SelectItem value="Telephone Reading">Telephone Reading</SelectItem>
-                  <SelectItem value="Home Psychic Evening">Home Psychic Evening</SelectItem>
-                  <SelectItem value="Workshop">Workshop</SelectItem>
-                  <SelectItem value="General">General</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+
 
             <div className="space-y-2">
               <Label>Rating</Label>

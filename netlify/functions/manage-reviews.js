@@ -3,7 +3,7 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
 exports.handler = async (event, context) => {
   const { httpMethod } = event;
-  const { action, password, reviewData, reviewId, postId } = JSON.parse(event.body || '{}');
+  const { action, password, reviewData, reviewId, postId, userToken } = JSON.parse(event.body || '{}');
 
   // Authentication check for admin operations
   const isAdmin = password === process.env.ADMIN_PASSWORD;
@@ -26,11 +26,12 @@ exports.handler = async (event, context) => {
         }
 
         // Add to reviews table
+        const authToken = userToken || SUPABASE_ANON_KEY;
         const addReviewResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews`, {
           method: 'POST',
           headers: {
             'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Authorization': `Bearer ${authToken}`,
             'Content-Type': 'application/json',
             'Prefer': 'return=representation'
           },
