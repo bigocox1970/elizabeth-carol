@@ -53,13 +53,14 @@ exports.handler = async (event, context) => {
             body: JSON.stringify({
               name: reviewData.name,
               email: reviewData.email || '',
-              location: reviewData.location || '',
-              service: reviewData.service || 'General',
               rating: parseInt(reviewData.rating),
               title: reviewData.title || '',
               content: reviewData.comment,
               user_id: reviewData.userId,
-              approved: false // Requires admin approval
+              approved: false, // Requires admin approval
+              // Only include location and service if they're provided
+              ...(reviewData.location ? { location: reviewData.location } : {}),
+              ...(reviewData.service ? { service: reviewData.service } : {})
             })
           });
 
