@@ -15,8 +15,8 @@ exports.handler = async (event, context) => {
     console.log('SUPABASE_URL:', SUPABASE_URL ? 'Exists' : 'Missing');
     console.log('SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? 'Exists' : 'Missing');
     
-    const { email, name, source = 'newsletter' } = JSON.parse(event.body);
-    console.log('Parsed request body:', { email, name, source });
+    const { email, name, source = 'newsletter', user_id = null } = JSON.parse(event.body);
+    console.log('Parsed request body:', { email, name, source, user_id });
     
     if (!email) {
       return {
@@ -70,6 +70,7 @@ exports.handler = async (event, context) => {
       const insertUrl = `${SUPABASE_URL}/rest/v1/subscribers`;
       console.log('Insert URL:', insertUrl);
       
+      // Create insert body, only include user_id if it's not null or undefined
       const insertBody = {
         email: email.toLowerCase(),
         name: name || '',
@@ -77,6 +78,12 @@ exports.handler = async (event, context) => {
         date_added: new Date().toISOString(),
         active: true
       };
+      
+      // Only add user_id if it exists
+      if (user_id) {
+        insertBody.user_id = user_id;
+      }
+      
       console.log('Insert body:', insertBody);
       
       const insertResponse = await fetch(insertUrl, {
@@ -149,6 +156,11 @@ exports.handler = async (event, context) => {
           dateAdded: new Date().toISOString(),
           active: true
         };
+        
+        // Only add user_id if it exists
+        if (user_id) {
+          newSubscriber.user_id = user_id;
+        }
         
         subscribers.push(newSubscriber);
         
