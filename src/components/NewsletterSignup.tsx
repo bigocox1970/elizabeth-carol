@@ -16,28 +16,26 @@ const NewsletterSignup = () => {
     setIsSubmitting(true);
     setMessage('');
 
-    try {
-      const response = await fetch('/.netlify/functions/add-subscriber', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          name,
-          source: 'subscription'
-        }),
-      });
+    // Create form data for Netlify Forms
+    const formData = new FormData();
+    formData.append('form-name', 'newsletter-signup');
+    formData.append('email', email);
+    formData.append('name', name);
 
-      const data = await response.json();
+    try {
+      const response = await fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams([...formData] as [string, string][]).toString()
+      });
 
       if (response.ok) {
         setIsSuccess(true);
-        setMessage(data.message);
+        setMessage('Successfully subscribed! Thank you for joining our newsletter.');
         setEmail('');
         setName('');
       } else {
-        setMessage(data.message || 'Failed to subscribe. Please try again.');
+        setMessage('Failed to subscribe. Please try again.');
       }
     } catch (error) {
       setMessage('Failed to subscribe. Please check your connection and try again.');
@@ -62,10 +60,28 @@ const NewsletterSignup = () => {
         </div>
 
         {!isSuccess ? (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form 
+            onSubmit={handleSubmit} 
+            className="space-y-4"
+            name="newsletter-signup" 
+            method="POST" 
+            data-netlify="true"
+            netlify-honeypot="bot-field"
+          >
+            {/* Hidden form name for Netlify */}
+            <input type="hidden" name="form-name" value="newsletter-signup" />
+            
+            {/* Honeypot field */}
+            <div style={{ display: 'none' }}>
+              <label>
+                Don't fill this out if you're human: <input name="bot-field" />
+              </label>
+            </div>
+
             <div>
               <Input
                 type="text"
+                name="name"
                 placeholder="Your name (optional)"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -75,6 +91,7 @@ const NewsletterSignup = () => {
             <div>
               <Input
                 type="email"
+                name="email"
                 placeholder="Your email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
