@@ -151,7 +151,7 @@ exports.handler = async (event, context) => {
       pass: process.env.EMAIL_PASSWORD ? 'SET' : 'MISSING'
     });
     
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       host: 'smtpout.secureserver.net',
       port: 587,
       secure: false,
