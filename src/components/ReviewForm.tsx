@@ -50,6 +50,7 @@ const ReviewForm = ({ onSuccess }: ReviewFormProps) => {
             rating,
             service,
             comment: comment.trim(),
+            userId: user?.id || null,
           },
         }),
       });

@@ -40,6 +40,7 @@ exports.handler = async (event, context) => {
             rating: parseInt(reviewData.rating),
             title: reviewData.title || '',
             content: reviewData.comment,
+            user_id: reviewData.userId || null,
             approved: false // Requires admin approval
           })
         });
@@ -119,6 +120,7 @@ exports.handler = async (event, context) => {
             author_name: reviewData.name,
             author_email: reviewData.email || '',
             content: reviewData.comment,
+            user_id: reviewData.userId || null,
             approved: false // Requires admin approval
           })
         });
@@ -183,7 +185,6 @@ exports.handler = async (event, context) => {
           rating: review.rating,
           title: review.title,
           comment: review.content,
-          service: review.service,
           approved: review.approved,
           featured: review.featured,
           createdAt: review.created_at
@@ -226,7 +227,6 @@ exports.handler = async (event, context) => {
             rating: review.rating,
             title: review.title,
             comment: review.content,
-            service: review.service,
             approved: review.approved,
             featured: review.featured,
             createdAt: review.created_at
