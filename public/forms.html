@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Forms for Netlify Detection</title>
+</head>
+<body style="display: none;">
+    <!-- Contact Form for Netlify Detection -->
+    <form name="contact-form" netlify netlify-honeypot="bot-field" hidden>
+        <input type="text" name="firstName" />
+        <input type="text" name="lastName" />
+        <input type="email" name="email" />
+        <input type="tel" name="phone" />
+        <input type="text" name="service" />
+        <textarea name="message"></textarea>
+        <input type="text" name="bot-field" />
+    </form>
+
+    <!-- Newsletter Form for Netlify Detection -->
+    <form name="newsletter-signup" netlify netlify-honeypot="bot-field" hidden>
+        <input type="email" name="email" />
+        <input type="text" name="name" />
+        <input type="text" name="bot-field" />
+    </form>
+</body>
+</html> 
