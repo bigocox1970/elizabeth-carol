@@ -37,6 +37,7 @@ const ReviewForm = ({ onSuccess }: ReviewFormProps) => {
     setMessage("");
 
     try {
+      console.log("Submitting review...");
       // Submit review
       const response = await fetch("/.netlify/functions/manage-reviews", {
         method: "POST",
@@ -58,7 +59,9 @@ const ReviewForm = ({ onSuccess }: ReviewFormProps) => {
         }),
       });
 
+      console.log("Response status:", response.status);
       const result = await response.json();
+      console.log("Response data:", result);
       
       if (response.ok) {
         setIsSuccess(true);
