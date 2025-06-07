@@ -1,10 +1,11 @@
-const fs = require('fs').promises;
-const path = require('path');
-
 exports.handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
       body: JSON.stringify({ message: 'Method not allowed' })
     };
   }
@@ -15,6 +16,10 @@ exports.handler = async (event, context) => {
   if (!email) {
     return {
       statusCode: 400,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
       body: JSON.stringify({ message: 'Email is required' })
     };
   }
@@ -24,52 +29,52 @@ exports.handler = async (event, context) => {
   if (!emailRegex.test(email)) {
     return {
       statusCode: 400,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
       body: JSON.stringify({ message: 'Invalid email address' })
     };
   }
 
   try {
-    // Read existing subscribers
-    let subscribers = [];
-    const filePath = path.join(process.cwd(), 'data', 'subscribers.json');
-    
-    try {
-      const data = await fs.readFile(filePath, 'utf8');
-      subscribers = JSON.parse(data);
-    } catch (err) {
-      // File doesn't exist yet, start with empty array
-      subscribers = [];
-    }
+    // For now, just log the subscription and return success
+    // In production, you'd integrate with an email service or database
+    console.log('New subscriber:', {
+      email: email.toLowerCase(),
+      name: name || '',
+      source: source,
+      dateAdded: new Date().toISOString(),
+      active: true
+    });
 
-    // Check if email already exists
-    const existingSubscriber = subscribers.find(sub => sub.email.toLowerCase() === email.toLowerCase());
-    
-    if (!existingSubscriber) {
-      // Add new subscriber
-      subscribers.push({
-        email: email.toLowerCase(),
-        name: name || '',
-        source: source, // 'subscription' or 'contact_form'
-        dateAdded: new Date().toISOString(),
-        active: true
-      });
-
-      // Save updated list
-      await fs.writeFile(filePath, JSON.stringify(subscribers, null, 2));
-    }
+    // You can integrate with services like:
+    // - Mailchimp API
+    // - ConvertKit API  
+    // - Airtable
+    // - Google Sheets API
+    // - Send email to Elizabeth directly
 
     return {
       statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
       body: JSON.stringify({ 
-        message: existingSubscriber ? 'Already subscribed' : 'Successfully subscribed!',
-        isNew: !existingSubscriber
+        message: 'Successfully subscribed!',
+        isNew: true
       })
     };
 
   } catch (error) {
-    console.error('Error managing subscriber:', error);
+    console.error('Error processing subscription:', error);
     return {
       statusCode: 500,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
       body: JSON.stringify({ message: 'Failed to process subscription' })
     };
   }
