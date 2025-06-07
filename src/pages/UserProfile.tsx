@@ -218,20 +218,14 @@ const UserProfile = () => {
       <Navigation />
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-4">
-              <div className="bg-primary/10 p-3 rounded-full">
-                <User className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">{user.user_metadata?.name || "User"}'s Profile</h1>
-                <p className="text-muted-foreground">{user.email}</p>
-              </div>
+          <div className="flex items-center space-x-4 mb-8">
+            <div className="bg-primary/10 p-3 rounded-full">
+              <User className="w-6 h-6 text-primary" />
             </div>
-            <Button variant="outline" onClick={handleSignOut}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
-            </Button>
+            <div>
+              <h1 className="text-2xl font-bold">{user.user_metadata?.name || "User"}'s Profile</h1>
+              <p className="text-muted-foreground">{user.email}</p>
+            </div>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

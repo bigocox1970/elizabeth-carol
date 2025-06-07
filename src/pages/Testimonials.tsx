@@ -85,7 +85,6 @@ const Testimonials = () => {
   const displayTestimonials = testimonials.length > 0 ? testimonials : fallbackTestimonials;
 
   const stats = [
-    { number: "100's", label: "Happy Clients" },
     { number: "35+", label: "Years Experience" },
     { number: "5★", label: "Average Rating" }
   ];
@@ -112,7 +111,7 @@ const Testimonials = () => {
       {/* Stats */}
       <section className="py-16 bg-secondary/20">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 gap-8">
             {stats.map((stat, index) => (
               <div key={index} className="text-center">
                 <div className="text-3xl md:text-4xl font-bold text-primary mb-2">

@@ -65,14 +65,10 @@ const Hero = () => {
             </div>
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-3 gap-6 pt-8">
+            <div className="grid grid-cols-2 gap-6 pt-8">
               <div className="text-center">
                 <div className="text-2xl font-bold text-gray-200">35+</div>
                 <div className="text-sm text-gray-300">Years Experience</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-gray-200">100's</div>
-                <div className="text-sm text-gray-300">Happy Clients</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-gray-200">5★</div>
