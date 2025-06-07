@@ -5,21 +5,33 @@
 </head>
 <body style="display: none;">
     <!-- Contact Form for Netlify Detection -->
-    <form name="contact-form" netlify netlify-honeypot="bot-field" hidden>
-        <input type="text" name="firstName" />
-        <input type="text" name="lastName" />
-        <input type="email" name="email" />
+    <form name="contact-form" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/contact" hidden>
+        <input type="hidden" name="form-name" value="contact-form" />
+        <input type="text" name="firstName" required />
+        <input type="text" name="lastName" required />
+        <input type="email" name="email" required />
         <input type="tel" name="phone" />
-        <input type="text" name="service" />
-        <textarea name="message"></textarea>
-        <input type="text" name="bot-field" />
+        <select name="service">
+            <option value="">Select a service</option>
+            <option value="One-to-One Reading">One-to-One Reading</option>
+            <option value="Group Reading">Group Reading</option>
+            <option value="Telephone/Video Reading">Telephone/Video Reading</option>
+            <option value="Home Psychic Evening">Home Psychic Evening</option>
+            <option value="Talk/Workshop">Talk/Workshop</option>
+            <option value="General Inquiry">General Inquiry</option>
+        </select>
+        <textarea name="message" required></textarea>
+        <input type="text" name="bot-field" style="display: none;" />
+        <button type="submit">Submit</button>
     </form>
 
     <!-- Newsletter Form for Netlify Detection -->
-    <form name="newsletter-signup" netlify netlify-honeypot="bot-field" hidden>
-        <input type="email" name="email" />
+    <form name="newsletter-signup" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/newsletter" hidden>
+        <input type="hidden" name="form-name" value="newsletter-signup" />
         <input type="text" name="name" />
-        <input type="text" name="bot-field" />
+        <input type="email" name="email" required />
+        <input type="text" name="bot-field" style="display: none;" />
+        <button type="submit">Subscribe</button>
     </form>
 </body>
 </html> 

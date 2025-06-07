@@ -10,3 +10,14 @@
   from = "/*"
   to = "/index.html"
   status = 200 
+
+# Enable form handling
+[forms]
+  settings = {}
+
+# Explicitly define forms
+[[forms]]
+  name = "contact-form"
+  
+[[forms]]
+  name = "newsletter-signup" 
