@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, Quote, MapPin, Calendar, Heart, Loader2 } from "lucide-react";
+import ReviewForm from "@/components/ReviewForm";
 
 const Testimonials = () => {
   const [testimonials, setTestimonials] = useState([]);
@@ -176,6 +177,18 @@ const Testimonials = () => {
               ))}
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Leave a Review Section */}
+      <section className="py-20 bg-background">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-serif font-bold text-foreground mb-12 text-center">
+            Share Your Experience
+          </h2>
+          <div className="max-w-md mx-auto">
+            <ReviewForm onSuccess={() => loadReviews()} />
+          </div>
         </div>
       </section>
 
