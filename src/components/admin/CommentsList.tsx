@@ -30,7 +30,7 @@ const CommentsList = ({ password }: CommentsListProps) => {
   const loadComments = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/.netlify/functions/manage-blog', {
+      const response = await fetch('/.netlify/functions/manage-comments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -54,7 +54,7 @@ const CommentsList = ({ password }: CommentsListProps) => {
 
   const handleApproveComment = async (commentId: string, approve: boolean) => {
     try {
-      const response = await fetch('/.netlify/functions/manage-blog', {
+      const response = await fetch('/.netlify/functions/manage-comments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -81,7 +81,7 @@ const CommentsList = ({ password }: CommentsListProps) => {
     if (!confirm('Are you sure you want to delete this comment?')) return;
 
     try {
-      const response = await fetch('/.netlify/functions/manage-blog', {
+      const response = await fetch('/.netlify/functions/manage-comments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

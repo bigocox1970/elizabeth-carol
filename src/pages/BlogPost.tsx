@@ -67,15 +67,15 @@ const BlogPost = () => {
     setReviewMessage('');
 
     try {
-      const response = await fetch('/.netlify/functions/manage-reviews', {
+      const response = await fetch('/.netlify/functions/manage-comments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          action: 'add-blog-review',
-          postId: postId,
-          reviewData: {
+                  body: JSON.stringify({
+            action: 'add-comment',
+            postId: postId,
+            commentData: {
             name: user.email.split('@')[0], // Use email username as name
             email: user.email,
             rating: reviewForm.rating,

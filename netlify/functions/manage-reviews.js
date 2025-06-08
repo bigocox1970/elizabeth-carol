@@ -4,7 +4,7 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 exports.handler = async (event, context) => {
   const { httpMethod } = event;
-  const { action, password, reviewData, reviewId, postId, userToken } = JSON.parse(event.body || '{}');
+  const { action, password, reviewData, reviewId, userToken } = JSON.parse(event.body || '{}');
 
   // Authentication check for admin operations
   const isAdmin = password === process.env.ADMIN_PASSWORD;
@@ -96,88 +96,6 @@ exports.handler = async (event, context) => {
           body: JSON.stringify({ 
             message: 'Thank you for your review! It will be published after approval.',
             review: formattedNewReview
-          })
-        };
-
-      case 'add-blog-review':
-        // Add a comment to a specific blog post
-        if (!reviewData.name || !reviewData.comment || !postId) {
-          return {
-            statusCode: 400,
-            headers: { "Access-Control-Allow-Origin": "*" },
-            body: JSON.stringify({ message: 'Name, comment, and post ID are required' })
-          };
-        }
-
-        // Check if post exists
-        const postCheckResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?id=eq.${postId}&select=id`, {
-          method: 'GET',
-          headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!postCheckResponse.ok) {
-          throw new Error(`Database query failed: ${postCheckResponse.status}`);
-        }
-
-        const existingPosts = await postCheckResponse.json();
-        
-        if (existingPosts.length === 0) {
-          return {
-            statusCode: 404,
-            headers: { "Access-Control-Allow-Origin": "*" },
-            body: JSON.stringify({ message: 'Blog post not found' })
-          };
-        }
-
-        // Add comment to blog_comments table
-        // Use service role key to bypass RLS for comment insertion
-        const commentAuthKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
-        const addCommentResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_comments`, {
-          method: 'POST',
-          headers: {
-            'apikey': commentAuthKey,
-            'Authorization': `Bearer ${commentAuthKey}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
-          },
-          body: JSON.stringify({
-            post_id: postId,
-            author_name: reviewData.name,
-            author_email: reviewData.email || '',
-            content: reviewData.comment,
-            user_id: reviewData.userId || null,
-            approved: false // Requires admin approval
-          })
-        });
-
-        if (!addCommentResponse.ok) {
-          throw new Error(`Failed to add comment: ${addCommentResponse.status}`);
-        }
-
-        const newComments = await addCommentResponse.json();
-        const newComment = newComments[0];
-
-        // Format comment for frontend
-        const formattedNewComment = {
-          id: newComment.id.toString(),
-          name: newComment.author_name,
-          email: newComment.author_email,
-          comment: newComment.content,
-          approved: newComment.approved,
-          createdAt: newComment.created_at,
-          rating: reviewData.rating || 5 // Include rating if provided
-        };
-
-        return {
-          statusCode: 200,
-          headers: { "Access-Control-Allow-Origin": "*" },
-          body: JSON.stringify({ 
-            message: 'Thank you for your comment! It will be published after approval.',
-            review: formattedNewComment
           })
         };
 
@@ -481,8 +399,8 @@ exports.handler = async (event, context) => {
           }
         });
 
-        if (!deleteCommentResponse.ok) {
-          throw new Error(`Failed to delete comment: ${deleteCommentResponse.status}`);
+        if (!deleteBlogCommentResponse.ok) {
+          throw new Error(`Failed to delete comment: ${deleteBlogCommentResponse.status}`);
         }
 
         return {
