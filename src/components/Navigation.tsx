@@ -29,20 +29,20 @@ const Navigation = () => {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
+          <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity cursor-pointer">
             <img 
               src="/images/elizabeth-carol-logo-icon-trans.png" 
               alt="Elizabeth Carol Logo" 
               className="h-8 w-8"
             />
             <div className="flex flex-col">
-              <span className="font-serif text-xl font-bold text-foreground tracking-wider">Elizabeth Carol</span>
+              <span className="font-serif text-xl font-bold text-foreground tracking-wider hover:text-primary transition-colors">Elizabeth Carol</span>
               <span className="text-xs text-muted-foreground">Clairvoyant & Psychic Medium</span>
             </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-6">
+          <div className="hidden lg:flex items-center space-x-6">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -57,7 +57,7 @@ const Navigation = () => {
           </div>
 
           {/* Phone Number & CTA */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden lg:flex items-center space-x-4">
             <a
               href="tel:01865361786"
               className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors"
@@ -99,7 +99,7 @@ const Navigation = () => {
           </div>
 
           {/* Mobile Menu */}
-          <div className="md:hidden">
+          <div className="lg:hidden">
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon">
