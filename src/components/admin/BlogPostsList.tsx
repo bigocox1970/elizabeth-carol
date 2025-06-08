@@ -17,15 +17,16 @@ interface BlogPost {
 interface BlogPostsListProps {
   password: string;
   onEditPost: (postId: string) => void;
+  refreshTrigger?: number;
 }
 
-const BlogPostsList = ({ password, onEditPost }: BlogPostsListProps) => {
+const BlogPostsList = ({ password, onEditPost, refreshTrigger }: BlogPostsListProps) => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     loadPosts();
-  }, []);
+  }, [refreshTrigger]);
 
   const loadPosts = async () => {
     setIsLoading(true);

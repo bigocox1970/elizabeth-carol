@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,9 +11,10 @@ interface BlogPostFormProps {
   password: string;
   editingPost: string | null;
   onPostSaved: () => void;
+  onCancelEdit?: () => void;
 }
 
-const BlogPostForm = ({ password, editingPost, onPostSaved }: BlogPostFormProps) => {
+const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: BlogPostFormProps) => {
   const [blogData, setBlogData] = useState({
     title: '',
     content: '',
@@ -23,6 +24,59 @@ const BlogPostForm = ({ password, editingPost, onPostSaved }: BlogPostFormProps)
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [blogMessage, setBlogMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Load post data when editing
+  useEffect(() => {
+    if (editingPost) {
+      loadPostData(editingPost);
+    } else {
+      // Reset form when creating new post
+      setBlogData({
+        title: '',
+        content: '',
+        excerpt: '',
+        category: 'Spiritual Guidance',
+        published: false
+      });
+      setBlogMessage('');
+    }
+  }, [editingPost]);
+
+  const loadPostData = async (postId: string) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/.netlify/functions/manage-blog', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          action: 'get-single',
+          password: password,
+          postId: postId
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.post) {
+          setBlogData({
+            title: data.post.title || '',
+            content: data.post.content || '',
+            excerpt: data.post.excerpt || '',
+            category: data.post.category || 'Spiritual Guidance',
+            published: data.post.published || false
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load post:', error);
+      setBlogMessage('Failed to load post data.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,14 +216,27 @@ const BlogPostForm = ({ password, editingPost, onPostSaved }: BlogPostFormProps)
             <Label htmlFor="published">Publish immediately</Label>
           </div>
           
-          <Button 
-            type="submit" 
-            disabled={isSubmitting}
-            className="w-full bg-gradient-to-r from-purple-900 to-black hover:from-black hover:to-gray-900 text-white disabled:opacity-50"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {isSubmitting ? 'Saving...' : editingPost ? 'Update Post' : 'Create Post'}
-          </Button>
+          <div className="flex gap-2">
+            {editingPost && onCancelEdit && (
+              <Button 
+                type="button" 
+                variant="outline"
+                onClick={onCancelEdit}
+                disabled={isSubmitting || isLoading}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            )}
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || isLoading}
+              className="flex-1 bg-gradient-to-r from-purple-900 to-black hover:from-black hover:to-gray-900 text-white disabled:opacity-50"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {isSubmitting ? 'Saving...' : isLoading ? 'Loading...' : editingPost ? 'Update Post' : 'Create Post'}
+            </Button>
+          </div>
           
           {blogMessage && (
             <div className={`p-3 rounded-md ${blogMessage.includes('successfully') ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>

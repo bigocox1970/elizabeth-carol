@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,10 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, User, ArrowLeft, Star, MessageCircle, Send } from "lucide-react";
+import { Calendar, User, ArrowLeft, Star, MessageCircle, Send, LogIn } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const BlogPost = () => {
   const { postId } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [reviewForm, setReviewForm] = useState({
@@ -55,6 +58,11 @@ const BlogPost = () => {
 
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
+    if (!user) {
+      setReviewMessage('You must be logged in to comment.');
+      return;
+    }
+    
     setIsSubmittingReview(true);
     setReviewMessage('');
 
@@ -67,7 +75,12 @@ const BlogPost = () => {
         body: JSON.stringify({
           action: 'add-blog-review',
           postId: postId,
-          reviewData: reviewForm
+          reviewData: {
+            name: user.email.split('@')[0], // Use email username as name
+            email: user.email,
+            rating: reviewForm.rating,
+            comment: reviewForm.comment
+          }
         }),
       });
 
@@ -252,78 +265,88 @@ const BlogPost = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={handleReviewSubmit} className="space-y-4">
-                    <div className="grid md:grid-cols-2 gap-4">
+                  {!user ? (
+                    <div className="text-center py-8">
+                      <LogIn className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                      <h3 className="text-lg font-semibold text-foreground mb-2">Login Required</h3>
+                      <p className="text-muted-foreground mb-6">
+                        Please log in to leave a comment on this blog post.
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                        <Button 
+                          onClick={() => navigate('/auth?redirect=' + encodeURIComponent(window.location.pathname))}
+                          className="bg-gradient-to-r from-purple-900 to-black hover:from-black hover:to-gray-900 text-white"
+                        >
+                          <LogIn className="w-4 h-4 mr-2" />
+                          Login
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          onClick={() => navigate('/auth?mode=register&redirect=' + encodeURIComponent(window.location.pathname))}
+                        >
+                          Create Account
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleReviewSubmit} className="space-y-4">
+                      <div className="bg-secondary/20 p-3 rounded-lg">
+                        <p className="text-sm text-muted-foreground">
+                          Commenting as <span className="font-semibold text-foreground">{user.email}</span>
+                        </p>
+                      </div>
+
                       <div className="space-y-2">
-                        <Label htmlFor="name">Name *</Label>
-                        <Input
-                          id="name"
-                          value={reviewForm.name}
-                          onChange={(e) => setReviewForm({...reviewForm, name: e.target.value})}
+                        <Label>Rating *</Label>
+                        <div className="flex items-center space-x-1">
+                          {Array.from({ length: 5 }, (_, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => setReviewForm({...reviewForm, rating: i + 1})}
+                              className="p-1"
+                            >
+                              <Star
+                                className={`w-6 h-6 ${
+                                  i < reviewForm.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                                } hover:text-yellow-400 transition-colors`}
+                              />
+                            </button>
+                          ))}
+                          <span className="ml-2 text-sm text-muted-foreground">
+                            ({reviewForm.rating} star{reviewForm.rating !== 1 ? 's' : ''})
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="comment">Comment *</Label>
+                        <Textarea
+                          id="comment"
+                          value={reviewForm.comment}
+                          onChange={(e) => setReviewForm({...reviewForm, comment: e.target.value})}
+                          placeholder="Share your thoughts about this post..."
+                          rows={4}
                           required
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email (optional)</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={reviewForm.email}
-                          onChange={(e) => setReviewForm({...reviewForm, email: e.target.value})}
-                        />
-                      </div>
-                    </div>
 
-                    <div className="space-y-2">
-                      <Label>Rating *</Label>
-                      <div className="flex items-center space-x-1">
-                        {Array.from({ length: 5 }, (_, i) => (
-                          <button
-                            key={i}
-                            type="button"
-                            onClick={() => setReviewForm({...reviewForm, rating: i + 1})}
-                            className="p-1"
-                          >
-                            <Star
-                              className={`w-6 h-6 ${
-                                i < reviewForm.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                              } hover:text-yellow-400 transition-colors`}
-                            />
-                          </button>
-                        ))}
-                        <span className="ml-2 text-sm text-muted-foreground">
-                          ({reviewForm.rating} star{reviewForm.rating !== 1 ? 's' : ''})
-                        </span>
-                      </div>
-                    </div>
+                      <Button 
+                        type="submit" 
+                        disabled={isSubmittingReview}
+                        className="bg-gradient-to-r from-purple-900 to-black hover:from-black hover:to-gray-900 text-white disabled:opacity-50"
+                      >
+                        <Send className="w-4 h-4 mr-2" />
+                        {isSubmittingReview ? 'Submitting...' : 'Submit Comment'}
+                      </Button>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="comment">Comment *</Label>
-                      <Textarea
-                        id="comment"
-                        value={reviewForm.comment}
-                        onChange={(e) => setReviewForm({...reviewForm, comment: e.target.value})}
-                        placeholder="Share your thoughts about this post..."
-                        rows={4}
-                        required
-                      />
-                    </div>
-
-                    <Button 
-                      type="submit" 
-                      disabled={isSubmittingReview}
-                      className="bg-gradient-to-r from-purple-900 to-black hover:from-black hover:to-gray-900 text-white disabled:opacity-50"
-                    >
-                      <Send className="w-4 h-4 mr-2" />
-                      {isSubmittingReview ? 'Submitting...' : 'Submit Comment'}
-                    </Button>
-
-                    {reviewMessage && (
-                      <div className={`p-3 rounded-md ${reviewMessage.includes('approval') ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                        <p className="text-sm">{reviewMessage}</p>
-                      </div>
-                    )}
-                  </form>
+                      {reviewMessage && (
+                        <div className={`p-3 rounded-md ${reviewMessage.includes('approval') ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                          <p className="text-sm">{reviewMessage}</p>
+                        </div>
+                      )}
+                    </form>
+                  )}
                 </CardContent>
               </Card>
             </section>

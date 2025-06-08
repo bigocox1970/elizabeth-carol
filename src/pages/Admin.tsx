@@ -20,6 +20,7 @@ const Admin = () => {
   const [subscribers, setSubscribers] = useState([]);
   const [activeTab, setActiveTab] = useState("subscribers");
   const [editingPost, setEditingPost] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -128,13 +129,18 @@ const Admin = () => {
                   editingPost={editingPost} 
                   onPostSaved={() => {
                     setEditingPost(null);
-                  }} 
+                    setRefreshTrigger(prev => prev + 1); // Trigger refresh
+                  }}
+                  onCancelEdit={() => {
+                    setEditingPost(null);
+                  }}
                 />
                 <BlogPostsList 
                   password={password} 
                   onEditPost={(postId) => {
                     setEditingPost(postId);
-                  }} 
+                  }}
+                  refreshTrigger={refreshTrigger}
                 />
               </div>
             </TabsContent>
