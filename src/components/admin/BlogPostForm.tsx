@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { FileText, Save, Upload, X, Image } from "lucide-react";
+import { FileText, Save, Upload, X, Image, Camera } from "lucide-react";
 
 interface BlogPostFormProps {
   password: string;
@@ -306,34 +306,52 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
                   </div>
                 </div>
               )}
-              <div className="flex items-center gap-2">
-                <Input
-                  id="image"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageSelect}
-                  className="hidden"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => document.getElementById('image')?.click()}
-                  className="flex items-center gap-2"
-                >
-                  <Upload className="w-4 h-4" />
-                  {imagePreview ? 'Change Image' : 'Upload Image'}
-                </Button>
-                {imagePreview && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={removeImage}
-                    className="text-red-600 border-red-200 hover:bg-red-50"
-                  >
-                    Remove
-                  </Button>
-                )}
-              </div>
+                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                 <Input
+                   id="image"
+                   type="file"
+                   accept="image/*"
+                   onChange={handleImageSelect}
+                   className="hidden"
+                 />
+                 <Input
+                   id="camera"
+                   type="file"
+                   accept="image/*"
+                   capture="environment"
+                   onChange={handleImageSelect}
+                   className="hidden"
+                 />
+                 <Button
+                   type="button"
+                   variant="outline"
+                   onClick={() => document.getElementById('camera')?.click()}
+                   className="flex items-center justify-center gap-2 h-11"
+                 >
+                   <Camera className="w-4 h-4" />
+                   Take Photo
+                 </Button>
+                 <Button
+                   type="button"
+                   variant="outline"
+                   onClick={() => document.getElementById('image')?.click()}
+                   className="flex items-center justify-center gap-2 h-11"
+                 >
+                   <Upload className="w-4 h-4" />
+                   Upload Image
+                 </Button>
+                 {imagePreview && (
+                   <Button
+                     type="button"
+                     variant="outline"
+                     onClick={removeImage}
+                     className="col-span-1 sm:col-span-2 text-red-600 border-red-200 hover:bg-red-50 h-11"
+                   >
+                     <X className="w-4 h-4 mr-2" />
+                     Remove Image
+                   </Button>
+                 )}
+               </div>
             </div>
           </div>
           
