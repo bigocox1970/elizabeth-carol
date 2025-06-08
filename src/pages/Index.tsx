@@ -7,26 +7,57 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, Quote, Phone, MapPin, Heart, Users, Award } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+
+interface Testimonial {
+  id: number | string;
+  name: string;
+  location?: string;
+  text?: string;
+  comment?: string;
+  content?: string;
+  rating: number;
+  service?: string;
+  createdAt?: string;
+}
 
 const Index = () => {
-  // Actual client reviews
-  const quickTestimonials = [
-    {
-      text: "Elizabeth connected me with my late husband and gave me messages that only he would know. Her compassion and accuracy brought me immense comfort during a very difficult time.",
-      name: "Margaret H.",
-      location: "Oxford"
-    },
-    {
-      text: "I was sceptical at first, but Elizabeth knew things about my family that she couldn't possibly have known. Her reading gave me clarity and peace of mind about important decisions.",
-      name: "David P.",
-      location: "Witney"
-    },
-    {
-      text: "The home psychic evening Elizabeth hosted was incredible. She gave accurate readings to all my guests - we're still talking about it months later!",
-      name: "Claire R.",
-      location: "Bicester"
+  const [quickTestimonials, setQuickTestimonials] = useState<Testimonial[]>([]);
+
+  useEffect(() => {
+    loadFeaturedReviews();
+  }, []);
+
+  const loadFeaturedReviews = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('approved', true)
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const formattedReviews = data.map(review => ({
+          id: review.id,
+          name: review.name,
+          location: review.location,
+          text: review.comment || review.content,
+          rating: review.rating,
+          service: review.service,
+          createdAt: review.created_at
+        }));
+        setQuickTestimonials(formattedReviews);
+      }
+    } catch (error) {
+      console.error('Failed to load featured reviews:', error);
+      // Don't show any reviews if database fails - better than fake ones
+      setQuickTestimonials([]);
     }
-  ];
+  };
 
   const reasons = [
     {
@@ -99,7 +130,7 @@ const Index = () => {
                     </div>
                     <div className="flex space-x-1">
                       {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-gray-300 text-gray-300" />
+                        <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                       ))}
                     </div>
                   </div>
