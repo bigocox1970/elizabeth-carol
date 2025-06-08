@@ -61,7 +61,7 @@ exports.handler = async (event, context) => {
     // Generate unique filename
     const timestamp = Date.now();
     const extension = imageFile.filename.split('.').pop();
-    const filename = `blog-images/${timestamp}.${extension}`;
+    const filename = `${timestamp}.${extension}`;
 
     // Upload to Supabase Storage
     const { data, error } = await supabase.storage
