@@ -134,11 +134,13 @@ exports.handler = async (event, context) => {
         }
 
         // Add comment to blog_comments table
+        // Use service role key to bypass RLS for comment insertion
+        const commentAuthKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
         const addCommentResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_comments`, {
           method: 'POST',
           headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'apikey': commentAuthKey,
+            'Authorization': `Bearer ${commentAuthKey}`,
             'Content-Type': 'application/json',
             'Prefer': 'return=representation'
           },
