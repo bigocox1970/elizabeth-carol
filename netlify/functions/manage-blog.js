@@ -309,7 +309,9 @@ exports.handler = async (event, context) => {
 
       case 'get-comments':
         // Get all blog comments for admin
+        console.log('get-comments: Starting');
         if (!isAdmin) {
+          console.log('get-comments: Not admin');
           return {
             statusCode: 401,
             headers: { "Access-Control-Allow-Origin": "*" },
@@ -317,8 +319,12 @@ exports.handler = async (event, context) => {
           };
         }
 
+        console.log('get-comments: Fetching comments');
         const commentsAuthKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
-        const commentsResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_comments?select=*,blog_posts(title)&order=created_at.desc`, {
+        console.log('get-comments: Using service role key:', !!SUPABASE_SERVICE_ROLE_KEY);
+        
+        // First, try to get comments without the join to see if that works
+        const commentsResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_comments?select=*&order=created_at.desc`, {
           method: 'GET',
           headers: {
             'apikey': commentsAuthKey,
@@ -327,11 +333,32 @@ exports.handler = async (event, context) => {
           }
         });
 
+        console.log('get-comments: Response status:', commentsResponse.status);
+
         if (!commentsResponse.ok) {
-          throw new Error(`Database query failed: ${commentsResponse.status}`);
+          const errorText = await commentsResponse.text();
+          console.error('get-comments: Error response:', errorText);
+          throw new Error(`Database query failed: ${commentsResponse.status} - ${errorText}`);
         }
 
         const comments = await commentsResponse.json();
+        console.log('get-comments: Found comments:', comments.length);
+        
+        // Get posts separately to get titles
+        const postsResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?select=id,title`, {
+          method: 'GET',
+          headers: {
+            'apikey': commentsAuthKey,
+            'Authorization': `Bearer ${commentsAuthKey}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const posts = postsResponse.ok ? await postsResponse.json() : [];
+        const postsMap = posts.reduce((acc, post) => {
+          acc[post.id] = post.title;
+          return acc;
+        }, {});
         
         // Format comments for frontend
         const formattedComments = comments.map(comment => ({
@@ -339,12 +366,13 @@ exports.handler = async (event, context) => {
           name: comment.author_name,
           email: comment.author_email,
           content: comment.content,
-          postId: comment.post_id.toString(),
-          postTitle: comment.blog_posts?.title || 'Unknown Post',
+          postId: comment.post_id?.toString() || 'unknown',
+          postTitle: postsMap[comment.post_id] || 'Unknown Post',
           approved: comment.approved,
           createdAt: comment.created_at
         }));
 
+        console.log('get-comments: Returning formatted comments:', formattedComments.length);
         return {
           statusCode: 200,
           headers: { "Access-Control-Allow-Origin": "*" },
