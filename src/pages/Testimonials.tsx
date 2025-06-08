@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
@@ -277,9 +277,11 @@ const Testimonials = () => {
               through professional psychic and mediumship readings.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-gradient-mystical hover:opacity-90 text-primary-foreground">
-                Book Your Reading
-              </Button>
+              <Link to="/contact">
+                <Button size="lg" className="bg-gradient-mystical hover:opacity-90 text-primary-foreground">
+                  Book Your Reading
+                </Button>
+              </Link>
               <a href="tel:01865361786">
                 <Button size="lg" variant="outline">
                   Call 01865 361 786

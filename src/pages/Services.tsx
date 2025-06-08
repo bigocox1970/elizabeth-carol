@@ -10,7 +10,7 @@ const ServicesPage = () => {
   const faqs = [
     {
       question: "How long does a reading take?",
-      answer: "One-to-one readings typically last 60-90 minutes, while telephone/video sessions are usually 45-60 minutes. Group readings and home psychic evenings can last 2-4 hours depending on the number of participants."
+      answer: "Both one-to-one and telephone/video readings are 60 minutes. Home psychic evenings typically last 3-4 hours depending on the number of participants."
     },
     {
       question: "Do I need to prepare anything for my reading?",
@@ -121,16 +121,12 @@ const ServicesPage = () => {
                   <h3 className="text-xl font-semibold text-foreground mb-4">Individual Services</h3>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center py-2 border-b border-border">
-                      <span className="text-muted-foreground">One-to-One Reading (60-90 min)</span>
-                      <span className="font-semibold text-foreground">From £50</span>
+                      <span className="text-muted-foreground">One-to-One Reading (60 min)</span>
+                      <span className="font-semibold text-foreground">£70</span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-border">
-                      <span className="text-muted-foreground">Telephone/Video Reading (45-60 min)</span>
-                      <span className="font-semibold text-foreground">From £40</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b border-border">
-                      <span className="text-muted-foreground">Group Reading (per person)</span>
-                      <span className="font-semibold text-foreground">From £20</span>
+                      <span className="text-muted-foreground">Telephone/Video Reading (60 min)</span>
+                      <span className="font-semibold text-foreground">£70</span>
                     </div>
                   </div>
                 </div>
@@ -139,8 +135,8 @@ const ServicesPage = () => {
                   <h3 className="text-xl font-semibold text-foreground mb-4">Group & Special Events</h3>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center py-2 border-b border-border">
-                      <span className="text-muted-foreground">Home Psychic Evening</span>
-                      <span className="font-semibold text-foreground">From £200</span>
+                      <span className="text-muted-foreground">Home Psychic Evening (3-4 hours)</span>
+                      <span className="font-semibold text-foreground">From £300</span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-border">
                       <span className="text-muted-foreground">Talks & Workshops</span>
@@ -208,12 +204,12 @@ const ServicesPage = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl font-serif font-bold text-foreground mb-12 text-center">
-              Service Areas in Oxfordshire
+              Areas Covered in Oxfordshire
             </h2>
             
             <div className="grid md:grid-cols-2 gap-12 items-center">
               <div>
-                <h3 className="text-xl font-semibold text-foreground mb-4">Areas I Visit</h3>
+                <h3 className="text-xl font-semibold text-foreground mb-4">Areas Covered</h3>
                 <div className="grid grid-cols-2 gap-2 text-muted-foreground">
                   <div className="flex items-center space-x-2">
                     <MapPin className="w-4 h-4 text-primary" />

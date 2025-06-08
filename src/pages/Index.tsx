@@ -221,9 +221,11 @@ const Index = () => {
                   Call 01865 361 786
                 </Button>
               </a>
-              <Button size="lg" variant="outline">
-                Book Your Reading
-              </Button>
+              <Link to="/contact">
+                <Button size="lg" variant="outline">
+                  Book Your Reading
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

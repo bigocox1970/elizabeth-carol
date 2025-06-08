@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Star, Phone, MapPin, Clock } from "lucide-react";
@@ -13,8 +14,8 @@ const Hero = () => {
         }}
       />
       
-      {/* Much Darker Overlay - lighter on mobile, darker on desktop */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/75 via-black/70 to-black/75 md:from-black/95 md:via-black/92 md:to-black/95" />
+      {/* Overlay - balanced transparency for both mobile and desktop */}
+      <div className="absolute inset-0 bg-gradient-to-br from-black/85 via-black/80 to-black/85" />
 
       {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
@@ -48,12 +49,14 @@ const Hero = () => {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button 
-                size="lg" 
-                className="bg-gradient-to-r from-purple-900 to-black hover:from-black hover:to-gray-900 text-white font-medium shadow-lg"
-              >
-                Book Your Reading
-              </Button>
+              <Link to="/contact">
+                <Button 
+                  size="lg" 
+                  className="bg-gradient-to-r from-purple-900 to-black hover:from-black hover:to-gray-900 text-white font-medium shadow-lg"
+                >
+                  Book Your Reading
+                </Button>
+              </Link>
               <a href="tel:01865361786">
                 <Button 
                   size="lg" 

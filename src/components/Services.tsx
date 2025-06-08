@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -72,7 +73,9 @@ const Services = () => {
                         <Clock className="w-4 h-4" />
                         <span>{service.duration}</span>
                       </div>
-                      <span className="font-semibold text-primary">{service.price}</span>
+                      <span className="font-semibold bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs">
+                        {service.price}
+                      </span>
                     </div>
                   </div>
                 </CardHeader>
@@ -94,12 +97,14 @@ const Services = () => {
                     </ul>
                   </div>
 
-                  <Button 
-                    className="w-full bg-gradient-mystical hover:opacity-90 text-primary-foreground"
-                    size="sm"
-                  >
-                    Book This Service
-                  </Button>
+                  <Link to="/contact">
+                    <Button 
+                      className="w-full bg-gradient-mystical hover:opacity-90 text-primary-foreground"
+                      size="sm"
+                    >
+                      Book This Service
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
             );
@@ -121,9 +126,11 @@ const Services = () => {
                   Call 01865 361 786
                 </Button>
               </a>
-              <Button size="lg" variant="outline">
-                Send a Message
-              </Button>
+              <Link to="/contact">
+                <Button size="lg" variant="outline">
+                  Send a Message
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

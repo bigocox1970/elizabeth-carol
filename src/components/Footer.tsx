@@ -54,11 +54,21 @@ const Footer = () => {
           <div className="space-y-4">
             <h3 className="font-semibold text-foreground">Services</h3>
             <nav className="flex flex-col space-y-2">
-              <span className="text-muted-foreground">One-to-One Readings</span>
-              <span className="text-muted-foreground">Group Readings</span>
-              <span className="text-muted-foreground">Telephone/Video Sessions</span>
-              <span className="text-muted-foreground">Talks & Workshops</span>
-              <span className="text-muted-foreground">Home Psychic Evenings</span>
+              <Link to="/services" className="text-muted-foreground hover:text-primary transition-colors">
+                One-to-One Readings
+              </Link>
+              <Link to="/services" className="text-muted-foreground hover:text-primary transition-colors">
+                Telephone/Video Sessions
+              </Link>
+              <Link to="/services" className="text-muted-foreground hover:text-primary transition-colors">
+                Home Psychic Evenings
+              </Link>
+              <Link to="/services" className="text-muted-foreground hover:text-primary transition-colors">
+                View All Services
+              </Link>
+              <Link to="/contact" className="text-muted-foreground hover:text-primary transition-colors">
+                Book a Reading
+              </Link>
             </nav>
           </div>
 
@@ -86,7 +96,7 @@ const Footer = () => {
             </div>
 
             <div className="pt-4">
-              <h4 className="font-medium text-foreground mb-2">Areas Served</h4>
+              <h4 className="font-medium text-foreground mb-2">Areas Covered</h4>
               <p className="text-sm text-muted-foreground">
                 Oxford, Oxfordshire, Witney, Bicester, Didcot, Abingdon, Banbury, and surrounding areas
               </p>
