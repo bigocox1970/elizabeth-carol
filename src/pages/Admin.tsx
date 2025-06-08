@@ -84,27 +84,47 @@ const Admin = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 w-full">
-              <TabsTrigger value="subscribers" onClick={() => setActiveTab("subscribers")}>
-                <Users className="w-4 h-4 mr-2" />
+            <TabsList className="flex flex-wrap gap-2 w-full h-auto p-2">
+              <TabsTrigger 
+                value="subscribers" 
+                onClick={() => setActiveTab("subscribers")} 
+                className="flex items-center justify-center gap-2 h-11 min-w-0 flex-1 sm:flex-none sm:min-w-[120px]"
+              >
+                <Users className="w-4 h-4" />
                 <span className="hidden sm:inline">Subscribers</span>
                 <span className="sm:hidden">Subs</span>
               </TabsTrigger>
-              <TabsTrigger value="newsletter" onClick={() => setActiveTab("newsletter")}>
-                <Mail className="w-4 h-4 mr-2" />
+              <TabsTrigger 
+                value="newsletter" 
+                onClick={() => setActiveTab("newsletter")} 
+                className="flex items-center justify-center gap-2 h-11 min-w-0 flex-1 sm:flex-none sm:min-w-[120px]"
+              >
+                <Mail className="w-4 h-4" />
                 <span className="hidden sm:inline">Newsletter</span>
                 <span className="sm:hidden">Email</span>
               </TabsTrigger>
-              <TabsTrigger value="blog" onClick={() => setActiveTab("blog")}>
-                <BookOpen className="w-4 h-4 mr-2" />
+              <TabsTrigger 
+                value="blog" 
+                onClick={() => setActiveTab("blog")} 
+                className="flex items-center justify-center gap-2 h-11 min-w-0 flex-1 sm:flex-none sm:min-w-[100px]"
+              >
+                <BookOpen className="w-4 h-4" />
                 <span>Blog</span>
               </TabsTrigger>
-              <TabsTrigger value="reviews" onClick={() => setActiveTab("reviews")}>
-                <Star className="w-4 h-4 mr-2" />
+              <TabsTrigger 
+                value="reviews" 
+                onClick={() => setActiveTab("reviews")} 
+                className="flex items-center justify-center gap-2 h-11 min-w-0 flex-1 sm:flex-none sm:min-w-[110px]"
+              >
+                <Star className="w-4 h-4" />
                 <span>Reviews</span>
               </TabsTrigger>
-              <TabsTrigger value="comments" onClick={() => setActiveTab("comments")}>
-                <MessageCircle className="w-4 h-4 mr-2" />
+              <TabsTrigger 
+                value="comments" 
+                onClick={() => setActiveTab("comments")} 
+                className="flex items-center justify-center gap-2 h-11 min-w-0 flex-1 sm:flex-none sm:min-w-[120px]"
+              >
+                <MessageCircle className="w-4 h-4" />
                 <span className="hidden sm:inline">Comments</span>
                 <span className="sm:hidden">Cmts</span>
               </TabsTrigger>
