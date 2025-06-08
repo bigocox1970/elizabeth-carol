@@ -79,7 +79,8 @@ const BlogPost = () => {
             name: user.email.split('@')[0], // Use email username as name
             email: user.email,
             rating: reviewForm.rating,
-            comment: reviewForm.comment
+            comment: reviewForm.comment,
+            userId: user.id // Add the user ID for linking
           }
         }),
       });

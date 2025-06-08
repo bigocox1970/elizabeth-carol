@@ -3,7 +3,7 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
 exports.handler = async (event, context) => {
   const { httpMethod } = event;
-  const { action, password, postId, postData } = JSON.parse(event.body || '{}');
+  const { action, password, postId, postData, commentId, commentData } = JSON.parse(event.body || '{}');
 
   // Authentication check for write operations
   const isAdmin = password === process.env.ADMIN_PASSWORD;
@@ -305,6 +305,111 @@ exports.handler = async (event, context) => {
           statusCode: 200,
           headers: { "Access-Control-Allow-Origin": "*" },
           body: JSON.stringify({ message: 'Post deleted successfully' })
+        };
+
+      case 'get-comments':
+        // Get all blog comments for admin
+        if (!isAdmin) {
+          return {
+            statusCode: 401,
+            headers: { "Access-Control-Allow-Origin": "*" },
+            body: JSON.stringify({ message: 'Unauthorized' })
+          };
+        }
+
+        const commentsAuthKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+        const commentsResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_comments?select=*,blog_posts(title)&order=created_at.desc`, {
+          method: 'GET',
+          headers: {
+            'apikey': commentsAuthKey,
+            'Authorization': `Bearer ${commentsAuthKey}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!commentsResponse.ok) {
+          throw new Error(`Database query failed: ${commentsResponse.status}`);
+        }
+
+        const comments = await commentsResponse.json();
+        
+        // Format comments for frontend
+        const formattedComments = comments.map(comment => ({
+          id: comment.id.toString(),
+          name: comment.author_name,
+          email: comment.author_email,
+          content: comment.content,
+          postId: comment.post_id.toString(),
+          postTitle: comment.blog_posts?.title || 'Unknown Post',
+          approved: comment.approved,
+          createdAt: comment.created_at
+        }));
+
+        return {
+          statusCode: 200,
+          headers: { "Access-Control-Allow-Origin": "*" },
+          body: JSON.stringify({ comments: formattedComments })
+        };
+
+      case 'update-comment':
+        // Update a blog comment (admin only)
+        if (!isAdmin) {
+          return {
+            statusCode: 401,
+            headers: { "Access-Control-Allow-Origin": "*" },
+            body: JSON.stringify({ message: 'Unauthorized' })
+          };
+        }
+
+        const updateCommentAuthKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+        const updateCommentResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_comments?id=eq.${commentId}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': updateCommentAuthKey,
+            'Authorization': `Bearer ${updateCommentAuthKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(commentData)
+        });
+
+        if (!updateCommentResponse.ok) {
+          throw new Error(`Failed to update comment: ${updateCommentResponse.status}`);
+        }
+
+        return {
+          statusCode: 200,
+          headers: { "Access-Control-Allow-Origin": "*" },
+          body: JSON.stringify({ message: 'Comment updated successfully' })
+        };
+
+      case 'delete-comment':
+        // Delete a blog comment (admin only)
+        if (!isAdmin) {
+          return {
+            statusCode: 401,
+            headers: { "Access-Control-Allow-Origin": "*" },
+            body: JSON.stringify({ message: 'Unauthorized' })
+          };
+        }
+
+        const deleteCommentAuthKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+        const deleteCommentResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_comments?id=eq.${commentId}`, {
+          method: 'DELETE',
+          headers: {
+            'apikey': deleteCommentAuthKey,
+            'Authorization': `Bearer ${deleteCommentAuthKey}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!deleteCommentResponse.ok) {
+          throw new Error(`Failed to delete comment: ${deleteCommentResponse.status}`);
+        }
+
+        return {
+          statusCode: 200,
+          headers: { "Access-Control-Allow-Origin": "*" },
+          body: JSON.stringify({ message: 'Comment deleted successfully' })
         };
 
       default:
