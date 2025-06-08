@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { FileText, Save } from "lucide-react";
+import { FileText, Save, Upload, X, Image } from "lucide-react";
 
 interface BlogPostFormProps {
   password: string;
@@ -20,8 +20,11 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
     content: '',
     excerpt: '',
     category: 'Spiritual Guidance',
-    published: false
+    published: false,
+    image_url: ''
   });
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [blogMessage, setBlogMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -37,8 +40,11 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
         content: '',
         excerpt: '',
         category: 'Spiritual Guidance',
-        published: false
+        published: false,
+        image_url: ''
       });
+      setSelectedImage(null);
+      setImagePreview('');
       setBlogMessage('');
     }
   }, [editingPost]);
@@ -66,8 +72,10 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
             content: data.post.content || '',
             excerpt: data.post.excerpt || '',
             category: data.post.category || 'Spiritual Guidance',
-            published: data.post.published || false
+            published: data.post.published || false,
+            image_url: data.post.image_url || ''
           });
+          setImagePreview(data.post.image_url || '');
         }
       }
     } catch (error) {
@@ -84,6 +92,12 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
     setBlogMessage('');
 
     try {
+      // Handle image upload if image selected
+      let imageUrl = '';
+      if (selectedImage) {
+        imageUrl = await uploadImage(selectedImage);
+      }
+
       const response = await fetch('/.netlify/functions/manage-blog', {
         method: 'POST',
         headers: {
@@ -92,7 +106,7 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
         body: JSON.stringify({
           action: 'create',
           password: password,
-          postData: blogData
+          postData: { ...blogData, image_url: imageUrl }
         }),
       });
 
@@ -105,8 +119,11 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
           content: '',
           excerpt: '',
           category: 'Spiritual Guidance',
-          published: false
+          published: false,
+          image_url: ''
         });
+        setSelectedImage(null);
+        setImagePreview('');
         onPostSaved();
       } else {
         setBlogMessage(data.message || 'Failed to create blog post.');
@@ -124,6 +141,12 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
     setBlogMessage('');
 
     try {
+      // Handle image upload if new image selected
+      let imageUrl = blogData.image_url;
+      if (selectedImage) {
+        imageUrl = await uploadImage(selectedImage);
+      }
+
       const response = await fetch('/.netlify/functions/manage-blog', {
         method: 'POST',
         headers: {
@@ -133,7 +156,7 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
           action: 'update',
           password: password,
           postId: editingPost,
-          postData: blogData
+          postData: { ...blogData, image_url: imageUrl }
         }),
       });
 
@@ -149,6 +172,61 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
       setBlogMessage('Failed to update blog post. Please try again.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setBlogMessage('Image size must be less than 5MB.');
+        return;
+      }
+
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        setBlogMessage('Please select a valid image file.');
+        return;
+      }
+
+      setSelectedImage(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+      setBlogMessage('');
+    }
+  };
+
+  const removeImage = () => {
+    setSelectedImage(null);
+    setImagePreview('');
+    setBlogData({ ...blogData, image_url: '' });
+  };
+
+  const uploadImage = async (file: File): Promise<string> => {
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('password', password);
+
+      const response = await fetch('/.netlify/functions/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload image');
+      }
+
+      const data = await response.json();
+      return data.imageUrl;
+    } catch (error) {
+      throw new Error('Failed to upload image');
     }
   };
 
@@ -193,6 +271,70 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
               placeholder="e.g., Spiritual Guidance, Meditation, Healing"
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="image">Featured Image (Optional)</Label>
+            <div className="space-y-3">
+              {imagePreview ? (
+                <div className="relative">
+                  <img 
+                    src={imagePreview} 
+                    alt="Preview" 
+                    className="w-full h-48 object-cover rounded-lg border"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={removeImage}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <Image className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-600">
+                      Click to upload an image, or drag and drop
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      PNG, JPG, GIF up to 5MB
+                    </p>
+                  </div>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <Input
+                  id="image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => document.getElementById('image')?.click()}
+                  className="flex items-center gap-2"
+                >
+                  <Upload className="w-4 h-4" />
+                  {imagePreview ? 'Change Image' : 'Upload Image'}
+                </Button>
+                {imagePreview && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={removeImage}
+                    className="text-red-600 border-red-200 hover:bg-red-50"
+                  >
+                    Remove
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
           
           <div className="space-y-2">

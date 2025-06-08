@@ -219,6 +219,17 @@ const BlogPost = () => {
               )}
             </header>
 
+            {/* Featured Image */}
+            {post.image_url && (
+              <div className="mb-8">
+                <img 
+                  src={post.image_url} 
+                  alt={post.title}
+                  className="w-full h-96 object-cover rounded-lg shadow-lg"
+                />
+              </div>
+            )}
+
             {/* Content */}
             <div className="prose prose-lg max-w-none mb-12">
               <div className="text-foreground leading-relaxed whitespace-pre-wrap">

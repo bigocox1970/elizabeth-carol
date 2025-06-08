@@ -49,7 +49,8 @@ exports.handler = async (event, context) => {
           published: post.published,
           createdAt: post.created_at,
           updatedAt: post.updated_at,
-          author: post.author
+          author: post.author,
+          image_url: post.image_url
         }));
 
         return {
@@ -92,6 +93,7 @@ exports.handler = async (event, context) => {
             createdAt: post.created_at,
             updatedAt: post.updated_at,
             author: post.author,
+            image_url: post.image_url,
             reviews: post.blog_comments.filter(comment => comment.approved).map(comment => ({
               id: comment.id.toString(),
               name: comment.author_name,
@@ -161,6 +163,7 @@ exports.handler = async (event, context) => {
           createdAt: post.created_at,
           updatedAt: post.updated_at,
           author: post.author,
+          image_url: post.image_url,
           reviews: post.blog_comments.map(comment => ({
             id: comment.id.toString(),
             name: comment.author_name,
@@ -194,7 +197,8 @@ exports.handler = async (event, context) => {
             excerpt: postData.excerpt || postData.content.substring(0, 200) + '...',
             category: postData.category || 'Spiritual Guidance',
             published: postData.published || false,
-            author: 'Elizabeth Carol'
+            author: 'Elizabeth Carol',
+            image_url: postData.image_url || null
           })
         });
 

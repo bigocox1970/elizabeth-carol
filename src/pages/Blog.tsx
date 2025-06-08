@@ -109,6 +109,15 @@ const Blog = () => {
                 {posts.map((post) => (
                   <Link key={post.id} to={`/blog/${post.id}`} className="block">
                     <Card className="hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 group cursor-pointer h-full">
+                      {post.image_url && (
+                        <div className="overflow-hidden rounded-t-lg">
+                          <img 
+                            src={post.image_url} 
+                            alt={post.title}
+                            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
+                      )}
                       <CardHeader>
                         <div className="flex items-center justify-between mb-2">
                           <Badge variant="secondary" className="text-xs">
