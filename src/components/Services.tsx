@@ -111,29 +111,7 @@ const Services = () => {
           })}
         </div>
 
-        <div className="text-center mt-16">
-          <div className="bg-card/50 rounded-lg p-8 max-w-2xl mx-auto">
-            <h3 className="text-2xl font-serif font-bold text-foreground mb-4">
-              Not Sure Which Service is Right for You?
-            </h3>
-            <p className="text-muted-foreground mb-6">
-              Elizabeth is happy to discuss your needs and recommend the most suitable type of reading or service.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href="tel:01865361786">
-                <Button size="lg" className="bg-gradient-mystical hover:opacity-90 text-primary-foreground">
-                  <Phone className="w-4 h-4 mr-2" />
-                  Call 01865 361 786
-                </Button>
-              </a>
-              <Link to="/contact">
-                <Button size="lg" variant="outline">
-                  Send a Message
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
+
       </div>
     </section>
   );
