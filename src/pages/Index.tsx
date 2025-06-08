@@ -9,21 +9,21 @@ import { Star, Quote, Phone, MapPin, Heart, Users, Award } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Index = () => {
-  // Quick testimonials for homepage
+  // Actual client reviews
   const quickTestimonials = [
     {
-      text: "Elizabeth's reading brought me such comfort after losing my mother. Her accuracy was incredible.",
-      name: "Sarah M.",
+      text: "Elizabeth connected me with my late husband and gave me messages that only he would know. Her compassion and accuracy brought me immense comfort during a very difficult time.",
+      name: "Margaret H.",
       location: "Oxford"
     },
     {
-      text: "35 years of experience really shows. Elizabeth's guidance has been invaluable to my family.",
-      name: "James R.",
+      text: "I was sceptical at first, but Elizabeth knew things about my family that she couldn't possibly have known. Her reading gave me clarity and peace of mind about important decisions.",
+      name: "David P.",
       location: "Witney"
     },
     {
-      text: "The home psychic evening was amazing! All my friends were blown away by the accuracy.",
-      name: "Margaret T.",
+      text: "The home psychic evening Elizabeth hosted was incredible. She gave accurate readings to all my guests - we're still talking about it months later!",
+      name: "Claire R.",
       location: "Bicester"
     }
   ];
@@ -67,8 +67,8 @@ const Index = () => {
           }}
         />
         
-        {/* Dark Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-black/95 via-black/92 to-black/95" />
+        {/* Dark Overlay - lighter on mobile, darker on desktop */}
+        <div className="absolute inset-0 bg-gradient-to-br from-black/75 via-black/70 to-black/75 md:from-black/95 md:via-black/92 md:to-black/95" />
         
         <div className="container mx-auto px-4 relative z-10">
           <div className="text-center max-w-3xl mx-auto mb-16">
@@ -172,7 +172,7 @@ const Index = () => {
               guidance, Elizabeth Carol brings over 35 years of experience to help illuminate your path.
             </p>
             
-            <div className="grid md:grid-cols-3 gap-8 mb-12">
+            <div className="grid md:grid-cols-2 gap-8 mb-12 max-w-2xl mx-auto">
               <div className="text-center">
                 <div className="text-2xl font-bold text-primary mb-2">Oxford Based</div>
                 <div className="text-muted-foreground">Serving the local community</div>
@@ -181,17 +181,15 @@ const Index = () => {
                 <div className="text-2xl font-bold text-primary mb-2">35+ Years</div>
                 <div className="text-muted-foreground">Professional experience</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary mb-2">1000+</div>
-                <div className="text-muted-foreground">Satisfied clients</div>
-              </div>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-gradient-mystical hover:opacity-90 text-primary-foreground">
-                <Phone className="w-4 h-4 mr-2" />
-                Call 01865 361 786
-              </Button>
+              <a href="tel:01865361786">
+                <Button size="lg" className="bg-gradient-mystical hover:opacity-90 text-primary-foreground">
+                  <Phone className="w-4 h-4 mr-2" />
+                  Call 01865 361 786
+                </Button>
+              </a>
               <Button size="lg" variant="outline">
                 Book Your Reading
               </Button>

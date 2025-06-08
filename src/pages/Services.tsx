@@ -70,7 +70,7 @@ const ServicesPage = () => {
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
-                    Call 01865 361 786 or use the contact form to discuss your needs and preferred service type.
+                    <a href="tel:01865361786" className="text-primary hover:underline">Call 01865 361 786</a> or use the contact form to discuss your needs and preferred service type.
                   </CardDescription>
                 </CardContent>
               </Card>
@@ -192,10 +192,12 @@ const ServicesPage = () => {
               <p className="text-muted-foreground mb-6">
                 Have another question? I'm happy to discuss your specific needs and answer any concerns.
               </p>
-              <Button className="bg-gradient-mystical hover:opacity-90 text-primary-foreground">
-                <Phone className="w-4 h-4 mr-2" />
-                Ask Elizabeth - 01865 361 786
-              </Button>
+              <a href="tel:01865361786">
+                <Button className="bg-gradient-mystical hover:opacity-90 text-primary-foreground">
+                  <Phone className="w-4 h-4 mr-2" />
+                  Ask Elizabeth - 01865 361 786
+                </Button>
+              </a>
             </div>
           </div>
         </div>

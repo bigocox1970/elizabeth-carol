@@ -3,6 +3,11 @@
   functions = "netlify/functions"
   publish = "dist"
 
+[dev]
+  command = "npm run dev"
+  targetPort = 8081
+  port = 8888
+
 [build.environment]
   NODE_VERSION = "18"
   

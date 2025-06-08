@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Multiple Reviews Issue</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .error {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+    </style>
+</head>
+<body>
+    <h1>Fix Multiple Reviews Issue</h1>
+    
+    <p>This page will help you fix the issue with submitting multiple reviews. The problem is with the Row Level Security (RLS) policy in your Supabase database that is restricting users from submitting multiple reviews.</p>
+    
+    <h2>The SQL Fix</h2>
+    
+    <pre id="sql-code">-- Fix issue with multiple reviews from the same user
+-- The problem is likely with the RLS policy that restricts users to only insert reviews where user_id = auth.uid()
+
+-- Apply the fix directly using SQL
+DO $$
+BEGIN
+    -- Check if the policy exists and drop it
+    IF EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE schemaname = 'public' 
+        AND tablename = 'reviews' 
+        AND policyname = 'Enable insert for authenticated users'
+    ) THEN
+        DROP POLICY "Enable insert for authenticated users" ON public.reviews;
+    END IF;
+
+    -- Create a new policy that allows authenticated users to insert reviews
+    -- This policy ensures that the user_id column matches the authenticated user's ID
+    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'reviews') THEN
+        CREATE POLICY "Enable insert for authenticated users" ON public.reviews
+            FOR INSERT WITH CHECK (
+                auth.uid() IS NOT NULL AND 
+                auth.uid() = user_id
+            );
+    END IF;
+END
+$$;
+
+-- Add a comment to explain the policy
+COMMENT ON POLICY "Enable insert for authenticated users" ON public.reviews IS 
+    'Allows authenticated users to submit reviews with their user_id';</pre>
+    
+    <h2>Instructions</h2>
+    
+    <ol>
+        <li>Log in to your <a href="https://app.supabase.com" target="_blank">Supabase dashboard</a></li>
+        <li>Go to the SQL Editor</li>
+        <li>Copy the SQL code above</li>
+        <li>Paste it into the SQL Editor</li>
+        <li>Click "Run" to execute the SQL</li>
+    </ol>
+    
+    <p>After applying this fix, you should be able to submit multiple reviews without any issues.</p>
+    
+    <div id="result" style="display: none;"></div>
+</body>
+</html>

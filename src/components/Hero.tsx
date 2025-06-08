@@ -13,8 +13,8 @@ const Hero = () => {
         }}
       />
       
-      {/* Much Darker Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/95 via-black/92 to-black/95" />
+      {/* Much Darker Overlay - lighter on mobile, darker on desktop */}
+      <div className="absolute inset-0 bg-gradient-to-br from-black/75 via-black/70 to-black/75 md:from-black/95 md:via-black/92 md:to-black/95" />
 
       {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
@@ -35,7 +35,7 @@ const Hero = () => {
               
               <h1 className="text-4xl md:text-6xl font-serif font-bold text-white leading-tight">
                 Elizabeth Carol
-                <span className="block text-3xl md:text-4xl text-gray-300 mt-2">
+                <span className="block text-3xl md:text-4xl text-purple-900 mt-2">
                   Clairvoyant & Psychic Medium
                 </span>
               </h1>
@@ -54,14 +54,16 @@ const Hero = () => {
               >
                 Book Your Reading
               </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="border-gray-400 text-gray-300 hover:bg-gray-300 hover:text-black bg-black/50 backdrop-blur-sm"
-              >
-                <Phone className="w-4 h-4 mr-2" />
-                Call 01865 361 786
-              </Button>
+              <a href="tel:01865361786">
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="border-gray-400 text-gray-300 hover:bg-gray-300 hover:text-black bg-black/50 backdrop-blur-sm"
+                >
+                  <Phone className="w-4 h-4 mr-2" />
+                  Call 01865 361 786
+                </Button>
+              </a>
             </div>
 
             {/* Quick Stats */}

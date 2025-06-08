@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Mail, Check, AlertCircle, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { getApiUrl } from "@/utils/api";
 
 // Define types for subscribers
 interface Subscriber {
@@ -90,7 +91,7 @@ const NewsletterSignup = () => {
       }
 
       // In production, use the Netlify Function
-      const response = await fetch('/.netlify/functions/add-subscriber', {
+      const response = await fetch(getApiUrl('add-subscriber'), {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json'

@@ -12,6 +12,7 @@ import BlogPostForm from "@/components/admin/BlogPostForm";
 import BlogPostsList from "@/components/admin/BlogPostsList";
 import ReviewsList from "@/components/admin/ReviewsList";
 import CommentsList from "@/components/admin/CommentsList";
+import { getApiUrl } from "@/utils/api";
 
 const Admin = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -29,7 +30,7 @@ const Admin = () => {
   const handleLogin = (enteredPassword: string) => {
     // Always verify the password on the server side
     // This way we don't expose the password in the frontend code
-    fetch('/.netlify/functions/verify-admin', {
+            fetch(getApiUrl('verify-admin'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -53,7 +54,7 @@ const Admin = () => {
 
   const loadSubscribers = async () => {
     try {
-      const response = await fetch('/.netlify/functions/get-subscribers');
+      const response = await fetch(getApiUrl('get-subscribers'));
       if (response.ok) {
         const data = await response.json();
         setSubscribers(data.subscribers || []);

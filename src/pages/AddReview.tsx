@@ -36,7 +36,10 @@ const AddReview = () => {
           <ReviewForm 
             onSuccess={() => {
               navigate("/testimonials");
-            }} 
+            }}
+            onClose={() => {
+              navigate("/testimonials");
+            }}
           />
         </div>
       </main>
@@ -45,4 +48,4 @@ const AddReview = () => {
   );
 };
 
-export default AddReview; 
+export default AddReview;

@@ -186,10 +186,12 @@ const About = () => {
               where healing and insight can flourish.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-gradient-mystical hover:opacity-90 text-primary-foreground">
-                <Phone className="w-4 h-4 mr-2" />
-                Call 01865 361 786
-              </Button>
+              <a href="tel:01865361786">
+                <Button size="lg" className="bg-gradient-mystical hover:opacity-90 text-primary-foreground">
+                  <Phone className="w-4 h-4 mr-2" />
+                  Call 01865 361 786
+                </Button>
+              </a>
               <Button size="lg" variant="outline">
                 Book Online
               </Button>

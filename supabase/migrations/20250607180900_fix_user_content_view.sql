@@ -1,20 +1,27 @@
--- Drop the existing user_content view
-DROP VIEW IF EXISTS user_content;
-
--- Create a new user_content table instead of a view
-CREATE TABLE IF NOT EXISTS public.user_content (
-  id BIGSERIAL PRIMARY KEY,
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  content_type TEXT NOT NULL,
-  title TEXT,
-  content TEXT,
-  metadata JSONB,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- Add RLS policies
-ALTER TABLE public.user_content ENABLE ROW LEVEL SECURITY;
+-- Check if user_content exists as a view
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_views WHERE viewname = 'user_content') THEN
+        -- Drop the existing user_content view
+        DROP VIEW user_content;
+        
+        -- Create a new user_content table instead of a view
+        CREATE TABLE IF NOT EXISTS public.user_content (
+          id BIGSERIAL PRIMARY KEY,
+          user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+          content_type TEXT NOT NULL,
+          title TEXT,
+          content TEXT,
+          metadata JSONB,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        
+        -- Add RLS policies
+        ALTER TABLE public.user_content ENABLE ROW LEVEL SECURITY;
+    END IF;
+END
+$$;
 
 -- Policy for users to select their own content
 CREATE POLICY "Users can view their own content"

@@ -9,41 +9,25 @@ const Services = () => {
       icon: Star,
       title: "One-to-One Readings",
       description: "Personal spiritual guidance sessions in a comfortable, confidential setting. Connect with loved ones who have passed and receive insight into your life's path.",
-      duration: "60-90 minutes",
-      price: "From £50",
+      duration: "60 minutes",
+      price: "£70",
       features: ["Mediumship", "Clairvoyant guidance", "Tarot reading", "Spirit communication"],
       popular: true
-    },
-    {
-      icon: Users,
-      title: "Group Readings", 
-      description: "Share the spiritual experience with friends or family. Perfect for special occasions or group exploration of spiritual connections.",
-      duration: "2-3 hours",
-      price: "From £20 per person",
-      features: ["Small groups (4-8 people)", "Shared messages", "Group energy", "Social spiritual experience"]
     },
     {
       icon: Phone,
       title: "Telephone & Video Readings",
       description: "Distance is no barrier to spiritual connection. Receive the same quality guidance from the comfort of your own home via phone or video call.",
-      duration: "45-60 minutes", 
-      price: "From £40",
+      duration: "60 minutes", 
+      price: "£70",
       features: ["Remote sessions", "Flexible timing", "Recording available", "Same spiritual connection"]
-    },
-    {
-      icon: Presentation,
-      title: "Talks & Workshops",
-      description: "Educational presentations about psychic development, mediumship, and spiritual awareness for groups, societies, and organizations.",
-      duration: "1-2 hours",
-      price: "Contact for pricing",
-      features: ["Educational content", "Group presentations", "Q&A sessions", "Customizable topics"]
     },
     {
       icon: Home,
       title: "Home Psychic Evenings",
       description: "Host an intimate psychic evening in your own home. Elizabeth will provide readings for you and your guests in a relaxed, familiar environment.",
       duration: "3-4 hours",
-      price: "From £200",
+      price: "From £300",
       features: ["In your home", "Multiple readings", "Social atmosphere", "Memorable experience"]
     }
   ];
@@ -131,10 +115,12 @@ const Services = () => {
               Elizabeth is happy to discuss your needs and recommend the most suitable type of reading or service.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-gradient-mystical hover:opacity-90 text-primary-foreground">
-                <Phone className="w-4 h-4 mr-2" />
-                Call 01865 361 786
-              </Button>
+              <a href="tel:01865361786">
+                <Button size="lg" className="bg-gradient-mystical hover:opacity-90 text-primary-foreground">
+                  <Phone className="w-4 h-4 mr-2" />
+                  Call 01865 361 786
+                </Button>
+              </a>
               <Button size="lg" variant="outline">
                 Send a Message
               </Button>

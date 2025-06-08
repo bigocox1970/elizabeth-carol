@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
+import { getApiUrl } from "@/utils/api";
 
 interface RegisterFormProps {
   onSuccess?: () => void;
@@ -73,7 +74,7 @@ const RegisterForm = ({ onSuccess, onLoginClick }: RegisterFormProps) => {
       // If newsletter subscription is enabled and user signed up successfully
       if (formData.subscribeToNewsletter) {
         try {
-          const response = await fetch('/.netlify/functions/add-subscriber', {
+          const response = await fetch(getApiUrl('add-subscriber'), {
             method: 'POST',
             headers: { 
               'Content-Type': 'application/json'

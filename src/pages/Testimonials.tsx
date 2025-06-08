@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Star, Quote, MapPin, Calendar, Heart, Loader2 } from "lucide-react";
 import ReviewForm from "@/components/ReviewForm";
 import { useAuth } from "@/contexts/AuthContext";
+import { getApiUrl } from "@/utils/api";
 
 interface Testimonial {
   id: number | string;
@@ -34,7 +35,12 @@ const Testimonials = () => {
 
   const loadReviews = async () => {
     try {
-      const response = await fetch('/.netlify/functions/manage-reviews', {
+      console.log('Loading reviews...');
+      
+      const apiUrl = getApiUrl('manage-reviews');
+      console.log('API URL:', apiUrl);
+      
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -42,51 +48,74 @@ const Testimonials = () => {
         body: JSON.stringify({ action: 'get-approved-reviews' }),
       });
 
+      console.log('Response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('Reviews data received:', data);
+        console.log('Number of reviews:', data.reviews?.length || 0);
         setTestimonials(data.reviews || []);
+      } else {
+        console.error('API failed, using local demo data for development');
+        // Fallback for local development
+        const demoReviews = [
+          {
+            id: "demo-1",
+            name: "Chris",
+            location: "Botley", 
+            rating: 5,
+            service: "One-to-One Reading",
+            comment: "Still Amazing!",
+            createdAt: "2025-06-07T23:09:21.024687+00:00"
+          },
+          {
+            id: "demo-2", 
+            name: "Chris",
+            location: "Oxford",
+            rating: 5,
+            service: "Reading",
+            comment: "Amazing!",
+            createdAt: "2025-06-07T21:34:06.444693+00:00"
+          }
+        ];
+        setTestimonials(demoReviews);
       }
     } catch (error) {
-      console.error('Failed to load reviews:', error);
+      console.error('Failed to load reviews, using demo data:', error);
+      // Fallback for local development
+      const demoReviews = [
+        {
+          id: "demo-1",
+          name: "Chris",
+          location: "Botley", 
+          rating: 5,
+          service: "One-to-One Reading",
+          comment: "Still Amazing!",
+          createdAt: "2025-06-07T23:09:21.024687+00:00"
+        },
+        {
+          id: "demo-2", 
+          name: "Chris",
+          location: "Oxford",
+          rating: 5,
+          service: "Reading",
+          comment: "Amazing!",
+          createdAt: "2025-06-07T21:34:06.444693+00:00"
+        }
+      ];
+      setTestimonials(demoReviews);
     } finally {
       setLoading(false);
     }
   };
 
-  // Fallback testimonials in case no reviews are in the database yet
-  const fallbackTestimonials = [
-    {
-      id: 1,
-      name: "Sarah M.",
-      location: "Oxford",
-      date: "December 2023",
-      rating: 5,
-      service: "One-to-One Reading",
-      comment: "Elizabeth's reading was incredibly accurate and brought me such comfort. She connected with my late mother and shared details that only family would know. Her warmth and compassion made the experience truly healing.",
-      featured: true
-    },
-    {
-      id: 2,
-      name: "James R.",
-      location: "Witney",
-      date: "November 2023",
-      rating: 5,
-      service: "Telephone Reading",
-      comment: "Despite being over the phone, Elizabeth's connection was incredibly strong. She provided guidance about my career change that has proven to be spot on. I'm so grateful for her insights."
-    },
-    {
-      id: 3,
-      name: "Margaret T.",
-      location: "Bicester",
-      date: "October 2023",
-      rating: 5,
-      service: "Home Psychic Evening",
-      comment: "Elizabeth hosted a wonderful evening for my birthday. All my friends were amazed by the accuracy of their readings. She created such a lovely atmosphere and everyone left feeling uplifted."
-    }
-  ];
-
-  // Use fallback testimonials if no reviews are loaded from the database
-  const displayTestimonials = testimonials.length > 0 ? testimonials : fallbackTestimonials;
+  // Only show actual reviews from the database
+  const displayTestimonials = testimonials;
+  
+  // Debug logging
+  console.log('Current testimonials state:', testimonials);
+  console.log('Display testimonials length:', displayTestimonials.length);
+  console.log('Loading state:', loading);
 
   const stats = [
     { number: "35+", label: "Years Experience" },
@@ -161,7 +190,7 @@ const Testimonials = () => {
                 <p className="text-muted-foreground">Loading reviews...</p>
               </div>
             </div>
-          ) : (
+          ) : displayTestimonials.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {displayTestimonials.map((testimonial) => (
                 <Card key={testimonial.id} className={`p-6 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 ${testimonial.featured ? 'border-primary/50' : ''}`}>
@@ -207,6 +236,29 @@ const Testimonials = () => {
                 </Card>
               ))}
             </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="text-center">
+                <Star className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
+                <h3 className="text-xl font-semibold text-foreground mb-2">No Reviews Yet</h3>
+                <p className="text-muted-foreground mb-6">
+                  Be the first to share your experience with Elizabeth Carol's spiritual services.
+                </p>
+                <Button 
+                  onClick={() => {
+                    if (user) {
+                      navigate('/add-review');
+                    } else {
+                      navigate('/auth?redirect=/add-review');
+                    }
+                  }}
+                  className="bg-gradient-mystical hover:opacity-90 text-primary-foreground"
+                >
+                  <Star className="w-4 h-4 mr-2" />
+                  Write the First Review
+                </Button>
+              </div>
+            </div>
           )}
         </div>
       </section>
@@ -228,9 +280,11 @@ const Testimonials = () => {
               <Button size="lg" className="bg-gradient-mystical hover:opacity-90 text-primary-foreground">
                 Book Your Reading
               </Button>
-              <Button size="lg" variant="outline">
-                Call 01865 361 786
-              </Button>
+              <a href="tel:01865361786">
+                <Button size="lg" variant="outline">
+                  Call 01865 361 786
+                </Button>
+              </a>
             </div>
             <p className="text-sm text-muted-foreground mt-6">
               All readings are completely confidential and conducted with the utmost respect and care.

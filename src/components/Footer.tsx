@@ -15,7 +15,7 @@ const Footer = () => {
                 className="h-8 w-8"
               />
               <div className="flex flex-col">
-                <span className="font-serif text-xl font-bold text-foreground">Elizabeth Carol</span>
+                <span className="font-serif text-xl font-bold text-foreground tracking-wider">Elizabeth Carol</span>
                 <span className="text-sm text-muted-foreground">Clairvoyant & Psychic Medium</span>
               </div>
             </div>

@@ -13,7 +13,7 @@ const Navigation = () => {
 
   const navItems = [
     { href: "/", label: "Home" },
-    { href: "/about", label: "About Elizabeth" },
+    { href: "/about", label: "About" },
     { href: "/services", label: "Services" },
     { href: "/testimonials", label: "Reviews" },
     { href: "/blog", label: "Blog" },
@@ -36,7 +36,7 @@ const Navigation = () => {
               className="h-8 w-8"
             />
             <div className="flex flex-col">
-              <span className="font-serif text-xl font-bold text-foreground">Elizabeth Carol</span>
+              <span className="font-serif text-xl font-bold text-foreground tracking-wider">Elizabeth Carol</span>
               <span className="text-xs text-muted-foreground">Clairvoyant & Psychic Medium</span>
             </div>
           </Link>

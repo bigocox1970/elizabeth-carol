@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Phone, Mail, MapPin, Clock, MessageCircle, Star, Check, AlertCircle, Loader2 } from "lucide-react";
+import { getApiUrl } from "@/utils/api";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -72,7 +73,7 @@ const Contact = () => {
 
     try {
       // Use the existing contact function
-      const response = await fetch('/.netlify/functions/contact', {
+      const response = await fetch(getApiUrl('contact'), {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json'

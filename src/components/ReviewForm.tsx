@@ -7,29 +7,57 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Star, Loader2, Check, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { getApiUrl } from "@/utils/api";
 
 interface ReviewFormProps {
   onSuccess?: () => void;
+  onClose?: () => void;
 }
 
-const ReviewForm = ({ onSuccess }: ReviewFormProps) => {
+const ReviewForm = ({ onSuccess, onClose }: ReviewFormProps) => {
   const { user, session } = useAuth();
   const [name, setName] = useState(user?.user_metadata?.name || "");
   const [email, setEmail] = useState(user?.email || "");
   const [location, setLocation] = useState("");
   const [service, setService] = useState("");
-  const [rating, setRating] = useState(5);
+  const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
+  const [errors, setErrors] = useState<{
+    name?: string;
+    location?: string;
+    service?: string;
+    rating?: string;
+    comment?: string;
+  }>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Reset errors
+    setErrors({});
+    setMessage("");
+    
     // Client-side validation
-    if (!name.trim() || !comment.trim() || !location.trim() || !service) {
-      setMessage("Please provide your name, location, service type, and review.");
+    const newErrors: {
+      name?: string;
+      location?: string;
+      service?: string;
+      rating?: string;
+      comment?: string;
+    } = {};
+    
+    if (!name.trim()) newErrors.name = "Please enter your name";
+    if (!location.trim()) newErrors.location = "Please enter your location";
+    if (!service) newErrors.service = "Please select a service type";
+    if (rating === 0) newErrors.rating = "Please select a rating";
+    if (!comment.trim()) newErrors.comment = "Please enter your review";
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setMessage("Please fill in all required fields");
       return;
     }
 
@@ -37,8 +65,10 @@ const ReviewForm = ({ onSuccess }: ReviewFormProps) => {
     setMessage("");
 
     try {
+      console.log("Submitting review with user ID:", user?.id);
+      
       // Submit review
-      const response = await fetch("/.netlify/functions/manage-reviews", {
+      const response = await fetch(getApiUrl("manage-reviews"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -58,7 +88,18 @@ const ReviewForm = ({ onSuccess }: ReviewFormProps) => {
         }),
       });
 
-      const result = await response.json();
+      // Get the response text first for debugging
+      const responseText = await response.text();
+      console.log("Review submission response:", responseText);
+      
+      // Try to parse the response as JSON
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error("Error parsing response:", parseError);
+        throw new Error(`Invalid response: ${responseText}`);
+      }
       
       if (response.ok) {
         setIsSuccess(true);
@@ -94,7 +135,19 @@ const ReviewForm = ({ onSuccess }: ReviewFormProps) => {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto relative">
+      {onClose && (
+        <button 
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 focus:outline-none"
+          aria-label="Close"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      )}
       <CardHeader>
         <CardTitle>Share Your Experience</CardTitle>
         <CardDescription>
@@ -112,7 +165,11 @@ const ReviewForm = ({ onSuccess }: ReviewFormProps) => {
                 onChange={(e) => setName(e.target.value)}
                 disabled={isSubmitting}
                 required
+                className={errors.name ? "border-red-500" : ""}
               />
+              {errors.name && (
+                <p className="text-sm text-red-500">{errors.name}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -124,13 +181,17 @@ const ReviewForm = ({ onSuccess }: ReviewFormProps) => {
                 onChange={(e) => setLocation(e.target.value)}
                 disabled={isSubmitting}
                 required
+                className={errors.location ? "border-red-500" : ""}
               />
+              {errors.location && (
+                <p className="text-sm text-red-500">{errors.location}</p>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="service">Service Type</Label>
               <Select value={service} onValueChange={setService} disabled={isSubmitting}>
-                <SelectTrigger id="service">
+                <SelectTrigger id="service" className={errors.service ? "border-red-500" : ""}>
                   <SelectValue placeholder="Select a service" />
                 </SelectTrigger>
                 <SelectContent>
@@ -142,11 +203,15 @@ const ReviewForm = ({ onSuccess }: ReviewFormProps) => {
                   <SelectItem value="General">General</SelectItem>
                 </SelectContent>
               </Select>
+              {errors.service && (
+                <p className="text-sm text-red-500">{errors.service}</p>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label>Rating</Label>
               <div className="flex space-x-1">
+                <p className="text-sm text-gray-500 mb-1 w-full">Click to select your rating</p>
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Button
                     key={star}
@@ -166,6 +231,9 @@ const ReviewForm = ({ onSuccess }: ReviewFormProps) => {
                   </Button>
                 ))}
               </div>
+              {errors.rating && (
+                <p className="text-sm text-red-500">{errors.rating}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -174,16 +242,19 @@ const ReviewForm = ({ onSuccess }: ReviewFormProps) => {
                 id="comment"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                className="min-h-[100px]"
+                className={`min-h-[100px] ${errors.comment ? "border-red-500" : ""}`}
                 disabled={isSubmitting}
                 required
               />
+              {errors.comment && (
+                <p className="text-sm text-red-500">{errors.comment}</p>
+              )}
             </div>
 
             <Button
               type="submit"
               className="w-full"
-              disabled={isSubmitting || !name.trim() || !comment.trim() || !location.trim() || !service}
+              disabled={isSubmitting}
             >
               {isSubmitting ? (
                 <>
