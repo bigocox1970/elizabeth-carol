@@ -175,30 +175,88 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
     }
   };
 
-  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const compressImage = (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = document.createElement('img');
+      
+      img.onload = () => {
+        // Calculate new dimensions (max 1920px width, maintain aspect ratio)
+        const maxWidth = 1920;
+        const maxHeight = 1080;
+        let { width, height } = img;
+        
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+        
+        if (height > maxHeight) {
+          width = (width * maxHeight) / height;
+          height = maxHeight;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const compressedFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            } else {
+              resolve(file);
+            }
+          },
+          'image/jpeg',
+          0.8 // 80% quality
+        );
+      };
+      
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Check file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setBlogMessage('Image size must be less than 5MB.');
-        return;
-      }
-
       // Check file type
       if (!file.type.startsWith('image/')) {
         setBlogMessage('Please select a valid image file.');
         return;
       }
 
-      setSelectedImage(file);
+      setBlogMessage('Processing image...');
       
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-      setBlogMessage('');
+      try {
+        // Compress the image
+        const compressedFile = await compressImage(file);
+        
+        // Check compressed file size (should now be much smaller)
+        if (compressedFile.size > 5 * 1024 * 1024) {
+          setBlogMessage('Image is too large even after compression. Please try a different image.');
+          return;
+        }
+
+        setSelectedImage(compressedFile);
+        
+        // Create preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setImagePreview(e.target?.result as string);
+        };
+        reader.readAsDataURL(compressedFile);
+        setBlogMessage('');
+      } catch (error) {
+        setBlogMessage('Error processing image. Please try again.');
+      }
     }
   };
 
@@ -410,3 +468,4 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
 };
 
 export default BlogPostForm;
+
