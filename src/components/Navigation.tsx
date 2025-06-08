@@ -65,11 +65,13 @@ const Navigation = () => {
               <Phone className="h-4 w-4" />
               <span>01865 361 786</span>
             </a>
-            <Link to="/contact">
-              <Button size="sm" className="bg-gradient-mystical hover:opacity-90 text-primary-foreground">
-                Book Reading
-              </Button>
-            </Link>
+            {!isActive("/contact") && (
+              <Link to="/contact">
+                <Button size="sm" className="bg-gradient-mystical hover:opacity-90 text-primary-foreground">
+                  Book Reading
+                </Button>
+              </Link>
+            )}
             
             {user ? (
               <div className="flex items-center space-x-2">
@@ -136,11 +138,13 @@ const Navigation = () => {
                       <Phone className="h-5 w-5" />
                       <span>01865 361 786</span>
                     </a>
-                    <Link to="/contact" onClick={() => setIsOpen(false)}>
-                      <Button className="w-full bg-gradient-mystical hover:opacity-90 text-primary-foreground mb-4">
-                        Book Reading
-                      </Button>
-                    </Link>
+                    {!isActive("/contact") && (
+                      <Link to="/contact" onClick={() => setIsOpen(false)}>
+                        <Button className="w-full bg-gradient-mystical hover:opacity-90 text-primary-foreground mb-4">
+                          Book Reading
+                        </Button>
+                      </Link>
+                    )}
                     
                     {user ? (
                       <div className="flex flex-col space-y-2">
