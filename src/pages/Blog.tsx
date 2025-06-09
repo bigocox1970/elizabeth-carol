@@ -110,16 +110,12 @@ const Blog = () => {
                   <Link key={post.id} to={`/blog/${post.id}`} className="block">
                     <Card className="flex flex-col h-96 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 group cursor-pointer">
                       {post.image_url && (
-                        <div 
-                          className="overflow-hidden rounded-t-lg" 
-                          style={{ 
-                            height: "192px",
-                            backgroundImage: `url(${post.image_url})`,
-                            backgroundSize: 'contain',
-                            backgroundPosition: 'center center',
-                            backgroundRepeat: 'no-repeat'
-                          }}
-                        >
+                        <div className="overflow-hidden rounded-t-lg" style={{ height: "192px" }}>
+                          <img 
+                            src={post.image_url} 
+                            alt={post.title}
+                            className="w-full h-full object-cover"
+                          />
                         </div>
                       )}
                       <CardHeader className="flex-none">
