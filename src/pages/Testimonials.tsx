@@ -26,6 +26,7 @@ interface Testimonial {
 const Testimonials = () => {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedTestimonials, setExpandedTestimonials] = useState<Set<number | string>>(new Set());
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -107,6 +108,21 @@ const Testimonials = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleExpanded = (id: number | string) => {
+    const newExpanded = new Set(expandedTestimonials);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpandedTestimonials(newExpanded);
+  };
+
+  const truncateText = (text: string, maxLength: number = 200) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength).trim() + '...';
   };
 
   // Only show actual reviews from the database
@@ -192,49 +208,66 @@ const Testimonials = () => {
             </div>
           ) : displayTestimonials.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {displayTestimonials.map((testimonial) => (
-                <Card key={testimonial.id} className={`p-6 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 ${testimonial.featured ? 'border-primary/50' : ''}`}>
-                  <CardContent className="p-0">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex space-x-1">
-                        {[...Array(testimonial.rating)].map((_, i) => (
-                          <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                        ))}
+              {displayTestimonials.map((testimonial) => {
+                const isExpanded = expandedTestimonials.has(testimonial.id);
+                const reviewText = testimonial.comment || testimonial.content || '';
+                const shouldTruncate = reviewText.length > 200;
+                const displayText = shouldTruncate && !isExpanded 
+                  ? truncateText(reviewText, 200)
+                  : reviewText;
+
+                return (
+                  <Card key={testimonial.id} className={`p-6 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 ${testimonial.featured ? 'border-primary/50' : ''}`}>
+                    <CardContent className="p-0">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex space-x-1">
+                          {[...Array(testimonial.rating)].map((_, i) => (
+                            <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                          ))}
+                        </div>
+                        <Badge variant={testimonial.featured ? "default" : "outline"} className="text-xs">
+                          {testimonial.service || 'Reading'}
+                        </Badge>
                       </div>
-                      <Badge variant={testimonial.featured ? "default" : "outline"} className="text-xs">
-                        {testimonial.service || 'Reading'}
-                      </Badge>
-                    </div>
-                    
-                    <blockquote className="text-sm leading-relaxed text-muted-foreground mb-4">
-                      "{testimonial.comment || testimonial.content}"
-                    </blockquote>
-                    
-                    <div className="border-t border-border pt-4">
-                      <div className="font-semibold text-foreground text-sm">{testimonial.name}</div>
-                      <div className="flex items-center space-x-3 text-xs text-muted-foreground">
-                        {testimonial.location && (
-                          <div className="flex items-center space-x-1">
-                            <MapPin className="w-3 h-3" />
-                            <span>{testimonial.location}</span>
-                          </div>
+                      
+                      <blockquote className="text-sm leading-relaxed text-muted-foreground mb-4">
+                        "{displayText}"
+                        {shouldTruncate && (
+                          <button
+                            onClick={() => toggleExpanded(testimonial.id)}
+                            className="ml-2 text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium text-sm underline transition-colors"
+                          >
+                            {isExpanded ? 'Read less' : 'Read more'}
+                          </button>
                         )}
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="w-3 h-3" />
-                          <span>
-                            {testimonial.date || 
-                              (testimonial.createdAt ? 
-                                new Date(testimonial.createdAt).toLocaleDateString('en-US', {
-                                  year: 'numeric',
-                                  month: 'long'
-                                }) : 'Recent')}
-                          </span>
+                      </blockquote>
+                      
+                      <div className="border-t border-border pt-4">
+                        <div className="font-semibold text-foreground text-sm">{testimonial.name}</div>
+                        <div className="flex items-center space-x-3 text-xs text-muted-foreground">
+                          {testimonial.location && (
+                            <div className="flex items-center space-x-1">
+                              <MapPin className="w-3 h-3" />
+                              <span>{testimonial.location}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center space-x-1">
+                            <Calendar className="w-3 h-3" />
+                            <span>
+                              {testimonial.date || 
+                                (testimonial.createdAt ? 
+                                  new Date(testimonial.createdAt).toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'long'
+                                  }) : 'Recent')}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-12">
