@@ -67,17 +67,27 @@ exports.handler = async (event, context) => {
     }
 
     // Create the prompt for OpenAI
-    const systemPrompt = `You are Elizabeth Carol, a compassionate and experienced psychic medium and clairvoyant with over 35 years of spiritual guidance experience based in Oxford. You write blog posts that are:
+    const systemPrompt = `You are Elizabeth Carol, a wise and compassionate 77-year-old psychic medium and clairvoyant with over 35 years of spiritual guidance experience based in Oxford, England. 
 
-- Warm, compassionate, and accessible
-- Spiritually insightful but grounded
-- Helpful for people seeking spiritual guidance
-- Written in a conversational, caring tone
+CRITICAL WRITING REQUIREMENTS:
+- ALWAYS use British English spelling, grammar, and expressions (colour not color, realise not realize, programme not program, etc.)
+- Write with the wisdom and gentle authority of a 77-year-old spiritual guide
+- Use slightly more formal, traditional British phrasing whilst remaining warm and accessible
+- Include subtle references to your decades of experience and wisdom gained over the years
+- Write as someone who has "seen it all" and offers gentle, maternal guidance
+
+Your blog posts are:
+- Warm, compassionate, and deeply wise
+- Written with proper British English throughout
+- Spiritually insightful but practical and grounded
+- Helpful for people seeking spiritual guidance from someone with decades of experience
+- Written in a caring, slightly formal but accessible tone befitting your age and wisdom
 - Around 800-1200 words
-- Include practical advice where appropriate
+- Include practical advice drawn from your years of helping people
 - Reflect your expertise in psychic readings, spiritual healing, and mediumship
+- Show the patience and understanding that comes with age and experience
 
-Write in the first person as Elizabeth Carol. Be authentic and genuine, sharing wisdom that comes from decades of helping people on their spiritual journeys.`;
+Write in the first person as Elizabeth Carol. Be authentic and genuine, sharing wisdom that comes from nearly four decades of helping people on their spiritual journeys. Use phrases and expressions that reflect your British heritage and maturity.`;
 
     const userPrompt = `Please write a blog post about: ${topic}
 
@@ -86,15 +96,17 @@ ${outline ? `Here's a brief outline to follow: ${outline}` : ''}
 Category: ${category || 'Spiritual Guidance'}
 
 Please provide:
-1. A compelling title
-2. A brief excerpt (2-3 sentences)
-3. The full blog post content
+1. A compelling title (British English)
+2. A brief excerpt (2-3 sentences, British English)
+3. The full blog post content (British English throughout)
+4. A detailed image description for AI image generation (describe a calming, spiritual image that would complement this blog post - include colours, mood, and spiritual elements)
 
 Format your response as JSON with the following structure:
 {
   "title": "Blog post title",
   "excerpt": "Brief excerpt for the blog post",
-  "content": "Full blog post content in markdown format"
+  "content": "Full blog post content in markdown format",
+  "imageDescription": "Detailed description for AI image generation"
 }`;
 
     // Make request to OpenAI API
@@ -151,8 +163,42 @@ Format your response as JSON with the following structure:
       aiContent = {
         title: topic,
         excerpt: `A spiritual guide to ${topic.toLowerCase()}.`,
-        content: content
+        content: content,
+        imageDescription: `A peaceful, spiritual scene related to ${topic}`
       };
+    }
+
+    // Generate image if imageDescription is provided
+    let generatedImageUrl = null;
+    if (aiContent.imageDescription) {
+      try {
+        const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openaiApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'dall-e-3',
+            prompt: `Create a beautiful, calming spiritual image: ${aiContent.imageDescription}. Style: soft, ethereal, peaceful, with warm colours and gentle lighting. Suitable for a spiritual blog post.`,
+            n: 1,
+            size: '1024x1024',
+            quality: 'standard',
+          }),
+        });
+
+        if (imageResponse.ok) {
+          const imageData = await imageResponse.json();
+          if (imageData.data && imageData.data[0] && imageData.data[0].url) {
+            generatedImageUrl = imageData.data[0].url;
+          }
+        } else {
+          console.log('Image generation failed, continuing without image');
+        }
+      } catch (imageError) {
+        console.log('Image generation error:', imageError);
+        // Continue without image if generation fails
+      }
     }
 
     return {
@@ -163,7 +209,11 @@ Format your response as JSON with the following structure:
         title: aiContent.title || topic,
         excerpt: aiContent.excerpt || `A spiritual guide to ${topic.toLowerCase()}.`,
         content: aiContent.content || data.choices[0].message.content,
-        message: 'Blog post generated successfully!'
+        imageUrl: generatedImageUrl,
+        imageDescription: aiContent.imageDescription,
+        message: generatedImageUrl ? 
+          'Blog post and image generated successfully!' : 
+          'Blog post generated successfully!'
       })
     };
 

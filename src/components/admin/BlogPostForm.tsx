@@ -325,13 +325,20 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
           title: data.title || prev.title,
           content: data.content || prev.content,
           excerpt: data.excerpt || prev.excerpt,
+          image_url: data.imageUrl || prev.image_url,
         }));
+        
+        // Set the generated image as preview if available
+        if (data.imageUrl) {
+          setImagePreview(data.imageUrl);
+          setSelectedImage(null); // Clear any previously selected file
+        }
         
         setShowAiDialog(false);
         setAiTopic('');
         setAiOutline('');
         setAiMessage('');
-        setBlogMessage('Blog post generated successfully! You can edit the content before saving.');
+        setBlogMessage(data.message || 'Blog post generated successfully! You can edit the content before saving.');
       } else {
         setAiMessage(data.message || 'Failed to generate blog post. Please try again.');
       }
@@ -499,10 +506,13 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                       <Sparkles className="w-5 h-5 text-purple-600" />
-                      Generate Blog Post with AI
+                      Generate Blog Post & Image with AI
                     </DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
+                    <div className="text-sm text-gray-600 mb-4">
+                      AI will generate a complete blog post in Elizabeth's authentic voice, plus a beautiful spiritual image to accompany it.
+                    </div>
                     <div className="space-y-2">
                       <Label htmlFor="ai-topic">Topic *</Label>
                       <Input

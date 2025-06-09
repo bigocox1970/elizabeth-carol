@@ -18,16 +18,18 @@ This is the website for Elizabeth Carol, a psychic medium and spiritual guide. T
 The admin panel now includes an AI-powered blog post generator that allows Elizabeth to:
 
 - Enter a topic or brief outline
-- Generate a complete blog post in her authentic voice
-- Edit and customise the generated content before publishing
+- Generate a complete blog post in her authentic 77-year-old British voice
+- **Automatically generate a beautiful spiritual image** to accompany the post
+- Edit and customise both the content and image before publishing
 - Save time while maintaining quality and personal touch
 
-The AI is trained to write in Elizabeth Carol's compassionate, experienced voice, reflecting her 35+ years of spiritual guidance experience. Generated posts include:
-- Compelling titles
-- Brief excerpts for previews
-- Full blog content (800-1200 words)
-- Practical spiritual advice
-- Personal, conversational tone
+The AI is specifically trained to write as Elizabeth Carol would - a wise, 77-year-old clairvoyant with proper British English grammar and expressions. Generated posts include:
+- Compelling titles (British English)
+- Brief excerpts for previews (British English)
+- Full blog content (800-1200 words, British English throughout)
+- Practical spiritual advice drawn from decades of experience
+- Personal, slightly formal but warm tone befitting her age and wisdom
+- **Beautiful, calming spiritual images** created with DALL-E 3
 
 ## Environment Variables
 
@@ -49,14 +51,14 @@ To set these variables in Netlify:
 
 ### Setting up OpenAI API Key
 
-To enable the AI blog post generation feature:
+To enable the AI blog post and image generation feature:
 
 1. Create an account at [OpenAI](https://platform.openai.com/)
 2. Generate an API key from your OpenAI dashboard
 3. Add the `OPENAI_API_KEY` environment variable with your API key
-4. The AI feature will use GPT-3.5-turbo to generate blog posts in Elizabeth Carol's voice
+4. The AI feature will use GPT-3.5-turbo for blog content and DALL-E 3 for image generation
 
-**Note**: The AI generation feature requires the OpenAI API key to be configured. Without it, the feature will show an error message to configure the API key.
+**Note**: The AI generation feature requires the OpenAI API key to be configured. Without it, the feature will show an error message to configure the API key. The same API key is used for both text generation (blog posts) and image generation.
 
 ## Local Development
 
