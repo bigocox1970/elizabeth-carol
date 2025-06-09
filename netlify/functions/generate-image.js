@@ -1,18 +1,22 @@
 // This function generates images using OpenAI's DALL-E API
 
 const { OpenAI } = require('openai');
+const { createClient } = require('@supabase/supabase-js');
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 exports.handler = async (event, context) => {
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
+      headers: { "Access-Control-Allow-Origin": "*" },
       body: JSON.stringify({ message: 'Method not allowed' }),
     };
   }
@@ -24,6 +28,7 @@ exports.handler = async (event, context) => {
     if (password !== ADMIN_PASSWORD) {
       return {
         statusCode: 401,
+        headers: { "Access-Control-Allow-Origin": "*" },
         body: JSON.stringify({ message: 'Unauthorized' }),
       };
     }
@@ -32,6 +37,7 @@ exports.handler = async (event, context) => {
     if (!process.env.OPENAI_API_KEY) {
       return {
         statusCode: 500,
+        headers: { "Access-Control-Allow-Origin": "*" },
         body: JSON.stringify({ 
           success: false,
           message: 'OpenAI API key not configured. Please add OPENAI_API_KEY to your environment variables.' 
@@ -45,6 +51,7 @@ exports.handler = async (event, context) => {
     if (!imageSubject) {
       return {
         statusCode: 400,
+        headers: { "Access-Control-Allow-Origin": "*" },
         body: JSON.stringify({ 
           success: false,
           message: 'Please provide either a blog title or topic for image generation.' 
@@ -67,14 +74,52 @@ exports.handler = async (event, context) => {
       style: "natural"
     });
 
-    const imageUrl = imageResponse.data[0].url;
+    const tempImageUrl = imageResponse.data[0].url;
+    console.log('AI image generated, downloading...');
+
+    // Download the image from OpenAI's temporary URL
+    const imageDownloadResponse = await fetch(tempImageUrl);
+    
+    if (!imageDownloadResponse.ok) {
+      throw new Error('Failed to download generated image');
+    }
+
+    const imageBuffer = await imageDownloadResponse.arrayBuffer();
+    const fileName = `ai-generated-${Date.now()}.jpg`;
+    
+    console.log('Uploading image to Supabase storage...');
+
+    // Initialize Supabase client
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Upload to Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('blog-images')
+      .upload(fileName, imageBuffer, {
+        contentType: 'image/jpeg',
+        upsert: false
+      });
+
+    if (uploadError) {
+      console.error('Supabase upload error:', uploadError);
+      throw new Error('Failed to save generated image to storage');
+    }
+
+    // Get the public URL
+    const { data: urlData } = supabase.storage
+      .from('blog-images')
+      .getPublicUrl(fileName);
+
+    const permanentImageUrl = urlData.publicUrl;
+    console.log('AI image saved to Supabase:', permanentImageUrl);
 
     return {
       statusCode: 200,
+      headers: { "Access-Control-Allow-Origin": "*" },
       body: JSON.stringify({
         success: true,
-        imageUrl: imageUrl,
-        message: 'Beautiful spiritual image generated successfully!'
+        imageUrl: permanentImageUrl,
+        message: 'Beautiful spiritual image generated and saved successfully!'
       }),
     };
 
@@ -89,10 +134,13 @@ exports.handler = async (event, context) => {
       errorMessage = 'Invalid OpenAI API key. Please check your configuration.';
     } else if (error.message && error.message.includes('content_policy_violation')) {
       errorMessage = 'Image request was rejected due to content policy. Please try a different topic.';
+    } else if (error.message && error.message.includes('storage')) {
+      errorMessage = 'Failed to save generated image. Please try again.';
     }
 
     return {
       statusCode: 500,
+      headers: { "Access-Control-Allow-Origin": "*" },
       body: JSON.stringify({
         success: false,
         message: errorMessage
