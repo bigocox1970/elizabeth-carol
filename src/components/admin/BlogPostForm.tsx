@@ -140,16 +140,28 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
 
       if (response.ok) {
         setBlogMessage('Blog post created successfully!');
-        setBlogData({
-          title: '',
-          content: '',
-          excerpt: '',
-          category: 'Spiritual Guidance',
-          published: false,
-          image_url: ''
-        });
+        if (data.post) {
+          setBlogData({
+            title: data.post.title || '',
+            content: data.post.content || '',
+            excerpt: data.post.excerpt || '',
+            category: data.post.category || 'Spiritual Guidance',
+            published: data.post.published || false,
+            image_url: data.post.image_url || ''
+          });
+          setImagePreview(data.post.image_url || '');
+        } else {
+          setBlogData({
+            title: '',
+            content: '',
+            excerpt: '',
+            category: 'Spiritual Guidance',
+            published: false,
+            image_url: ''
+          });
+          setImagePreview('');
+        }
         setSelectedImage(null);
-        setImagePreview('');
         onPostSaved();
       } else {
         setBlogMessage(data.message || 'Failed to create blog post.');
