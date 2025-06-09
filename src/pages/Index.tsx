@@ -24,6 +24,7 @@ interface Testimonial {
 
 const Index = () => {
   const [quickTestimonials, setQuickTestimonials] = useState<Testimonial[]>([]);
+  const [expandedTestimonials, setExpandedTestimonials] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     loadFeaturedReviews();
@@ -57,6 +58,21 @@ const Index = () => {
       // Don't show any reviews if database fails - better than fake ones
       setQuickTestimonials([]);
     }
+  };
+
+  const toggleExpanded = (index: number) => {
+    const newExpanded = new Set(expandedTestimonials);
+    if (newExpanded.has(index)) {
+      newExpanded.delete(index);
+    } else {
+      newExpanded.add(index);
+    }
+    setExpandedTestimonials(newExpanded);
+  };
+
+  const truncateText = (text: string, maxLength: number = 150) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength).trim() + '...';
   };
 
   const reasons = [
@@ -113,30 +129,46 @@ const Index = () => {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {quickTestimonials.map((testimonial, index) => (
-              <Card key={index} className="p-6 bg-white/65 dark:bg-black/60 backdrop-blur-md border-gray-300 dark:border-purple-900/50 hover:border-gray-500 dark:hover:border-gray-400/50 hover:shadow-lg hover:shadow-gray-500/20 dark:hover:shadow-purple-500/20 transition-all duration-300">
-                <CardContent className="p-0">
-                  <Quote className="w-6 h-6 text-gray-600 dark:text-gray-400 mb-4" />
-                  <blockquote className="text-gray-800 dark:text-gray-200 leading-relaxed mb-4">
-                    "{testimonial.text}"
-                  </blockquote>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-semibold text-gray-900 dark:text-white">{testimonial.name}</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-300 flex items-center space-x-1">
-                        <MapPin className="w-3 h-3" />
-                        <span>{testimonial.location}</span>
+            {quickTestimonials.map((testimonial, index) => {
+              const isExpanded = expandedTestimonials.has(index);
+              const shouldTruncate = testimonial.text && testimonial.text.length > 150;
+              const displayText = shouldTruncate && !isExpanded 
+                ? truncateText(testimonial.text, 150)
+                : testimonial.text;
+
+              return (
+                <Card key={index} className="p-6 bg-white/65 dark:bg-black/60 backdrop-blur-md border-gray-300 dark:border-purple-900/50 hover:border-gray-500 dark:hover:border-gray-400/50 hover:shadow-lg hover:shadow-gray-500/20 dark:hover:shadow-purple-500/20 transition-all duration-300">
+                  <CardContent className="p-0">
+                    <Quote className="w-6 h-6 text-gray-600 dark:text-gray-400 mb-4" />
+                    <blockquote className="text-gray-800 dark:text-gray-200 leading-relaxed mb-4">
+                      "{displayText}"
+                      {shouldTruncate && (
+                        <button
+                          onClick={() => toggleExpanded(index)}
+                          className="ml-2 text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium text-sm underline transition-colors"
+                        >
+                          {isExpanded ? 'Read less' : 'Read more'}
+                        </button>
+                      )}
+                    </blockquote>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-semibold text-gray-900 dark:text-white">{testimonial.name}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-300 flex items-center space-x-1">
+                          <MapPin className="w-3 h-3" />
+                          <span>{testimonial.location}</span>
+                        </div>
+                      </div>
+                      <div className="flex space-x-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                        ))}
                       </div>
                     </div>
-                    <div className="flex space-x-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
 
           <div className="text-center mt-12">
