@@ -11,6 +11,23 @@ This is the website for Elizabeth Carol, a psychic medium and spiritual guide. T
 - User authentication system
 - User profile management
 - Admin panel for managing all content
+- **AI Blog Post Generation** - Generate blog posts using OpenAI's GPT-3.5
+
+### AI Blog Post Generation
+
+The admin panel now includes an AI-powered blog post generator that allows Elizabeth to:
+
+- Enter a topic or brief outline
+- Generate a complete blog post in her authentic voice
+- Edit and customise the generated content before publishing
+- Save time while maintaining quality and personal touch
+
+The AI is trained to write in Elizabeth Carol's compassionate, experienced voice, reflecting her 35+ years of spiritual guidance experience. Generated posts include:
+- Compelling titles
+- Brief excerpts for previews
+- Full blog content (800-1200 words)
+- Practical spiritual advice
+- Personal, conversational tone
 
 ## Environment Variables
 
@@ -22,12 +39,24 @@ SUPABASE_ANON_KEY=your_supabase_anon_key
 EMAIL_USER=your_email_user
 EMAIL_PASSWORD=your_email_password
 ADMIN_PASSWORD=your_admin_password
+OPENAI_API_KEY=your_openai_api_key
 ```
 
 To set these variables in Netlify:
 1. Go to the Netlify dashboard
 2. Navigate to Site settings > Build & deploy > Environment variables
 3. Add each variable with its corresponding value
+
+### Setting up OpenAI API Key
+
+To enable the AI blog post generation feature:
+
+1. Create an account at [OpenAI](https://platform.openai.com/)
+2. Generate an API key from your OpenAI dashboard
+3. Add the `OPENAI_API_KEY` environment variable with your API key
+4. The AI feature will use GPT-3.5-turbo to generate blog posts in Elizabeth Carol's voice
+
+**Note**: The AI generation feature requires the OpenAI API key to be configured. Without it, the feature will show an error message to configure the API key.
 
 ## Local Development
 

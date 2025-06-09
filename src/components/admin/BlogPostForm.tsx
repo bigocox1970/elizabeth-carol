@@ -5,7 +5,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { FileText, Save, Upload, X, Image, Camera } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { FileText, Save, Upload, X, Image, Camera, Sparkles, Loader2 } from "lucide-react";
+import { getApiUrl } from "@/utils/api";
 
 interface BlogPostFormProps {
   password: string;
@@ -28,6 +30,13 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [blogMessage, setBlogMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  // AI Generation states
+  const [showAiDialog, setShowAiDialog] = useState(false);
+  const [aiTopic, setAiTopic] = useState('');
+  const [aiOutline, setAiOutline] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [aiMessage, setAiMessage] = useState('');
 
   // Load post data when editing
   useEffect(() => {
@@ -267,26 +276,85 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
   };
 
   const uploadImage = async (file: File): Promise<string> => {
-    try {
-      const formData = new FormData();
-      formData.append('image', file);
-      formData.append('password', password);
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('password', password);
 
-      const response = await fetch('/.netlify/functions/upload-image', {
-        method: 'POST',
-        body: formData,
-      });
+    const response = await fetch('/.netlify/functions/upload-image', {
+      method: 'POST',
+      body: formData,
+    });
 
-      if (!response.ok) {
-        throw new Error('Failed to upload image');
-      }
-
-      const data = await response.json();
-      return data.imageUrl;
-    } catch (error) {
+    if (!response.ok) {
       throw new Error('Failed to upload image');
     }
+
+    const data = await response.json();
+    return data.imageUrl;
   };
+
+  const handleAiGeneration = async () => {
+    if (!aiTopic.trim()) {
+      setAiMessage('Please enter a topic for your blog post.');
+      return;
+    }
+
+    setIsGenerating(true);
+    setAiMessage('');
+
+    try {
+      const response = await fetch(getApiUrl('generate-blog-post'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          password: password,
+          topic: aiTopic,
+          outline: aiOutline,
+          category: blogData.category
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Populate the form with AI-generated content
+        setBlogData(prev => ({
+          ...prev,
+          title: data.title || prev.title,
+          content: data.content || prev.content,
+          excerpt: data.excerpt || prev.excerpt,
+        }));
+        
+        setShowAiDialog(false);
+        setAiTopic('');
+        setAiOutline('');
+        setAiMessage('');
+        setBlogMessage('Blog post generated successfully! You can edit the content before saving.');
+      } else {
+        setAiMessage(data.message || 'Failed to generate blog post. Please try again.');
+      }
+    } catch (error) {
+      console.error('AI generation error:', error);
+      setAiMessage('Failed to generate blog post. Please check your connection and try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center space-x-2">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>Loading post data...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -415,6 +483,90 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
           
           <div className="space-y-2">
             <Label htmlFor="content">Post Content</Label>
+            <div className="flex gap-2 mb-2">
+              <Dialog open={showAiDialog} onOpenChange={setShowAiDialog}>
+                <DialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="bg-gradient-to-r from-purple-100 to-blue-100 hover:from-purple-200 hover:to-blue-200 border-purple-300 text-purple-700"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Generate with AI
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-purple-600" />
+                      Generate Blog Post with AI
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="ai-topic">Topic *</Label>
+                      <Input
+                        id="ai-topic"
+                        value={aiTopic}
+                        onChange={(e) => setAiTopic(e.target.value)}
+                        placeholder="e.g., The healing power of crystals"
+                        disabled={isGenerating}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="ai-outline">Brief Outline (Optional)</Label>
+                      <Textarea
+                        id="ai-outline"
+                        value={aiOutline}
+                        onChange={(e) => setAiOutline(e.target.value)}
+                        placeholder="e.g., Introduction to crystals, their spiritual properties, how to use them for healing..."
+                        rows={3}
+                        disabled={isGenerating}
+                      />
+                    </div>
+                    {aiMessage && (
+                      <div className={`p-3 rounded-md ${aiMessage.includes('successfully') ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                        <p className="text-sm">{aiMessage}</p>
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setShowAiDialog(false);
+                          setAiTopic('');
+                          setAiOutline('');
+                          setAiMessage('');
+                        }}
+                        disabled={isGenerating}
+                        className="flex-1"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleAiGeneration}
+                        disabled={isGenerating || !aiTopic.trim()}
+                        className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                      >
+                        {isGenerating ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            Generate
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
             <Textarea
               id="content"
               value={blogData.content}
