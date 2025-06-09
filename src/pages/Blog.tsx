@@ -115,7 +115,7 @@ const Blog = () => {
                           style={{ 
                             height: "192px",
                             backgroundImage: `url(${post.image_url})`,
-                            backgroundSize: 'cover',
+                            backgroundSize: 'contain',
                             backgroundPosition: 'center center',
                             backgroundRepeat: 'no-repeat'
                           }}
