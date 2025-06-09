@@ -43,7 +43,7 @@ const Navigation = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-6">
+          <div className="hidden md:flex items-center space-x-6">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -58,7 +58,7 @@ const Navigation = () => {
           </div>
 
           {/* Phone Number & CTA */}
-          <div className="hidden lg:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-4">
             <ThemeToggle />
             <a
               href="tel:01865361786"
@@ -103,7 +103,7 @@ const Navigation = () => {
           </div>
 
           {/* Mobile Menu */}
-          <div className="lg:hidden">
+          <div className="md:hidden">
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon">
