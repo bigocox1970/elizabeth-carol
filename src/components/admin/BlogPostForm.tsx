@@ -399,34 +399,15 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Download the AI-generated image and save it to Supabase
-        setImageGenMessage('Saving generated image...');
-        
-        try {
-          // Fetch the image from OpenAI's temporary URL
-          const imageResponse = await fetch(data.imageUrl);
-          const imageBlob = await imageResponse.blob();
-          
-          // Create a file from the blob
-          const filename = `ai-generated-${Date.now()}.jpg`;
-          const imageFile = new File([imageBlob], filename, { type: 'image/jpeg' });
-          
-          // Upload to Supabase using the existing upload system
-          const permanentImageUrl = await uploadImage(imageFile);
-          
-          // Set the permanent Supabase URL
-          setBlogData(prev => ({
-            ...prev,
-            image_url: permanentImageUrl,
-          }));
-          setImagePreview(permanentImageUrl);
-          setSelectedImage(null); // Clear any previously selected file
-          setImageGenMessage('');
-          setBlogMessage('Beautiful AI image generated and saved successfully!');
-        } catch (uploadError) {
-          console.error('Error saving AI-generated image:', uploadError);
-          setImageGenMessage('Image generated but failed to save. Please try again.');
-        }
+        // Server has already saved the image to Supabase, just use the permanent URL
+        setBlogData(prev => ({
+          ...prev,
+          image_url: data.imageUrl,
+        }));
+        setImagePreview(data.imageUrl);
+        setSelectedImage(null); // Clear any previously selected file
+        setImageGenMessage('');
+        setBlogMessage(data.message || 'Beautiful AI image generated and saved successfully!');
       } else {
         setImageGenMessage(data.message || 'Failed to generate image. Please try again.');
       }
