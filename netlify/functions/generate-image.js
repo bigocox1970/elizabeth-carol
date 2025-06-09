@@ -171,5 +171,5 @@ function createImageDescription(subject, category) {
     .replace(/\s+/g, ' ')
     .trim();
 
-  return `${baseStyle} inspired by "${cleanSubject}", ${categoryElement}. The image should be calming, inspirational, and suitable for a spiritual blog. Avoid any text or words in the image. Style: photorealistic with artistic, dreamy quality.`;
+  return `${baseStyle} inspired by "${cleanSubject}", ${categoryElement}. The image should be calming, inspirational, and suitable for a spiritual blog. Absolutely no text, letters, numbers, words, or writing of any kind should appear anywhere in the image. The image must be 100% free of all text and symbols that resemble writing. Style: photorealistic with artistic, dreamy quality.`;
 } 
