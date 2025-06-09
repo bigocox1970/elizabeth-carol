@@ -37,6 +37,10 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
   const [aiOutline, setAiOutline] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiMessage, setAiMessage] = useState('');
+  
+  // Image generation states
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [imageGenMessage, setImageGenMessage] = useState('');
 
   // Load post data when editing
   useEffect(() => {
@@ -97,6 +101,19 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if image is missing and prompt user
+    if (!blogData.image_url && !selectedImage && !imagePreview) {
+      const shouldContinue = window.confirm(
+        "You haven't added an image to this blog post. Images help engage readers and improve the visual appeal of your content.\n\nWould you like to continue without an image, or would you prefer to add one first?\n\nClick 'OK' to continue without an image, or 'Cancel' to add an image first."
+      );
+      
+      if (!shouldContinue) {
+        setBlogMessage('Please add an image using the upload button or "Generate AI Image" button above.');
+        return;
+      }
+    }
+    
     setIsSubmitting(true);
     setBlogMessage('');
 
@@ -146,6 +163,19 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
 
   const handleUpdatePost = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if image is missing and prompt user (only for new posts or if image was removed)
+    if (!blogData.image_url && !selectedImage && !imagePreview) {
+      const shouldContinue = window.confirm(
+        "You haven't added an image to this blog post. Images help engage readers and improve the visual appeal of your content.\n\nWould you like to continue without an image, or would you prefer to add one first?\n\nClick 'OK' to continue without an image, or 'Cancel' to add an image first."
+      );
+      
+      if (!shouldContinue) {
+        setBlogMessage('Please add an image using the upload button or "Generate AI Image" button above.');
+        return;
+      }
+    }
+    
     setIsSubmitting(true);
     setBlogMessage('');
 
@@ -325,14 +355,7 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
           title: data.title || prev.title,
           content: data.content || prev.content,
           excerpt: data.excerpt || prev.excerpt,
-          image_url: data.imageUrl || prev.image_url,
         }));
-        
-        // Set the generated image as preview if available
-        if (data.imageUrl) {
-          setImagePreview(data.imageUrl);
-          setSelectedImage(null); // Clear any previously selected file
-        }
         
         setShowAiDialog(false);
         setAiTopic('');
@@ -347,6 +370,71 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
       setAiMessage('Failed to generate blog post. Please check your connection and try again.');
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleImageGeneration = async () => {
+    if (!blogData.title && !aiTopic) {
+      setImageGenMessage('Please enter a blog title or topic first.');
+      return;
+    }
+
+    setIsGeneratingImage(true);
+    setImageGenMessage('');
+
+    try {
+      const response = await fetch(getApiUrl('generate-image'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          password: password,
+          title: blogData.title,
+          topic: aiTopic,
+          category: blogData.category
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Download the AI-generated image and save it to Supabase
+        setImageGenMessage('Saving generated image...');
+        
+        try {
+          // Fetch the image from OpenAI's temporary URL
+          const imageResponse = await fetch(data.imageUrl);
+          const imageBlob = await imageResponse.blob();
+          
+          // Create a file from the blob
+          const filename = `ai-generated-${Date.now()}.jpg`;
+          const imageFile = new File([imageBlob], filename, { type: 'image/jpeg' });
+          
+          // Upload to Supabase using the existing upload system
+          const permanentImageUrl = await uploadImage(imageFile);
+          
+          // Set the permanent Supabase URL
+          setBlogData(prev => ({
+            ...prev,
+            image_url: permanentImageUrl,
+          }));
+          setImagePreview(permanentImageUrl);
+          setSelectedImage(null); // Clear any previously selected file
+          setImageGenMessage('');
+          setBlogMessage('Beautiful AI image generated and saved successfully!');
+        } catch (uploadError) {
+          console.error('Error saving AI-generated image:', uploadError);
+          setImageGenMessage('Image generated but failed to save. Please try again.');
+        }
+      } else {
+        setImageGenMessage(data.message || 'Failed to generate image. Please try again.');
+      }
+    } catch (error) {
+      console.error('Image generation error:', error);
+      setImageGenMessage('Failed to generate image. Please check your connection and try again.');
+    } finally {
+      setIsGeneratingImage(false);
     }
   };
 
@@ -473,6 +561,25 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
                    <Upload className="w-4 h-4" />
                    Upload Image
                  </Button>
+                 <Button
+                   type="button"
+                   variant="outline"
+                   onClick={handleImageGeneration}
+                   disabled={isGeneratingImage || (!blogData.title && !aiTopic)}
+                   className="col-span-1 sm:col-span-2 bg-gradient-to-r from-purple-100 to-blue-100 hover:from-purple-200 hover:to-blue-200 border-purple-300 text-purple-700 h-11"
+                 >
+                   {isGeneratingImage ? (
+                     <>
+                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                       Generating Image...
+                     </>
+                   ) : (
+                     <>
+                       <Sparkles className="w-4 h-4 mr-2" />
+                       Generate AI Image
+                     </>
+                   )}
+                 </Button>
                  {imagePreview && (
                    <Button
                      type="button"
@@ -485,6 +592,11 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
                    </Button>
                  )}
                </div>
+               {imageGenMessage && (
+                 <div className={`p-3 rounded-md ${imageGenMessage.includes('successfully') ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                   <p className="text-sm">{imageGenMessage}</p>
+                 </div>
+               )}
             </div>
           </div>
           
@@ -506,12 +618,12 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                       <Sparkles className="w-5 h-5 text-purple-600" />
-                      Generate Blog Post & Image with AI
+                      Generate Blog Post with AI
                     </DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div className="text-sm text-gray-600 mb-4">
-                      AI will generate a complete blog post in Elizabeth's authentic voice, plus a beautiful spiritual image to accompany it.
+                      AI will generate a complete blog post in Elizabeth's authentic voice. Use the separate "Generate AI Image" button to add a spiritual image.
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="ai-topic">Topic *</Label>

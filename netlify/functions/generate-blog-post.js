@@ -95,18 +95,22 @@ ${outline ? `Here's a brief outline to follow: ${outline}` : ''}
 
 Category: ${category || 'Spiritual Guidance'}
 
+IMPORTANT FORMATTING REQUIREMENTS:
+- Do NOT use markdown headers (##, ###, etc.) in the content
+- Use clear paragraph breaks instead of headers
+- Write flowing, cohesive content without section breaks
+- Use proper British English throughout
+
 Please provide:
 1. A compelling title (British English)
 2. A brief excerpt (2-3 sentences, British English)
-3. The full blog post content (British English throughout)
-4. A detailed image description for AI image generation (describe a calming, spiritual image that would complement this blog post - include colours, mood, and spiritual elements)
+3. The full blog post content (British English throughout, NO markdown headers)
 
 Format your response as JSON with the following structure:
 {
   "title": "Blog post title",
   "excerpt": "Brief excerpt for the blog post",
-  "content": "Full blog post content in markdown format",
-  "imageDescription": "Detailed description for AI image generation"
+  "content": "Full blog post content in plain text format with paragraph breaks but NO markdown headers"
 }`;
 
     // Make request to OpenAI API
@@ -163,42 +167,8 @@ Format your response as JSON with the following structure:
       aiContent = {
         title: topic,
         excerpt: `A spiritual guide to ${topic.toLowerCase()}.`,
-        content: content,
-        imageDescription: `A peaceful, spiritual scene related to ${topic}`
+        content: content
       };
-    }
-
-    // Generate image if imageDescription is provided
-    let generatedImageUrl = null;
-    if (aiContent.imageDescription) {
-      try {
-        const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${openaiApiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'dall-e-3',
-            prompt: `Create a beautiful, calming spiritual image: ${aiContent.imageDescription}. Style: soft, ethereal, peaceful, with warm colours and gentle lighting. Suitable for a spiritual blog post.`,
-            n: 1,
-            size: '1024x1024',
-            quality: 'standard',
-          }),
-        });
-
-        if (imageResponse.ok) {
-          const imageData = await imageResponse.json();
-          if (imageData.data && imageData.data[0] && imageData.data[0].url) {
-            generatedImageUrl = imageData.data[0].url;
-          }
-        } else {
-          console.log('Image generation failed, continuing without image');
-        }
-      } catch (imageError) {
-        console.log('Image generation error:', imageError);
-        // Continue without image if generation fails
-      }
     }
 
     return {
@@ -209,11 +179,7 @@ Format your response as JSON with the following structure:
         title: aiContent.title || topic,
         excerpt: aiContent.excerpt || `A spiritual guide to ${topic.toLowerCase()}.`,
         content: aiContent.content || data.choices[0].message.content,
-        imageUrl: generatedImageUrl,
-        imageDescription: aiContent.imageDescription,
-        message: generatedImageUrl ? 
-          'Blog post and image generated successfully!' : 
-          'Blog post generated successfully!'
+        message: 'Blog post generated successfully!'
       })
     };
 
