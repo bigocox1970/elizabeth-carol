@@ -114,7 +114,7 @@ const Blog = () => {
                           <img 
                             src={post.image_url} 
                             alt={post.title}
-                            className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
+                            className={`w-full h-full ${post.image_url.includes('ai-generated') ? 'object-contain' : 'object-cover object-center'} group-hover:scale-105 transition-transform duration-300`}
                           />
                         </div>
                       )}
