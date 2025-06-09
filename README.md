@@ -160,3 +160,128 @@ Simply open [Lovable](https://lovable.dev/projects/1afd297e-bcf2-4032-a859-b34f4
 Yes, you can!
 
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+
+# Elizabeth Carol - Spiritual Guidance Website
+
+A beautiful, modern website for Elizabeth Carol, a psychic medium and spiritual guide based in Oxford, UK.
+
+## Features
+
+### 🌟 Core Features
+- **Responsive Design**: Beautiful, mobile-first design that works perfectly on all devices
+- **Dark/Light Mode**: Automatic theme switching based on user preference
+- **Contact Forms**: Integrated contact and booking forms with email notifications
+- **Blog System**: Full-featured blog with admin panel for content management
+- **AI-Powered Content**: Advanced AI integration for blog post and image generation
+- **Image Management**: Automatic image optimization and cloud storage
+
+### 🤖 AI Features
+- **Blog Post Generation**: AI generates authentic blog content in Elizabeth's voice
+- **Image Generation**: AI creates beautiful spiritual images using DALL-E
+- **Separate Workflows**: Independent blog and image generation for optimal performance
+- **British English**: All AI content uses proper British English and terminology
+
+### 📱 User Experience
+- **Fast Loading**: Optimized performance with lazy loading and image compression
+- **SEO Optimized**: Proper meta tags, structured data, and search engine optimization
+- **Accessibility**: WCAG compliant with proper contrast ratios and keyboard navigation
+- **Professional Design**: Elegant purple and gold color scheme reflecting spiritual themes
+
+### 🔧 Technical Features
+- **Modern Stack**: Built with React, TypeScript, and Tailwind CSS
+- **Serverless Functions**: Netlify Functions for backend operations
+- **Database**: Supabase for reliable data storage
+- **Image Storage**: Supabase Storage for optimized image delivery
+- **Email Integration**: Nodemailer for contact form submissions
+- **Admin Panel**: Secure admin interface for content management
+
+## Getting Started
+
+### Prerequisites
+- Node.js (v18 or higher)
+- npm or yarn
+- Supabase account
+- OpenAI API key (for AI features)
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/your-username/elizabeth-carol.git
+cd elizabeth-carol
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Set up environment variables:
+Create a `.env` file in the root directory with:
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+ADMIN_PASSWORD=your_admin_password
+OPENAI_API_KEY=your_openai_api_key
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_app_password
+```
+
+4. Start the development server:
+```bash
+npm run dev
+```
+
+## Deployment
+
+The site is configured for deployment on Netlify:
+
+1. Connect your GitHub repository to Netlify
+2. Set the build command to `npm run build`
+3. Set the publish directory to `dist`
+4. Add all environment variables in Netlify's dashboard
+5. Deploy!
+
+## AI Features Setup
+
+### OpenAI Integration
+The AI features require an OpenAI API key with access to:
+- GPT-4 or GPT-3.5-turbo for text generation
+- DALL-E 3 for image generation
+
+Add your OpenAI API key to the `OPENAI_API_KEY` environment variable.
+
+### Blog Post Generation
+- Generates authentic content in Elizabeth's voice
+- Supports custom topics and outlines
+- Maintains consistent British English and spiritual tone
+- Separate from image generation for faster performance
+
+### Image Generation
+- Creates beautiful spiritual artwork using DALL-E 3
+- Category-specific prompts for relevant imagery
+- Automatic upload to Supabase storage
+- Permanent URLs for reliable blog post display
+
+## Admin Panel
+
+Access the admin panel at `/admin` with your admin password to:
+- Create and edit blog posts
+- Generate AI content and images
+- Manage published/draft status
+- Upload and manage images
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.
+
+<!-- Build cache refresh: 2024-12-19 -->
