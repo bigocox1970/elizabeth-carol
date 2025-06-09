@@ -26,7 +26,7 @@ const Hero = () => {
       <div className="container mx-auto px-4 relative z-10">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Hero Content */}
-          <div className="space-y-8 bg-white/90 dark:bg-transparent p-8 rounded-lg backdrop-blur-sm">
+          <div className="space-y-8 bg-white/80 dark:bg-transparent p-8 rounded-lg backdrop-blur-sm">
             <div className="space-y-4">
               <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-300">
                 <Star className="w-5 h-5" />

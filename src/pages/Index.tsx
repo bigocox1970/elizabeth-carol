@@ -103,10 +103,10 @@ const Index = () => {
         
         <div className="container mx-auto px-4 relative z-10">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-white dark:text-white text-foreground mb-4">
+            <h2 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 dark:text-white mb-4">
               What People Say About Elizabeth
             </h2>
-            <p className="text-xl text-gray-200 dark:text-gray-200 text-muted-foreground">
+            <p className="text-xl text-gray-700 dark:text-gray-200">
               Real experiences from clients throughout Oxford and Oxfordshire who have found 
               comfort, clarity, and healing through spiritual guidance.
             </p>
@@ -114,16 +114,16 @@ const Index = () => {
 
           <div className="grid md:grid-cols-3 gap-8">
             {quickTestimonials.map((testimonial, index) => (
-              <Card key={index} className="p-6 bg-black/60 dark:bg-black/60 bg-card/80 backdrop-blur-md border-purple-900/50 dark:border-purple-900/50 border-border hover:border-gray-400/50 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300">
+              <Card key={index} className="p-6 bg-white/95 dark:bg-black/60 backdrop-blur-md border-gray-300 dark:border-purple-900/50 hover:border-gray-500 dark:hover:border-gray-400/50 hover:shadow-lg hover:shadow-gray-500/20 dark:hover:shadow-purple-500/20 transition-all duration-300">
                 <CardContent className="p-0">
-                  <Quote className="w-6 h-6 text-gray-400 dark:text-gray-400 text-muted-foreground mb-4" />
-                  <blockquote className="text-gray-200 dark:text-gray-200 text-foreground leading-relaxed mb-4">
+                  <Quote className="w-6 h-6 text-gray-600 dark:text-gray-400 mb-4" />
+                  <blockquote className="text-gray-800 dark:text-gray-200 leading-relaxed mb-4">
                     "{testimonial.text}"
                   </blockquote>
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-semibold text-white dark:text-white text-foreground">{testimonial.name}</div>
-                      <div className="text-sm text-gray-300 dark:text-gray-300 text-muted-foreground flex items-center space-x-1">
+                      <div className="font-semibold text-gray-900 dark:text-white">{testimonial.name}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-300 flex items-center space-x-1">
                         <MapPin className="w-3 h-3" />
                         <span>{testimonial.location}</span>
                       </div>
@@ -144,7 +144,7 @@ const Index = () => {
               <Button 
                 variant="outline" 
                 size="lg"
-                className="border-gray-400 dark:border-gray-400 border-border text-gray-300 dark:text-gray-300 text-foreground hover:bg-gray-300 hover:text-black dark:hover:bg-gray-300 dark:hover:text-black hover:bg-background hover:text-foreground bg-black/50 dark:bg-black/50 bg-card/50 backdrop-blur-sm"
+                className="border-gray-600 dark:border-gray-400 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-300 hover:text-black dark:hover:text-black bg-white/50 dark:bg-black/50 backdrop-blur-sm"
                 onClick={() => window.scrollTo(0, 0)}
               >
               Read More Reviews
