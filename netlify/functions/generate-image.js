@@ -69,7 +69,7 @@ exports.handler = async (event, context) => {
       model: "dall-e-3",
       prompt: imageDescription,
       n: 1,
-      size: "1920x1080",
+      size: "1024x1024",
       quality: "standard",
       style: "natural"
     });
@@ -172,4 +172,4 @@ function createImageDescription(subject, category) {
     .trim();
 
   return `${baseStyle} inspired by "${cleanSubject}", ${categoryElement}. The image should be calming, inspirational, and suitable for a spiritual blog. Absolutely no text, letters, numbers, words, or writing of any kind should appear anywhere in the image. The image must be 100% free of all text and symbols that resemble writing. Style: photorealistic with artistic, dreamy quality.`;
-} 
+}
