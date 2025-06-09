@@ -115,6 +115,7 @@ const Blog = () => {
                             src={post.image_url} 
                             alt={post.title}
                             className="w-full h-full object-cover"
+                            style={{ objectPosition: post.image_url.includes('ai-generated') ? 'center top' : 'center center' }}
                           />
                         </div>
                       )}
