@@ -15,7 +15,7 @@ const Hero = () => {
       />
       
       {/* Overlay - balanced transparency for both mobile and desktop */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/85 via-black/80 to-black/85" />
+      <div className="absolute inset-0 hero-overlay" />
 
       {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
@@ -26,22 +26,22 @@ const Hero = () => {
       <div className="container mx-auto px-4 relative z-10">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Hero Content */}
-          <div className="space-y-8">
+          <div className="space-y-8 bg-white/90 dark:bg-transparent p-8 rounded-lg backdrop-blur-sm">
             <div className="space-y-4">
-              <div className="flex items-center space-x-2 text-gray-300">
+              <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-300">
                 <Star className="w-5 h-5" />
                 <span className="text-sm font-medium">Oxford's Trusted Psychic Medium</span>
                 <Star className="w-5 h-5" />
               </div>
               
-              <h1 className="text-4xl md:text-6xl font-serif font-bold text-white leading-tight">
+              <h1 className="text-4xl md:text-6xl font-serif font-bold text-gray-900 dark:text-white leading-tight">
                 Elizabeth Carol
                 <span className="block text-3xl md:text-4xl text-purple-900 mt-2">
                   Clairvoyant & Psychic Medium
                 </span>
               </h1>
               
-              <p className="text-xl text-gray-200 max-w-xl">
+              <p className="text-xl text-gray-700 dark:text-gray-200 max-w-xl">
                 With over 35 years of spiritual guidance experience, I provide compassionate and insightful 
                 psychic readings to help illuminate your path forward in Oxford and beyond.
               </p>
@@ -61,7 +61,7 @@ const Hero = () => {
                 <Button 
                   size="lg" 
                   variant="outline" 
-                  className="border-gray-400 text-gray-300 hover:bg-gray-300 hover:text-black bg-black/50 backdrop-blur-sm"
+                  className="border-gray-600 dark:border-gray-400 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-300 hover:text-black bg-white/50 dark:bg-black/50 backdrop-blur-sm"
                 >
                   <Phone className="w-4 h-4 mr-2" />
                   Call 01865 361 786
@@ -72,12 +72,12 @@ const Hero = () => {
             {/* Quick Stats */}
             <div className="grid grid-cols-2 gap-6 pt-8">
               <div className="text-center">
-                <div className="text-2xl font-bold text-gray-200">35+</div>
-                <div className="text-sm text-gray-300">Years Experience</div>
+                <div className="text-2xl font-bold text-gray-800 dark:text-gray-200">35+</div>
+                <div className="text-sm text-gray-600 dark:text-gray-300">Years Experience</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-gray-200">5★</div>
-                <div className="text-sm text-gray-300">Client Reviews</div>
+                <div className="text-2xl font-bold text-gray-800 dark:text-gray-200">5★</div>
+                <div className="text-sm text-gray-600 dark:text-gray-300">Client Reviews</div>
               </div>
             </div>
           </div>
