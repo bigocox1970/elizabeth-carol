@@ -102,7 +102,7 @@ const Index = () => {
         <div className="absolute inset-0 testimonials-overlay" />
         
         <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center max-w-3xl mx-auto mb-16">
+          <div className="text-center max-w-3xl mx-auto mb-16 bg-white/70 dark:bg-black/70 p-8 rounded-lg backdrop-blur-sm">
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 dark:text-white mb-4">
               What People Say About Elizabeth
             </h2>
@@ -114,7 +114,7 @@ const Index = () => {
 
           <div className="grid md:grid-cols-3 gap-8">
             {quickTestimonials.map((testimonial, index) => (
-              <Card key={index} className="p-6 bg-white/95 dark:bg-black/60 backdrop-blur-md border-gray-300 dark:border-purple-900/50 hover:border-gray-500 dark:hover:border-gray-400/50 hover:shadow-lg hover:shadow-gray-500/20 dark:hover:shadow-purple-500/20 transition-all duration-300">
+              <Card key={index} className="p-6 bg-white/65 dark:bg-black/60 backdrop-blur-md border-gray-300 dark:border-purple-900/50 hover:border-gray-500 dark:hover:border-gray-400/50 hover:shadow-lg hover:shadow-gray-500/20 dark:hover:shadow-purple-500/20 transition-all duration-300">
                 <CardContent className="p-0">
                   <Quote className="w-6 h-6 text-gray-600 dark:text-gray-400 mb-4" />
                   <blockquote className="text-gray-800 dark:text-gray-200 leading-relaxed mb-4">
