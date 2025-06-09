@@ -101,29 +101,24 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     // Check if image is missing and prompt user
     if (!blogData.image_url && !selectedImage && !imagePreview) {
       const shouldContinue = window.confirm(
         "You haven't added an image to this blog post. Images help engage readers and improve the visual appeal of your content.\n\nWould you like to continue without an image, or would you prefer to add one first?\n\nClick 'OK' to continue without an image, or 'Cancel' to add an image first."
       );
-      
       if (!shouldContinue) {
         setBlogMessage('Please add an image using the upload button or "Generate AI Image" button above.');
         return;
       }
     }
-    
     setIsSubmitting(true);
     setBlogMessage('');
-
     try {
       // Handle image upload if image selected
-      let imageUrl = '';
+      let imageUrl = blogData.image_url;
       if (selectedImage) {
         imageUrl = await uploadImage(selectedImage);
       }
-
       const response = await fetch('/.netlify/functions/manage-blog', {
         method: 'POST',
         headers: {
@@ -135,9 +130,7 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
           postData: { ...blogData, image_url: imageUrl }
         }),
       });
-
       const data = await response.json();
-
       if (response.ok) {
         setBlogMessage('Blog post created successfully!');
         if (data.post) {
@@ -175,29 +168,24 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
 
   const handleUpdatePost = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     // Check if image is missing and prompt user (only for new posts or if image was removed)
     if (!blogData.image_url && !selectedImage && !imagePreview) {
       const shouldContinue = window.confirm(
         "You haven't added an image to this blog post. Images help engage readers and improve the visual appeal of your content.\n\nWould you like to continue without an image, or would you prefer to add one first?\n\nClick 'OK' to continue without an image, or 'Cancel' to add an image first."
       );
-      
       if (!shouldContinue) {
         setBlogMessage('Please add an image using the upload button or "Generate AI Image" button above.');
         return;
       }
     }
-    
     setIsSubmitting(true);
     setBlogMessage('');
-
     try {
       // Handle image upload if new image selected
       let imageUrl = blogData.image_url;
       if (selectedImage) {
         imageUrl = await uploadImage(selectedImage);
       }
-
       const response = await fetch('/.netlify/functions/manage-blog', {
         method: 'POST',
         headers: {
@@ -210,9 +198,7 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
           postData: { ...blogData, image_url: imageUrl }
         }),
       });
-
       const data = await response.json();
-
       if (response.ok) {
         setBlogMessage('Blog post updated successfully!');
         onPostSaved();
