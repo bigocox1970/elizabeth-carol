@@ -385,7 +385,7 @@ const Contact = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
                     <MapPin className="w-5 h-5 text-primary" />
-                    <span>Areas I Serve</span>
+                    <span>Areas I Cover</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>

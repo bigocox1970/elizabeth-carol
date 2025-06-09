@@ -22,7 +22,7 @@ const ServicesPage = () => {
     },
     {
       question: "Do you travel for home psychic evenings?",
-      answer: "Yes, I travel throughout Oxford, Oxfordshire, and surrounding areas for home psychic evenings. Travel costs may apply depending on distance."
+      answer: "I travel throughout Oxford, Oxfordshire, and surrounding areas for home psychic evenings and multiple bookings only. For one-to-one readings, clients visit me at my location. Travel costs may apply depending on distance for group events."
     },
     {
       question: "How do telephone and video readings work?",
@@ -102,60 +102,6 @@ const ServicesPage = () => {
                   </CardDescription>
                 </CardContent>
               </Card>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-serif font-bold text-foreground mb-12 text-center">
-              Transparent Pricing
-            </h2>
-            
-            <div className="bg-card/50 rounded-lg p-8">
-              <div className="grid md:grid-cols-2 gap-8">
-                <div>
-                  <h3 className="text-xl font-semibold text-foreground mb-4">Individual Services</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center py-2 border-b border-border">
-                      <span className="text-muted-foreground">One-to-One Reading (60 min)</span>
-                      <span className="font-semibold text-foreground">£70</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b border-border">
-                      <span className="text-muted-foreground">Telephone/Video Reading (60 min)</span>
-                      <span className="font-semibold text-foreground">£70</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="text-xl font-semibold text-foreground mb-4">Group & Special Events</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center py-2 border-b border-border">
-                      <span className="text-muted-foreground">Home Psychic Evening (3-4 hours)</span>
-                      <span className="font-semibold text-foreground">From £300</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b border-border">
-                      <span className="text-muted-foreground">Talks & Workshops</span>
-                      <span className="font-semibold text-foreground">Contact for pricing</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b border-border">
-                      <span className="text-muted-foreground">Special Events</span>
-                      <span className="font-semibold text-foreground">Bespoke quotes</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-8 p-4 bg-primary/5 rounded-lg border border-primary/20">
-                <p className="text-sm text-muted-foreground text-center">
-                  All prices are discussed upfront with no hidden fees. Payment can be made by cash or bank transfer. 
-                  Concessions available for those experiencing financial hardship.
-                </p>
-              </div>
             </div>
           </div>
         </div>
