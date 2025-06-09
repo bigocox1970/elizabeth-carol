@@ -249,7 +249,8 @@ exports.handler = async (event, context) => {
             excerpt: postData.excerpt || postData.content.substring(0, 200) + '...',
             category: postData.category,
             published: postData.published,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
+            image_url: postData.image_url || null
           })
         });
 
