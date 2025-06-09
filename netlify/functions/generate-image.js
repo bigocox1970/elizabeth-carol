@@ -69,7 +69,7 @@ exports.handler = async (event, context) => {
       model: "dall-e-3",
       prompt: imageDescription,
       n: 1,
-      size: "1024x1024",
+      size: "1920x1080",
       quality: "standard",
       style: "natural"
     });

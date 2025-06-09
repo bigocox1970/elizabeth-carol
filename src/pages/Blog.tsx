@@ -110,15 +110,15 @@ const Blog = () => {
                   <Link key={post.id} to={`/blog/${post.id}`} className="block">
                     <Card className="flex flex-col h-96 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 group cursor-pointer">
                       {post.image_url && (
-                        <div className="overflow-hidden rounded-t-lg">
+                        <div className="overflow-hidden rounded-t-lg aspect-video">
                           <img 
                             src={post.image_url} 
                             alt={post.title}
-                            className="w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-300"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
                         </div>
                       )}
-                      <CardHeader>
+                      <CardHeader className="flex-none">
                         <div className="flex items-center justify-between mb-2">
                           <Badge variant="secondary" className="text-xs">
                             {post.category}
