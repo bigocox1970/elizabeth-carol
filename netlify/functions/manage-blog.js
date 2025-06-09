@@ -220,6 +220,7 @@ exports.handler = async (event, context) => {
           createdAt: newPost.created_at,
           updatedAt: newPost.updated_at,
           author: newPost.author,
+          image_url: newPost.image_url,
           reviews: []
         };
 
