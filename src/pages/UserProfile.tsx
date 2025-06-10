@@ -34,7 +34,7 @@ interface Review {
 }
 
 const UserProfile = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, updatePassword } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [comments, setComments] = useState<Comment[]>([]);
@@ -45,6 +45,9 @@ const UserProfile = () => {
   const [editingReview, setEditingReview] = useState<Review | null>(null);
   const [editedContent, setEditedContent] = useState("");
   const [editedRating, setEditedRating] = useState(5);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -199,6 +202,49 @@ const UserProfile = () => {
     }
   };
 
+  const handlePasswordChange = async () => {
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Passwords do not match.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const { error } = await updatePassword(newPassword);
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Your password has been updated successfully.",
+      });
+
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error) {
+      console.error("Error updating password:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update your password. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
   const renderStars = (rating: number) => {
     return Array(5)
       .fill(0)
@@ -230,9 +276,10 @@ const UserProfile = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid grid-cols-2 w-full">
+            <TabsList className="grid grid-cols-3 w-full">
               <TabsTrigger value="comments">Comments</TabsTrigger>
               <TabsTrigger value="reviews">Reviews</TabsTrigger>
+              <TabsTrigger value="account">Account</TabsTrigger>
             </TabsList>
 
             <TabsContent value="comments" className="space-y-4">
@@ -446,6 +493,60 @@ const UserProfile = () => {
                       ))}
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="account" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Account Settings</CardTitle>
+                  <CardDescription>
+                    Manage your account settings and security
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Change Password</h3>
+                    <div className="space-y-2">
+                      <Label htmlFor="newPassword">New Password</Label>
+                      <Input
+                        id="newPassword"
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Enter new password"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword">Confirm Password</Label>
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Confirm new password"
+                      />
+                    </div>
+                    <Button
+                      onClick={handlePasswordChange}
+                      disabled={isChangingPassword || !newPassword || !confirmPassword}
+                      className="w-full"
+                    >
+                      {isChangingPassword ? "Updating..." : "Update Password"}
+                    </Button>
+                  </div>
+
+                  <div className="pt-4 border-t">
+                    <Button
+                      variant="destructive"
+                      onClick={handleSignOut}
+                      className="w-full"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Sign Out
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>

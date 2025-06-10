@@ -179,3 +179,10 @@ export const deleteReview = async (id: number) => {
 
   return { data, error };
 };
+
+export const updatePassword = async (newPassword: string) => {
+  const { data, error } = await supabase.auth.updateUser({
+    password: newPassword
+  });
+  return { data, error };
+};

@@ -43,7 +43,7 @@ const Navigation = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-6">
+          <div className="hidden custom950:flex items-center space-x-6">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -58,7 +58,7 @@ const Navigation = () => {
           </div>
 
           {/* Phone Number & CTA */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden custom950:flex items-center space-x-4">
             <ThemeToggle />
             <a
               href="tel:01865361786"
@@ -96,14 +96,14 @@ const Navigation = () => {
             ) : (
               <Link to="/auth">
                 <Button variant="outline" size="sm">
-                  Login / Register
+                  Login
                 </Button>
               </Link>
             )}
           </div>
 
           {/* Mobile Menu */}
-          <div className="md:hidden">
+          <div className="custom950:hidden">
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon">
@@ -175,7 +175,7 @@ const Navigation = () => {
                     ) : (
                       <Link to="/auth" onClick={() => setIsOpen(false)}>
                         <Button variant="outline" className="w-full">
-                          Login / Register
+                          Login
                         </Button>
                       </Link>
                     )}
