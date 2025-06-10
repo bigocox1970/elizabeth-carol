@@ -10,8 +10,7 @@ exports.handler = async (event, context) => {
   console.log('=== NEWSLETTER FUNCTION START ===');
   console.log('Environment check:', {
     SUPABASE_URL: SUPABASE_URL ? 'SET' : 'MISSING',
-    SUPABASE_ANON_KEY: SUPABASE_ANON_KEY ? 'SET' : 'MISSING',
-    ADMIN_PASSWORD: process.env.ADMIN_PASSWORD ? 'SET' : 'MISSING'
+    SUPABASE_ANON_KEY: SUPABASE_ANON_KEY ? 'SET' : 'MISSING'
   });
 
   if (event.httpMethod !== 'POST') {
@@ -22,40 +21,101 @@ exports.handler = async (event, context) => {
     };
   }
 
+  // Handle CORS
+  if (event.headers.origin) {
+    const allowedOrigins = [
+      'https://elizabethcarol.co.uk',
+      'https://www.elizabethcarol.co.uk',
+      'https://elizabethcarol.netlify.app',
+      'http://localhost:3000'
+    ];
+    
+    if (allowedOrigins.includes(event.headers.origin)) {
+      return {
+        statusCode: 200,
+        headers: {
+          'Access-Control-Allow-Origin': event.headers.origin,
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS'
+        },
+        body: JSON.stringify({ message: 'CORS preflight successful' })
+      };
+    }
+  }
+
   console.log('Request body:', event.body);
   
   try {
-    const { subject, message, password } = JSON.parse(event.body);
+    const { subject, message } = JSON.parse(event.body);
     console.log('Parsed request:', {
       subject: subject ? 'PROVIDED' : 'MISSING',
-      message: message ? 'PROVIDED' : 'MISSING', 
-      password: password ? 'PROVIDED' : 'MISSING'
+      message: message ? 'PROVIDED' : 'MISSING'
     });
 
-    // Get admin password from environment variable
-    const adminPassword = process.env.ADMIN_PASSWORD;
-    
-    console.log('Password check:', {
-      providedPassword: password ? 'Provided' : 'Missing',
-      envPassword: process.env.ADMIN_PASSWORD ? 'Set' : 'Not set'
-    });
-
-    // For development and testing, use a fallback password if the environment variable is not set
-    // In production, this should be properly set in the Netlify dashboard
-    const isDevelopment = process.env.NODE_ENV !== 'production';
-    const usePassword = adminPassword || (isDevelopment ? 'elizabeth2024' : null);
-    
-    if (!usePassword) {
-      console.error('ADMIN_PASSWORD environment variable is not set in production');
+    // Get the authorization header
+    const authHeader = event.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('Missing or invalid authorization header');
       return {
-        statusCode: 500,
-        body: JSON.stringify({ message: 'Server configuration error: Admin password not set' })
+        statusCode: 401,
+        body: JSON.stringify({ message: 'Unauthorized' })
       };
     }
 
-    // Simple password verification
-    if (password !== usePassword) {
-      console.log('Password mismatch');
+    // Extract the token
+    const token = authHeader.split(' ')[1];
+    console.log('Token extracted from header');
+
+    // Verify the token with Supabase
+    try {
+      const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        console.log('Token verification failed:', response.status);
+        return {
+          statusCode: 401,
+          body: JSON.stringify({ message: 'Unauthorized' })
+        };
+      }
+
+      const userData = await response.json();
+      console.log('User data retrieved:', userData);
+
+      // Check if user is admin
+      const adminResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ user_id: userData.id })
+      });
+
+      if (!adminResponse.ok) {
+        console.log('Admin check failed:', adminResponse.status);
+        return {
+          statusCode: 401,
+          body: JSON.stringify({ message: 'Unauthorized' })
+        };
+      }
+
+      const isAdmin = await adminResponse.json();
+      if (!isAdmin) {
+        console.log('User is not an admin');
+        return {
+          statusCode: 401,
+          body: JSON.stringify({ message: 'Unauthorized' })
+        };
+      }
+
+    } catch (error) {
+      console.error('Error verifying token:', error);
       return {
         statusCode: 401,
         body: JSON.stringify({ message: 'Unauthorized' })
@@ -126,16 +186,16 @@ exports.handler = async (event, context) => {
       subscribers = validSubscribers;
       console.log(`Found ${subscribers.length} valid subscribers for email sending`);
       
-         } catch (supabaseError) {
-       console.error('Failed to get subscribers from Supabase:', supabaseError);
-       return {
-         statusCode: 500,
-         body: JSON.stringify({ 
-           message: 'Failed to retrieve subscribers from database',
-           error: supabaseError.message
-         })
-       };
-     }
+    } catch (supabaseError) {
+      console.error('Failed to get subscribers from Supabase:', supabaseError);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ 
+          message: 'Failed to retrieve subscribers from database',
+          error: supabaseError.message
+        })
+      };
+    }
 
     if (subscribers.length === 0) {
       return {

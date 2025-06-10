@@ -5,12 +5,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Mail, Send } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface NewsletterFormProps {
   subscriberCount: number;
 }
 
 const NewsletterForm = ({ subscriberCount }: NewsletterFormProps) => {
+  const { session } = useAuth();
   const [emailData, setEmailData] = useState({
     subject: '',
     message: ''
@@ -20,6 +22,11 @@ const NewsletterForm = ({ subscriberCount }: NewsletterFormProps) => {
 
   const handleSendEmail = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!session) {
+      setSendMessage('You must be logged in to send newsletters.');
+      return;
+    }
+
     setIsSending(true);
     setSendMessage('');
 
@@ -28,6 +35,7 @@ const NewsletterForm = ({ subscriberCount }: NewsletterFormProps) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
           subject: emailData.subject,
@@ -85,7 +93,7 @@ const NewsletterForm = ({ subscriberCount }: NewsletterFormProps) => {
           
           <Button 
             type="submit" 
-            disabled={isSending || subscriberCount === 0}
+            disabled={isSending || subscriberCount === 0 || !session}
             className="w-full bg-gradient-to-r from-purple-900 to-black hover:from-black hover:to-gray-900 text-white disabled:opacity-50"
           >
             <Send className="w-4 h-4 mr-2" />
