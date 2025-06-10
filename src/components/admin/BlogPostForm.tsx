@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { FileText, Save, Upload, X, Image, Camera, Sparkles, Loader2 } from "lucide-react";
+import { FileText, Save, Upload, X, Image, Camera, Sparkles, Loader2, Plus } from "lucide-react";
 import { getApiUrl } from "@/utils/api";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -458,11 +458,52 @@ const BlogPostForm = ({ editingPost, onPostSaved, onCancelEdit }: BlogPostFormPr
                   )}
                   <span>Generate AI Image</span>
                 </Button>
+              </div>
+              {imageGenMessage && (
+                <p className={`text-sm ${imageGenMessage.includes('success') ? 'text-green-600' : 'text-red-600'}`}>
+                  {imageGenMessage}
+                </p>
+              )}
+              {imagePreview && (
+                <div className="relative mt-2">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-full h-48 object-cover rounded-md"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={removeImage}
+                    className="absolute top-2 right-2"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="excerpt">Excerpt</Label>
+              <Textarea
+                id="excerpt"
+                value={blogData.excerpt}
+                onChange={(e) => setBlogData(prev => ({ ...prev, excerpt: e.target.value }))}
+                placeholder="Enter a brief excerpt"
+                className="h-20"
+              />
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center">
+                <Label htmlFor="content">Content</Label>
                 <Dialog open={showAiDialog} onOpenChange={setShowAiDialog}>
                   <DialogTrigger asChild>
                     <Button
                       type="button"
                       variant="outline"
+                      size="sm"
                       className="flex items-center space-x-2"
                     >
                       <Sparkles className="w-4 h-4" />
@@ -526,44 +567,6 @@ const BlogPostForm = ({ editingPost, onPostSaved, onCancelEdit }: BlogPostFormPr
                   </DialogContent>
                 </Dialog>
               </div>
-              {imageGenMessage && (
-                <p className={`text-sm ${imageGenMessage.includes('success') ? 'text-green-600' : 'text-red-600'}`}>
-                  {imageGenMessage}
-                </p>
-              )}
-              {imagePreview && (
-                <div className="relative mt-2">
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="w-full h-48 object-cover rounded-md"
-                  />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    onClick={removeImage}
-                    className="absolute top-2 right-2"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="excerpt">Excerpt</Label>
-              <Textarea
-                id="excerpt"
-                value={blogData.excerpt}
-                onChange={(e) => setBlogData(prev => ({ ...prev, excerpt: e.target.value }))}
-                placeholder="Enter a brief excerpt"
-                className="h-20"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="content">Content</Label>
               <Textarea
                 id="content"
                 value={blogData.content}

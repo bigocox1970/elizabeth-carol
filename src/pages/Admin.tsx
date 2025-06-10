@@ -24,16 +24,26 @@ const Admin = () => {
   const [subscribers, setSubscribers] = useState([]);
   const [activeTab, setActiveTab] = useState("subscribers");
   const [editingPost, setEditingPost] = useState<string | null>(null);
+  
+  // Clear editing post when switching to blog tab
+  useEffect(() => {
+    if (activeTab === "blog") {
+      setEditingPost(null);
+    }
+  }, [activeTab]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const checkAdmin = async () => {
       if (!user || !session) {
+        console.log('No user or session found, redirecting to auth');
         navigate('/auth?redirect=/admin');
         return;
       }
 
       try {
+        console.log('Checking admin status for user:', user.id);
         const response = await fetch(getApiUrl('verify-admin'), {
           headers: {
             'Authorization': `Bearer ${session.access_token}`
@@ -41,9 +51,15 @@ const Admin = () => {
         });
 
         const data = await response.json();
+        console.log('Admin verification response:', data);
         
         if (!response.ok || !data.isAdmin) {
-          console.error('Admin verification failed:', data);
+          console.error('Admin verification failed:', {
+            status: response.status,
+            statusText: response.statusText,
+            data
+          });
+          setError('Admin verification failed. Please contact support.');
           navigate('/');
           return;
         }
@@ -53,6 +69,7 @@ const Admin = () => {
         loadSubscribers();
       } catch (error) {
         console.error('Error checking admin status:', error);
+        setError('An error occurred while verifying admin status.');
         navigate('/');
       }
     };
@@ -84,6 +101,9 @@ const Admin = () => {
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-4">Loading...</h2>
           <p className="text-muted-foreground">Please wait while we verify your access.</p>
+          {error && (
+            <p className="text-red-500 mt-4">{error}</p>
+          )}
         </div>
       </div>
     );
@@ -167,6 +187,16 @@ const Admin = () => {
 
             {/* Blog Tab */}
             <TabsContent value="blog" className="space-y-6">
+              <div className="flex justify-end mb-2">
+                <Button 
+                  onClick={() => setEditingPost(null)}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>New Post</span>
+                </Button>
+              </div>
               <div className="grid md:grid-cols-2 gap-6">
                 <BlogPostForm 
                   editingPost={editingPost} 
