@@ -40,13 +40,10 @@ const Admin = () => {
           }
         });
 
-        if (!response.ok) {
-          navigate('/');
-          return;
-        }
-
-        const { isAdmin: adminStatus } = await response.json();
-        if (!adminStatus) {
+        const data = await response.json();
+        
+        if (!response.ok || !data.isAdmin) {
+          console.error('Admin verification failed:', data);
           navigate('/');
           return;
         }
