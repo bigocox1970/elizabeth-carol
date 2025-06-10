@@ -380,7 +380,10 @@ const BlogPostForm = ({ editingPost, onPostSaved, onCancelEdit }: BlogPostFormPr
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
         },
-        body: JSON.stringify({ prompt: blogData.title })
+        body: JSON.stringify({ 
+          prompt: blogData.title,
+          category: blogData.category
+        })
       });
 
       if (!response.ok) {
@@ -388,9 +391,13 @@ const BlogPostForm = ({ editingPost, onPostSaved, onCancelEdit }: BlogPostFormPr
       }
 
       const data = await response.json();
-      setImagePreview(data.url);
-      setBlogData(prev => ({ ...prev, image_url: data.url }));
-      setImageGenMessage('Image generated successfully!');
+      if (data.success) {
+        setImagePreview(data.imageUrl);
+        setBlogData(prev => ({ ...prev, image_url: data.imageUrl }));
+        setImageGenMessage('Image generated successfully!');
+      } else {
+        throw new Error(data.message || 'Failed to generate image');
+      }
     } catch (error) {
       console.error('Error generating image:', error);
       setImageGenMessage('Failed to generate image. Please try again.');
