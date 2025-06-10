@@ -8,15 +8,16 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { FileText, Save, Upload, X, Image, Camera, Sparkles, Loader2 } from "lucide-react";
 import { getApiUrl } from "@/utils/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface BlogPostFormProps {
-  password: string;
   editingPost: string | null;
   onPostSaved: () => void;
   onCancelEdit?: () => void;
 }
 
-const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: BlogPostFormProps) => {
+const BlogPostForm = ({ editingPost, onPostSaved, onCancelEdit }: BlogPostFormProps) => {
+  const { session } = useAuth();
   const [blogData, setBlogData] = useState({
     title: '',
     content: '',
@@ -44,7 +45,7 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
 
   // Load post data when editing
   useEffect(() => {
-    if (editingPost) {
+    if (editingPost && session) {
       loadPostData(editingPost);
     } else {
       // Reset form when creating new post
@@ -60,25 +61,31 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
       setImagePreview('');
       setBlogMessage('');
     }
-  }, [editingPost]);
+  }, [editingPost, session]);
 
   const loadPostData = async (postId: string) => {
+    if (!session) return;
+
     setIsLoading(true);
     try {
-      const response = await fetch('/.netlify/functions/manage-blog', {
+      console.log('Loading post data for ID:', postId);
+      const response = await fetch(getApiUrl('manage-blog'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({ 
           action: 'get-single',
-          password: password,
           postId: postId
         }),
       });
 
+      console.log('Post data response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('Post data received:', data);
         if (data.post) {
           setBlogData({
             title: data.post.title || '',
@@ -90,6 +97,10 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
           });
           setImagePreview(data.post.image_url || '');
         }
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to load post:', response.status, errorData);
+        setBlogMessage('Failed to load post data.');
       }
     } catch (error) {
       console.error('Failed to load post:', error);
@@ -101,6 +112,8 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!session) return;
+
     // Check if image is missing and prompt user
     if (!blogData.image_url && !selectedImage && !imagePreview) {
       const shouldContinue = window.confirm(
@@ -119,14 +132,14 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
       if (selectedImage) {
         imageUrl = await uploadImage(selectedImage);
       }
-      const response = await fetch('/.netlify/functions/manage-blog', {
+      const response = await fetch(getApiUrl('manage-blog'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
           action: 'create',
-          password: password,
           postData: { ...blogData, image_url: imageUrl }
         }),
       });
@@ -168,6 +181,8 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
 
   const handleUpdatePost = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!session) return;
+
     // Check if image is missing and prompt user (only for new posts or if image was removed)
     if (!blogData.image_url && !selectedImage && !imagePreview) {
       const shouldContinue = window.confirm(
@@ -186,14 +201,14 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
       if (selectedImage) {
         imageUrl = await uploadImage(selectedImage);
       }
-      const response = await fetch('/.netlify/functions/manage-blog', {
+      const response = await fetch(getApiUrl('manage-blog'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
           action: 'update',
-          password: password,
           postId: editingPost,
           postData: { ...blogData, image_url: imageUrl }
         }),
@@ -253,7 +268,7 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
             }
           },
           'image/jpeg',
-          0.8 // 80% quality
+          0.8
         );
       };
       
@@ -263,54 +278,36 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
 
   const handleImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      // Check file type
-      if (!file.type.startsWith('image/')) {
-        setBlogMessage('Please select a valid image file.');
-        return;
-      }
+    if (!file) return;
 
-      setBlogMessage('Processing image...');
-      
-      try {
-        // Compress the image
-        const compressedFile = await compressImage(file);
-        
-        // Check compressed file size (should now be much smaller)
-        if (compressedFile.size > 5 * 1024 * 1024) {
-          setBlogMessage('Image is too large even after compression. Please try a different image.');
-          return;
-        }
-
-        setSelectedImage(compressedFile);
-        
-        // Create preview
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          setImagePreview(e.target?.result as string);
-        };
-        reader.readAsDataURL(compressedFile);
-        setBlogMessage('');
-      } catch (error) {
-        setBlogMessage('Error processing image. Please try again.');
-      }
+    try {
+      const compressedFile = await compressImage(file);
+      setSelectedImage(compressedFile);
+      setImagePreview(URL.createObjectURL(compressedFile));
+    } catch (error) {
+      console.error('Error handling image:', error);
+      setBlogMessage('Failed to process image. Please try again.');
     }
   };
 
   const removeImage = () => {
     setSelectedImage(null);
     setImagePreview('');
-    setBlogData({ ...blogData, image_url: '' });
+    setBlogData(prev => ({ ...prev, image_url: '' }));
   };
 
   const uploadImage = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('image', file);
-    formData.append('password', password);
+    if (!session) throw new Error('No session');
 
-    const response = await fetch('/.netlify/functions/upload-image', {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(getApiUrl('upload-image'), {
       method: 'POST',
-      body: formData,
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: formData
     });
 
     if (!response.ok) {
@@ -318,12 +315,14 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
     }
 
     const data = await response.json();
-    return data.imageUrl;
+    return data.url;
   };
 
   const handleAiGeneration = async () => {
+    if (!session) return;
+
     if (!aiTopic.trim()) {
-      setAiMessage('Please enter a topic for your blog post.');
+      setAiMessage('Please enter a topic for the blog post.');
       return;
     }
 
@@ -331,49 +330,35 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
     setAiMessage('');
 
     try {
-      const response = await fetch(getApiUrl('generate-blog-post'), {
+      const response = await fetch(getApiUrl('generate-blog'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
-        body: JSON.stringify({
-          password: password,
-          topic: aiTopic,
-          outline: aiOutline,
-          category: blogData.category
-        }),
+        body: JSON.stringify({ topic: aiTopic })
       });
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        // Populate the form with AI-generated content
-        setBlogData(prev => ({
-          ...prev,
-          title: data.title || prev.title,
-          content: data.content || prev.content,
-          excerpt: data.excerpt || prev.excerpt,
-        }));
-        
-        setShowAiDialog(false);
-        setAiTopic('');
-        setAiOutline('');
-        setAiMessage('');
-        setBlogMessage(data.message || 'Blog post generated successfully! You can edit the content before saving.');
-      } else {
-        setAiMessage(data.message || 'Failed to generate blog post. Please try again.');
+      if (!response.ok) {
+        throw new Error('Failed to generate blog post');
       }
+
+      const data = await response.json();
+      setAiOutline(data.outline);
+      setAiMessage('Blog post generated successfully!');
     } catch (error) {
-      console.error('AI generation error:', error);
-      setAiMessage('Failed to generate blog post. Please check your connection and try again.');
+      console.error('Error generating blog post:', error);
+      setAiMessage('Failed to generate blog post. Please try again.');
     } finally {
       setIsGenerating(false);
     }
   };
 
   const handleImageGeneration = async () => {
-    if (!blogData.title && !aiTopic) {
-      setImageGenMessage('Please enter a blog title or topic first.');
+    if (!session) return;
+
+    if (!blogData.title.trim()) {
+      setImageGenMessage('Please enter a title for the blog post first.');
       return;
     }
 
@@ -385,33 +370,22 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
-        body: JSON.stringify({
-          password: password,
-          title: blogData.title,
-          topic: aiTopic,
-          category: blogData.category
-        }),
+        body: JSON.stringify({ prompt: blogData.title })
       });
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        // Server has already saved the image to Supabase, just use the permanent URL
-        setBlogData(prev => ({
-          ...prev,
-          image_url: data.imageUrl,
-        }));
-        setImagePreview(data.imageUrl);
-        setSelectedImage(null); // Clear any previously selected file
-        setImageGenMessage('');
-        setBlogMessage(data.message || 'Beautiful AI image generated and saved successfully!');
-      } else {
-        setImageGenMessage(data.message || 'Failed to generate image. Please try again.');
+      if (!response.ok) {
+        throw new Error('Failed to generate image');
       }
+
+      const data = await response.json();
+      setImagePreview(data.url);
+      setBlogData(prev => ({ ...prev, image_url: data.url }));
+      setImageGenMessage('Image generated successfully!');
     } catch (error) {
-      console.error('Image generation error:', error);
-      setImageGenMessage('Failed to generate image. Please check your connection and try again.');
+      console.error('Error generating image:', error);
+      setImageGenMessage('Failed to generate image. Please try again.');
     } finally {
       setIsGeneratingImage(false);
     }
@@ -439,217 +413,121 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={editingPost ? handleUpdatePost : handleCreatePost} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Post Title</Label>
-            <Input
-              id="title"
-              value={blogData.title}
-              onChange={(e) => setBlogData({...blogData, title: e.target.value})}
-              placeholder="e.g., Finding Peace Through Meditation"
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="excerpt">Excerpt (Optional)</Label>
-            <Textarea
-              id="excerpt"
-              value={blogData.excerpt}
-              onChange={(e) => setBlogData({...blogData, excerpt: e.target.value})}
-              placeholder="A brief summary of your post (will be auto-generated if left empty)"
-              rows={2}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="category">Category</Label>
-            <Input
-              id="category"
-              value={blogData.category}
-              onChange={(e) => setBlogData({...blogData, category: e.target.value})}
-              placeholder="e.g., Spiritual Guidance, Meditation, Healing"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="image">Featured Image (Optional)</Label>
-            <div className="space-y-3">
-              {imagePreview ? (
-                <div className="relative">
-                  <img 
-                    src={imagePreview} 
-                    alt="Preview" 
-                    className="w-full h-48 object-cover rounded-lg border"
-                  />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    onClick={removeImage}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                  <Image className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                  <div className="space-y-2">
-                    <p className="text-sm text-gray-600">
-                      Click to upload an image, or drag and drop
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      PNG, JPG, GIF up to 5MB
-                    </p>
-                  </div>
-                </div>
-              )}
-                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                 <Input
-                   id="image"
-                   type="file"
-                   accept="image/*"
-                   onChange={handleImageSelect}
-                   className="hidden"
-                 />
-                 <Input
-                   id="camera"
-                   type="file"
-                   accept="image/*"
-                   capture="environment"
-                   onChange={handleImageSelect}
-                   className="hidden"
-                 />
-                 <Button
-                   type="button"
-                   variant="outline"
-                   onClick={() => document.getElementById('camera')?.click()}
-                   className="flex items-center justify-center gap-2 h-11"
-                 >
-                   <Camera className="w-4 h-4" />
-                   Take Photo
-                 </Button>
-                 <Button
-                   type="button"
-                   variant="outline"
-                   onClick={() => document.getElementById('image')?.click()}
-                   className="flex items-center justify-center gap-2 h-11"
-                 >
-                   <Upload className="w-4 h-4" />
-                   Upload Image
-                 </Button>
-                 <Button
-                   type="button"
-                   variant="outline"
-                   onClick={handleImageGeneration}
-                   disabled={isGeneratingImage || (!blogData.title && !aiTopic)}
-                   className="col-span-1 sm:col-span-2 bg-gradient-to-r from-purple-100 to-blue-100 hover:from-purple-200 hover:to-blue-200 border-purple-300 text-purple-700 h-11"
-                 >
-                   {isGeneratingImage ? (
-                     <>
-                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                       Generating Image...
-                     </>
-                   ) : (
-                     <>
-                       <Sparkles className="w-4 h-4 mr-2" />
-                       Generate AI Image
-                     </>
-                   )}
-                 </Button>
-                 {imagePreview && (
-                   <Button
-                     type="button"
-                     variant="outline"
-                     onClick={removeImage}
-                     className="col-span-1 sm:col-span-2 text-red-600 border-red-200 hover:bg-red-50 h-11"
-                   >
-                     <X className="w-4 h-4 mr-2" />
-                     Remove Image
-                   </Button>
-                 )}
-               </div>
-               {imageGenMessage && (
-                 <div className={`p-3 rounded-md ${imageGenMessage.includes('successfully') ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                   <p className="text-sm">{imageGenMessage}</p>
-                 </div>
-               )}
+        <form onSubmit={editingPost ? handleUpdatePost : handleCreatePost} className="space-y-6">
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                value={blogData.title}
+                onChange={(e) => setBlogData(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="Enter blog post title"
+                required
+              />
             </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="content">Post Content</Label>
-            <div className="flex gap-2 mb-2">
-              <Dialog open={showAiDialog} onOpenChange={setShowAiDialog}>
-                <DialogTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="bg-gradient-to-r from-purple-100 to-blue-100 hover:from-purple-200 hover:to-blue-200 border-purple-300 text-purple-700"
-                  >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Generate with AI
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                      <Sparkles className="w-5 h-5 text-purple-600" />
-                      Generate Blog Post with AI
-                    </DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="text-sm text-gray-600 mb-4">
-                      AI will generate a complete blog post in Elizabeth's authentic voice. Use the separate "Generate AI Image" button to add a spiritual image.
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="ai-topic">Topic *</Label>
-                      <Input
-                        id="ai-topic"
-                        value={aiTopic}
-                        onChange={(e) => setAiTopic(e.target.value)}
-                        placeholder="e.g., The healing power of crystals"
-                        disabled={isGenerating}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="ai-outline">Brief Outline (Optional)</Label>
-                      <Textarea
-                        id="ai-outline"
-                        value={aiOutline}
-                        onChange={(e) => setAiOutline(e.target.value)}
-                        placeholder="e.g., Introduction to crystals, their spiritual properties, how to use them for healing..."
-                        rows={3}
-                        disabled={isGenerating}
-                      />
-                    </div>
-                    {aiMessage && (
-                      <div className={`p-3 rounded-md ${aiMessage.includes('successfully') ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                        <p className="text-sm">{aiMessage}</p>
+
+            <div>
+              <Label htmlFor="excerpt">Excerpt</Label>
+              <Textarea
+                id="excerpt"
+                value={blogData.excerpt}
+                onChange={(e) => setBlogData(prev => ({ ...prev, excerpt: e.target.value }))}
+                placeholder="Enter a brief excerpt"
+                className="h-20"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="content">Content</Label>
+              <Textarea
+                id="content"
+                value={blogData.content}
+                onChange={(e) => setBlogData(prev => ({ ...prev, content: e.target.value }))}
+                placeholder="Write your blog post content here"
+                className="h-64"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="category">Category</Label>
+              <Input
+                id="category"
+                value={blogData.category}
+                onChange={(e) => setBlogData(prev => ({ ...prev, category: e.target.value }))}
+                placeholder="Enter category"
+              />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="published"
+                checked={blogData.published}
+                onCheckedChange={(checked) => setBlogData(prev => ({ ...prev, published: checked }))}
+              />
+              <Label htmlFor="published">Published</Label>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Featured Image</Label>
+              <div className="flex items-center space-x-2">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                  id="image-upload"
+                />
+                <Label
+                  htmlFor="image-upload"
+                  className="cursor-pointer flex items-center space-x-2 px-4 py-2 border rounded-md hover:bg-secondary"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>Upload Image</span>
+                </Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleImageGeneration}
+                  disabled={isGeneratingImage}
+                  className="flex items-center space-x-2"
+                >
+                  {isGeneratingImage ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Camera className="w-4 h-4" />
+                  )}
+                  <span>Generate AI Image</span>
+                </Button>
+                <Dialog open={showAiDialog} onOpenChange={setShowAiDialog}>
+                  <DialogTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="flex items-center space-x-2"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span>Generate with AI</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Generate Blog Post with AI</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="ai-topic">Topic</Label>
+                        <Input
+                          id="ai-topic"
+                          value={aiTopic}
+                          onChange={(e) => setAiTopic(e.target.value)}
+                          placeholder="Enter a topic for the blog post"
+                        />
                       </div>
-                    )}
-                    <div className="flex gap-2">
                       <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          setShowAiDialog(false);
-                          setAiTopic('');
-                          setAiOutline('');
-                          setAiMessage('');
-                        }}
-                        disabled={isGenerating}
-                        className="flex-1"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        type="button"
                         onClick={handleAiGeneration}
-                        disabled={isGenerating || !aiTopic.trim()}
-                        className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                        disabled={isGenerating}
+                        className="w-full"
                       >
                         {isGenerating ? (
                           <>
@@ -657,62 +535,92 @@ const BlogPostForm = ({ password, editingPost, onPostSaved, onCancelEdit }: Blog
                             Generating...
                           </>
                         ) : (
-                          <>
-                            <Sparkles className="w-4 h-4 mr-2" />
-                            Generate
-                          </>
+                          'Generate'
                         )}
                       </Button>
+                      {aiMessage && (
+                        <p className={`text-sm ${aiMessage.includes('success') ? 'text-green-600' : 'text-red-600'}`}>
+                          {aiMessage}
+                        </p>
+                      )}
+                      {aiOutline && (
+                        <div className="mt-4">
+                          <Label>Generated Outline</Label>
+                          <Textarea
+                            value={aiOutline}
+                            onChange={(e) => setAiOutline(e.target.value)}
+                            className="h-32"
+                          />
+                          <Button
+                            type="button"
+                            onClick={() => {
+                              setBlogData(prev => ({ ...prev, content: aiOutline }));
+                              setShowAiDialog(false);
+                            }}
+                            className="mt-2"
+                          >
+                            Use This Content
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                  </DialogContent>
+                </Dialog>
+              </div>
+              {imageGenMessage && (
+                <p className={`text-sm ${imageGenMessage.includes('success') ? 'text-green-600' : 'text-red-600'}`}>
+                  {imageGenMessage}
+                </p>
+              )}
+              {imagePreview && (
+                <div className="relative mt-2">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-full h-48 object-cover rounded-md"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={removeImage}
+                    className="absolute top-2 right-2"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
             </div>
-            <Textarea
-              id="content"
-              value={blogData.content}
-              onChange={(e) => setBlogData({...blogData, content: e.target.value})}
-              placeholder="Write your blog post content here..."
-              rows={10}
-              required
-            />
           </div>
-          
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="published"
-              checked={blogData.published}
-              onCheckedChange={(checked) => setBlogData({...blogData, published: checked})}
-            />
-            <Label htmlFor="published">Publish immediately</Label>
-          </div>
-          
-          <div className="flex gap-2">
+
+          <div className="flex justify-end space-x-2">
             {editingPost && onCancelEdit && (
-              <Button 
-                type="button" 
+              <Button
+                type="button"
                 variant="outline"
                 onClick={onCancelEdit}
-                disabled={isSubmitting || isLoading}
-                className="flex-1"
               >
                 Cancel
               </Button>
             )}
-            <Button 
-              type="submit" 
-              disabled={isSubmitting || isLoading}
-              className="flex-1 bg-gradient-to-r from-purple-900 to-black hover:from-black hover:to-gray-900 text-white disabled:opacity-50"
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex items-center space-x-2"
             >
-              <Save className="w-4 h-4 mr-2" />
-              {isSubmitting ? 'Saving...' : isLoading ? 'Loading...' : editingPost ? 'Update Post' : 'Create Post'}
+              {isSubmitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              <span>{editingPost ? 'Update Post' : 'Create Post'}</span>
             </Button>
           </div>
-          
+
           {blogMessage && (
-            <div className={`p-3 rounded-md ${blogMessage.includes('successfully') ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-              <p className="text-sm">{blogMessage}</p>
-            </div>
+            <p className={`text-sm ${blogMessage.includes('success') ? 'text-green-600' : 'text-red-600'}`}>
+              {blogMessage}
+            </p>
           )}
         </form>
       </CardContent>

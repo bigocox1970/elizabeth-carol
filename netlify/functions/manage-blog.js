@@ -209,60 +209,82 @@ exports.handler = async (event, context) => {
       }
 
     case 'get-single':
-      // Get a single post by ID
-      const singleResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?id=eq.${postId}&select=*,blog_comments(*)`, {
-        method: 'GET',
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      try {
+        // Get a single post by ID
+        console.log('Fetching single post from Supabase');
+        console.log('Post ID:', postId);
+        console.log('Using URL:', `${SUPABASE_URL}/rest/v1/blog_posts?id=eq.${postId}&select=*,blog_comments(*)`);
+        
+        const singleResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?id=eq.${postId}&select=*,blog_comments(*)`, {
+          method: 'GET',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        console.log('Single post response status:', singleResponse.status);
+        
+        if (!singleResponse.ok) {
+          const errorText = await singleResponse.text();
+          console.error('Single post response error:', errorText);
+          throw new Error(`Database query failed: ${singleResponse.status} - ${errorText}`);
         }
-      });
 
-      if (!singleResponse.ok) {
-        throw new Error(`Database query failed: ${singleResponse.status}`);
-      }
+        const singlePosts = await singleResponse.json();
+        console.log('Retrieved single post:', JSON.stringify(singlePosts, null, 2));
+        
+        if (singlePosts.length === 0) {
+          return {
+            statusCode: 404,
+            headers: { "Access-Control-Allow-Origin": "*" },
+            body: JSON.stringify({ message: 'Post not found' })
+          };
+        }
+        
+        const post = singlePosts[0];
+        
+        // Format post for frontend
+        const formattedPost = {
+          id: post.id.toString(),
+          title: post.title,
+          content: post.content,
+          excerpt: post.excerpt || post.content.substring(0, 200) + '...',
+          category: post.category,
+          published: post.published,
+          createdAt: post.created_at,
+          updatedAt: post.updated_at,
+          author: post.author,
+          image_url: post.image_url,
+          reviews: post.blog_comments.map(comment => ({
+            id: comment.id.toString(),
+            name: comment.author_name,
+            email: comment.author_email,
+            comment: comment.content,
+            approved: comment.approved,
+            createdAt: comment.created_at,
+            rating: 5 // Default rating for comments
+          }))
+        };
 
-      const singlePosts = await singleResponse.json();
-      
-      if (singlePosts.length === 0) {
+        console.log('Formatted single post:', JSON.stringify(formattedPost, null, 2));
+
         return {
-          statusCode: 404,
+          statusCode: 200,
           headers: { "Access-Control-Allow-Origin": "*" },
-          body: JSON.stringify({ message: 'Post not found' })
+          body: JSON.stringify({ post: formattedPost })
+        };
+      } catch (error) {
+        console.error('Error getting single post:', error);
+        return {
+          statusCode: 500,
+          headers: { "Access-Control-Allow-Origin": "*" },
+          body: JSON.stringify({ 
+            message: 'Failed to retrieve post',
+            error: error.message
+          })
         };
       }
-      
-      const post = singlePosts[0];
-      
-      // Format post for frontend
-      const formattedPost = {
-        id: post.id.toString(),
-        title: post.title,
-        content: post.content,
-        excerpt: post.excerpt || post.content.substring(0, 200) + '...',
-        category: post.category,
-        published: post.published,
-        createdAt: post.created_at,
-        updatedAt: post.updated_at,
-        author: post.author,
-        image_url: post.image_url,
-        reviews: post.blog_comments.map(comment => ({
-          id: comment.id.toString(),
-          name: comment.author_name,
-          email: comment.author_email,
-          comment: comment.content,
-          approved: comment.approved,
-          createdAt: comment.created_at,
-          rating: 5 // Default rating for comments
-        }))
-      };
-
-      return {
-        statusCode: 200,
-        headers: { "Access-Control-Allow-Origin": "*" },
-        body: JSON.stringify({ post: formattedPost })
-      };
 
     case 'create':
       // Create a new post
