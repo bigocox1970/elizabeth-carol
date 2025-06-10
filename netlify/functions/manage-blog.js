@@ -18,36 +18,57 @@ exports.handler = async (event, context) => {
   // Extract the token from the Bearer header
   const token = authHeader.replace('Bearer ', '');
 
-  // Verify the user is an admin
-  const isAdminResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
-    method: 'POST',
-    headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    }
-  });
-
-  if (!isAdminResponse.ok) {
-    return {
-      statusCode: 401,
-      headers: { "Access-Control-Allow-Origin": "*" },
-      body: JSON.stringify({ message: 'Unauthorized' })
-    };
-  }
-
-  const isAdmin = await isAdminResponse.json();
-
-  // Authentication check for write operations
-  if (['create', 'update', 'delete'].includes(action) && !isAdmin) {
-    return {
-      statusCode: 401,
-      headers: { "Access-Control-Allow-Origin": "*" },
-      body: JSON.stringify({ message: 'Unauthorized' })
-    };
-  }
-
   try {
+    // First, get the user ID from the token
+    const userResponse = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!userResponse.ok) {
+      console.error('Failed to get user info:', await userResponse.text());
+      return {
+        statusCode: 401,
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify({ message: 'Invalid token' })
+      };
+    }
+
+    const userData = await userResponse.json();
+    console.log('User data:', userData);
+
+    // Verify the user is an admin
+    const isAdminResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ user_id: userData.id })
+    });
+
+    if (!isAdminResponse.ok) {
+      return {
+        statusCode: 401,
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify({ message: 'Unauthorized' })
+      };
+    }
+
+    const isAdmin = await isAdminResponse.json();
+
+    // Authentication check for write operations
+    if (['create', 'update', 'delete'].includes(action) && !isAdmin) {
+      return {
+        statusCode: 401,
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify({ message: 'Unauthorized' })
+      };
+    }
+
     console.log('Starting manage-blog function');
     console.log('SUPABASE_URL:', SUPABASE_URL ? 'Exists' : 'Missing');
     console.log('SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? 'Exists' : 'Missing');
@@ -252,8 +273,7 @@ exports.handler = async (event, context) => {
           createdAt: newPost.created_at,
           updatedAt: newPost.updated_at,
           author: newPost.author,
-          image_url: newPost.image_url,
-          reviews: []
+          image_url: newPost.image_url
         };
 
         return {
@@ -289,10 +309,30 @@ exports.handler = async (event, context) => {
           throw new Error(`Failed to update post: ${updateResponse.status}`);
         }
 
+        const updatedPosts = await updateResponse.json();
+        const updatedPost = updatedPosts[0];
+        
+        // Format post for frontend
+        const formattedUpdatedPost = {
+          id: updatedPost.id.toString(),
+          title: updatedPost.title,
+          content: updatedPost.content,
+          excerpt: updatedPost.excerpt,
+          category: updatedPost.category,
+          published: updatedPost.published,
+          createdAt: updatedPost.created_at,
+          updatedAt: updatedPost.updated_at,
+          author: updatedPost.author,
+          image_url: updatedPost.image_url
+        };
+
         return {
           statusCode: 200,
           headers: { "Access-Control-Allow-Origin": "*" },
-          body: JSON.stringify({ message: 'Post updated successfully' })
+          body: JSON.stringify({ 
+            message: 'Post updated successfully',
+            post: formattedUpdatedPost
+          })
         };
 
       case 'delete':

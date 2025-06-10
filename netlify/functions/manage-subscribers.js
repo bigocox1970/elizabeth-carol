@@ -17,36 +17,57 @@ exports.handler = async (event, context) => {
   // Extract the token from the Bearer header
   const token = authHeader.replace('Bearer ', '');
 
-  // Verify the user is an admin
-  const isAdminResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
-    method: 'POST',
-    headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    }
-  });
-
-  if (!isAdminResponse.ok) {
-    return {
-      statusCode: 401,
-      headers: { "Access-Control-Allow-Origin": "*" },
-      body: JSON.stringify({ message: 'Unauthorized' })
-    };
-  }
-
-  const isAdmin = await isAdminResponse.json();
-
-  // Authentication check for write operations
-  if (['add-subscriber', 'update-subscriber', 'delete-subscriber'].includes(action) && !isAdmin) {
-    return {
-      statusCode: 401,
-      headers: { "Access-Control-Allow-Origin": "*" },
-      body: JSON.stringify({ message: 'Unauthorized' })
-    };
-  }
-
   try {
+    // First, get the user ID from the token
+    const userResponse = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!userResponse.ok) {
+      console.error('Failed to get user info:', await userResponse.text());
+      return {
+        statusCode: 401,
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify({ message: 'Invalid token' })
+      };
+    }
+
+    const userData = await userResponse.json();
+    console.log('User data:', userData);
+
+    // Verify the user is an admin
+    const isAdminResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ user_id: userData.id })
+    });
+
+    if (!isAdminResponse.ok) {
+      return {
+        statusCode: 401,
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify({ message: 'Unauthorized' })
+      };
+    }
+
+    const isAdmin = await isAdminResponse.json();
+
+    // Authentication check for write operations
+    if (['add-subscriber', 'update-subscriber', 'delete-subscriber'].includes(action) && !isAdmin) {
+      return {
+        statusCode: 401,
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify({ message: 'Unauthorized' })
+      };
+    }
+
     switch (action) {
       case 'get-all-subscribers':
         // Return all subscribers, sorted by date (newest first)
