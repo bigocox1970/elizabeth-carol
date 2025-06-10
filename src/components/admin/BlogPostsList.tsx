@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, Edit, Trash2, RefreshCw, Eye, EyeOff } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { getApiUrl } from "@/utils/api";
 
 interface BlogPost {
   id: string;
@@ -15,56 +17,68 @@ interface BlogPost {
 }
 
 interface BlogPostsListProps {
-  password: string;
   onEditPost: (postId: string) => void;
   refreshTrigger?: number;
 }
 
-const BlogPostsList = ({ password, onEditPost, refreshTrigger }: BlogPostsListProps) => {
+const BlogPostsList = ({ onEditPost, refreshTrigger }: BlogPostsListProps) => {
+  const { session } = useAuth();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    loadPosts();
-  }, [refreshTrigger]);
+    if (session) {
+      loadPosts();
+    }
+  }, [session, refreshTrigger]);
 
   const loadPosts = async () => {
+    if (!session) return;
+
     setIsLoading(true);
     try {
-      const response = await fetch('/.netlify/functions/manage-blog', {
+      console.log('Loading blog posts...');
+      const response = await fetch(getApiUrl('manage-blog'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({ 
-          action: 'get-all',
-          password: password
+          action: 'get-all'
         }),
       });
 
+      console.log('Blog posts response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('Blog posts data received:', data);
         setPosts(data.posts || []);
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to load blog posts:', response.status, errorData);
       }
     } catch (error) {
-      console.error('Failed to load posts:', error);
+      console.error('Failed to load blog posts:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDeletePost = async (postId: string) => {
+    if (!session) return;
     if (!confirm('Are you sure you want to delete this post?')) return;
 
     try {
-      const response = await fetch('/.netlify/functions/manage-blog', {
+      const response = await fetch(getApiUrl('manage-blog'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
           action: 'delete',
-          password: password,
           postId: postId
         }),
       });
@@ -96,7 +110,7 @@ const BlogPostsList = ({ password, onEditPost, refreshTrigger }: BlogPostsListPr
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3 max-h-96 overflow-y-auto">
+        <div className="space-y-3">
           {isLoading ? (
             <div className="flex justify-center py-8">
               <RefreshCw className="w-8 h-8 animate-spin text-primary" />

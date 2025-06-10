@@ -426,48 +426,7 @@ const BlogPostForm = ({ editingPost, onPostSaved, onCancelEdit }: BlogPostFormPr
               />
             </div>
 
-            <div>
-              <Label htmlFor="excerpt">Excerpt</Label>
-              <Textarea
-                id="excerpt"
-                value={blogData.excerpt}
-                onChange={(e) => setBlogData(prev => ({ ...prev, excerpt: e.target.value }))}
-                placeholder="Enter a brief excerpt"
-                className="h-20"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="content">Content</Label>
-              <Textarea
-                id="content"
-                value={blogData.content}
-                onChange={(e) => setBlogData(prev => ({ ...prev, content: e.target.value }))}
-                placeholder="Write your blog post content here"
-                className="h-64"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="category">Category</Label>
-              <Input
-                id="category"
-                value={blogData.category}
-                onChange={(e) => setBlogData(prev => ({ ...prev, category: e.target.value }))}
-                placeholder="Enter category"
-              />
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="published"
-                checked={blogData.published}
-                onCheckedChange={(checked) => setBlogData(prev => ({ ...prev, published: checked }))}
-              />
-              <Label htmlFor="published">Published</Label>
-            </div>
-
+            {/* Featured Image Section - Moved above content */}
             <div className="space-y-2">
               <Label>Featured Image</Label>
               <div className="flex items-center space-x-2">
@@ -591,6 +550,48 @@ const BlogPostForm = ({ editingPost, onPostSaved, onCancelEdit }: BlogPostFormPr
                 </div>
               )}
             </div>
+
+            <div>
+              <Label htmlFor="excerpt">Excerpt</Label>
+              <Textarea
+                id="excerpt"
+                value={blogData.excerpt}
+                onChange={(e) => setBlogData(prev => ({ ...prev, excerpt: e.target.value }))}
+                placeholder="Enter a brief excerpt"
+                className="h-20"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="content">Content</Label>
+              <Textarea
+                id="content"
+                value={blogData.content}
+                onChange={(e) => setBlogData(prev => ({ ...prev, content: e.target.value }))}
+                placeholder="Write your blog post content here"
+                className="h-64"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="category">Category</Label>
+              <Input
+                id="category"
+                value={blogData.category}
+                onChange={(e) => setBlogData(prev => ({ ...prev, category: e.target.value }))}
+                placeholder="Enter category"
+              />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="published"
+                checked={blogData.published}
+                onCheckedChange={(checked) => setBlogData(prev => ({ ...prev, published: checked }))}
+              />
+              <Label htmlFor="published">Published</Label>
+            </div>
           </div>
 
           <div className="flex justify-end space-x-2">
@@ -629,4 +630,3 @@ const BlogPostForm = ({ editingPost, onPostSaved, onCancelEdit }: BlogPostFormPr
 };
 
 export default BlogPostForm;
-
