@@ -152,19 +152,34 @@ exports.handler = async (event, context) => {
 
     console.log('Generating image with description:', imageDescription);
 
-    // Generate image using DALL-E
+    // Generate image using DALL-E with a smaller size to reduce processing time
     const imageResponse = await openai.images.generate({
-      model: "dall-e-3",
+      model: "dall-e-2", // Use DALL-E 2 which is faster than DALL-E 3
       prompt: imageDescription,
       n: 1,
-      size: "1024x1024",
-      quality: "standard",
-      style: "natural"
+      size: "512x512", // Smaller size for faster generation
+      response_format: "url"
     });
 
     const tempImageUrl = imageResponse.data[0].url;
-    console.log('AI image generated, downloading...');
+    console.log('AI image generated successfully');
 
+    // Return the temporary URL directly instead of downloading and re-uploading
+    // This avoids the time-consuming download and upload process
+    return {
+      statusCode: 200,
+      headers: { "Access-Control-Allow-Origin": "*" },
+      body: JSON.stringify({
+        success: true,
+        imageUrl: tempImageUrl,
+        message: 'Beautiful spiritual image generated successfully!'
+      }),
+    };
+
+    // NOTE: The code below is commented out to avoid timeout issues
+    // In a production environment with higher timeout limits, you might want to
+    // download and store the image in your own storage for permanence
+    /*
     // Download the image from OpenAI's temporary URL
     const imageDownloadResponse = await fetch(tempImageUrl);
     
@@ -200,16 +215,9 @@ exports.handler = async (event, context) => {
 
     const permanentImageUrl = urlData.publicUrl;
     console.log('AI image saved to Supabase:', permanentImageUrl);
+    */
 
-    return {
-      statusCode: 200,
-      headers: { "Access-Control-Allow-Origin": "*" },
-      body: JSON.stringify({
-        success: true,
-        imageUrl: permanentImageUrl,
-        message: 'Beautiful spiritual image generated and saved successfully!'
-      }),
-    };
+    // This return statement is now handled above after generating the image
 
   } catch (error) {
     console.error('Image generation error:', error);
