@@ -3,10 +3,42 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
 exports.handler = async (event, context) => {
   const { httpMethod } = event;
-  const { action, password, postId, postData, commentId, commentData } = JSON.parse(event.body || '{}');
+  const { action, postId, postData, commentId, commentData } = JSON.parse(event.body || '{}');
+
+  // Get the user's JWT token from the Authorization header
+  const authHeader = event.headers.authorization || event.headers.Authorization;
+  if (!authHeader) {
+    return {
+      statusCode: 401,
+      headers: { "Access-Control-Allow-Origin": "*" },
+      body: JSON.stringify({ message: 'No authorization token provided' })
+    };
+  }
+
+  // Extract the token from the Bearer header
+  const token = authHeader.replace('Bearer ', '');
+
+  // Verify the user is an admin
+  const isAdminResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  if (!isAdminResponse.ok) {
+    return {
+      statusCode: 401,
+      headers: { "Access-Control-Allow-Origin": "*" },
+      body: JSON.stringify({ message: 'Unauthorized' })
+    };
+  }
+
+  const isAdmin = await isAdminResponse.json();
 
   // Authentication check for write operations
-  const isAdmin = password === process.env.ADMIN_PASSWORD;
   if (['create', 'update', 'delete'].includes(action) && !isAdmin) {
     return {
       statusCode: 401,
@@ -28,7 +60,7 @@ exports.handler = async (event, context) => {
           method: 'GET',
           headers: {
             'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
@@ -67,7 +99,7 @@ exports.handler = async (event, context) => {
             method: 'GET',
             headers: {
               'apikey': SUPABASE_ANON_KEY,
-              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+              'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
             }
           });
@@ -131,7 +163,7 @@ exports.handler = async (event, context) => {
           method: 'GET',
           headers: {
             'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
@@ -187,7 +219,7 @@ exports.handler = async (event, context) => {
           method: 'POST',
           headers: {
             'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
             'Prefer': 'return=representation'
           },
@@ -239,7 +271,7 @@ exports.handler = async (event, context) => {
           method: 'PATCH',
           headers: {
             'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
             'Prefer': 'return=representation'
           },
@@ -249,8 +281,7 @@ exports.handler = async (event, context) => {
             excerpt: postData.excerpt || postData.content.substring(0, 200) + '...',
             category: postData.category,
             published: postData.published,
-            updated_at: new Date().toISOString(),
-            image_url: postData.image_url || null
+            image_url: postData.image_url
           })
         });
 
@@ -258,38 +289,10 @@ exports.handler = async (event, context) => {
           throw new Error(`Failed to update post: ${updateResponse.status}`);
         }
 
-        const updatedPosts = await updateResponse.json();
-        
-        if (updatedPosts.length === 0) {
-          return {
-            statusCode: 404,
-            headers: { "Access-Control-Allow-Origin": "*" },
-            body: JSON.stringify({ message: 'Post not found' })
-          };
-        }
-        
-        const updatedPost = updatedPosts[0];
-        
-        // Format post for frontend
-        const formattedUpdatedPost = {
-          id: updatedPost.id.toString(),
-          title: updatedPost.title,
-          content: updatedPost.content,
-          excerpt: updatedPost.excerpt,
-          category: updatedPost.category,
-          published: updatedPost.published,
-          createdAt: updatedPost.created_at,
-          updatedAt: updatedPost.updated_at,
-          author: updatedPost.author
-        };
-
         return {
           statusCode: 200,
           headers: { "Access-Control-Allow-Origin": "*" },
-          body: JSON.stringify({ 
-            message: 'Post updated successfully',
-            post: formattedUpdatedPost
-          })
+          body: JSON.stringify({ message: 'Post updated successfully' })
         };
 
       case 'delete':
@@ -298,7 +301,7 @@ exports.handler = async (event, context) => {
           method: 'DELETE',
           headers: {
             'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
@@ -320,15 +323,13 @@ exports.handler = async (event, context) => {
           body: JSON.stringify({ message: 'Invalid action' })
         };
     }
-
   } catch (error) {
-    console.error('Error managing blog:', error);
-    
+    console.error('Error in manage-blog function:', error);
     return {
       statusCode: 500,
       headers: { "Access-Control-Allow-Origin": "*" },
       body: JSON.stringify({ 
-        message: 'Failed to manage blog posts',
+        message: 'Internal server error',
         error: error.message
       })
     };

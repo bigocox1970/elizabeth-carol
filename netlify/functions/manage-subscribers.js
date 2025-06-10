@@ -2,7 +2,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
 exports.handler = async (event, context) => {
-  const { action, commentData, commentId } = JSON.parse(event.body || '{}');
+  const { action, subscriberData, subscriberId } = JSON.parse(event.body || '{}');
 
   // Get the user's JWT token from the Authorization header
   const authHeader = event.headers.authorization || event.headers.Authorization;
@@ -38,7 +38,7 @@ exports.handler = async (event, context) => {
   const isAdmin = await isAdminResponse.json();
 
   // Authentication check for write operations
-  if (['approve-comment', 'unapprove-comment', 'delete-comment'].includes(action) && !isAdmin) {
+  if (['add-subscriber', 'update-subscriber', 'delete-subscriber'].includes(action) && !isAdmin) {
     return {
       statusCode: 401,
       headers: { "Access-Control-Allow-Origin": "*" },
@@ -48,9 +48,9 @@ exports.handler = async (event, context) => {
 
   try {
     switch (action) {
-      case 'get-all-comments':
-        // Return all comments, sorted by date (newest first)
-        const allResponse = await fetch(`${SUPABASE_URL}/rest/v1/comments?select=*&order=created_at.desc`, {
+      case 'get-all-subscribers':
+        // Return all subscribers, sorted by date (newest first)
+        const allResponse = await fetch(`${SUPABASE_URL}/rest/v1/subscribers?select=*&order=created_at.desc`, {
           method: 'GET',
           headers: {
             'apikey': SUPABASE_ANON_KEY,
@@ -63,53 +63,76 @@ exports.handler = async (event, context) => {
           throw new Error(`Database query failed: ${allResponse.status}`);
         }
 
-        const allComments = await allResponse.json();
+        const allSubscribers = await allResponse.json();
         
-        // Format comments for frontend
-        const formattedComments = allComments.map(comment => ({
-          id: comment.id.toString(),
-          postId: comment.post_id,
-          name: comment.name,
-          email: comment.email,
-          content: comment.content,
-          approved: comment.approved,
-          createdAt: comment.created_at
+        // Format subscribers for frontend
+        const formattedSubscribers = allSubscribers.map(subscriber => ({
+          id: subscriber.id.toString(),
+          email: subscriber.email,
+          name: subscriber.name,
+          active: subscriber.active,
+          createdAt: subscriber.created_at
         }));
 
         return {
           statusCode: 200,
           headers: { "Access-Control-Allow-Origin": "*" },
-          body: JSON.stringify({ comments: formattedComments })
+          body: JSON.stringify({ subscribers: formattedSubscribers })
         };
 
-      case 'approve-comment':
-      case 'unapprove-comment':
-        // Update comment approval status
-        const updateResponse = await fetch(`${SUPABASE_URL}/rest/v1/comments?id=eq.${commentId}`, {
+      case 'add-subscriber':
+        // Add a new subscriber
+        const addResponse = await fetch(`${SUPABASE_URL}/rest/v1/subscribers`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify(subscriberData)
+        });
+
+        if (!addResponse.ok) {
+          throw new Error(`Failed to add subscriber: ${addResponse.status}`);
+        }
+
+        const newSubscriber = await addResponse.json();
+
+        return {
+          statusCode: 200,
+          headers: { "Access-Control-Allow-Origin": "*" },
+          body: JSON.stringify({ 
+            message: 'Subscriber added successfully',
+            subscriber: newSubscriber[0]
+          })
+        };
+
+      case 'update-subscriber':
+        // Update a subscriber
+        const updateResponse = await fetch(`${SUPABASE_URL}/rest/v1/subscribers?id=eq.${subscriberId}`, {
           method: 'PATCH',
           headers: {
             'apikey': SUPABASE_ANON_KEY,
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            approved: action === 'approve-comment'
-          })
+          body: JSON.stringify(subscriberData)
         });
 
         if (!updateResponse.ok) {
-          throw new Error(`Failed to update comment: ${updateResponse.status}`);
+          throw new Error(`Failed to update subscriber: ${updateResponse.status}`);
         }
 
         return {
           statusCode: 200,
           headers: { "Access-Control-Allow-Origin": "*" },
-          body: JSON.stringify({ message: 'Comment updated successfully' })
+          body: JSON.stringify({ message: 'Subscriber updated successfully' })
         };
 
-      case 'delete-comment':
-        // Delete a comment
-        const deleteResponse = await fetch(`${SUPABASE_URL}/rest/v1/comments?id=eq.${commentId}`, {
+      case 'delete-subscriber':
+        // Delete a subscriber
+        const deleteResponse = await fetch(`${SUPABASE_URL}/rest/v1/subscribers?id=eq.${subscriberId}`, {
           method: 'DELETE',
           headers: {
             'apikey': SUPABASE_ANON_KEY,
@@ -119,13 +142,13 @@ exports.handler = async (event, context) => {
         });
 
         if (!deleteResponse.ok) {
-          throw new Error(`Failed to delete comment: ${deleteResponse.status}`);
+          throw new Error(`Failed to delete subscriber: ${deleteResponse.status}`);
         }
 
         return {
           statusCode: 200,
           headers: { "Access-Control-Allow-Origin": "*" },
-          body: JSON.stringify({ message: 'Comment deleted successfully' })
+          body: JSON.stringify({ message: 'Subscriber deleted successfully' })
         };
 
       default:
@@ -136,7 +159,7 @@ exports.handler = async (event, context) => {
         };
     }
   } catch (error) {
-    console.error('Error in manage-comments function:', error);
+    console.error('Error in manage-subscribers function:', error);
     return {
       statusCode: 500,
       headers: { "Access-Control-Allow-Origin": "*" },

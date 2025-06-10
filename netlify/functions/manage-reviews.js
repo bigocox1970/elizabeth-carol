@@ -6,8 +6,47 @@ exports.handler = async (event, context) => {
   const { httpMethod } = event;
   const { action, password, reviewData, reviewId, userToken } = JSON.parse(event.body || '{}');
 
-  // Authentication check for admin operations
-  const isAdmin = password === process.env.ADMIN_PASSWORD;
+  // Get the user's JWT token from the Authorization header
+  const authHeader = event.headers.authorization || event.headers.Authorization;
+  if (!authHeader) {
+    return {
+      statusCode: 401,
+      headers: { "Access-Control-Allow-Origin": "*" },
+      body: JSON.stringify({ message: 'No authorization token provided' })
+    };
+  }
+
+  // Extract the token from the Bearer header
+  const token = authHeader.replace('Bearer ', '');
+
+  // Verify the user is an admin
+  const isAdminResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  if (!isAdminResponse.ok) {
+    return {
+      statusCode: 401,
+      headers: { "Access-Control-Allow-Origin": "*" },
+      body: JSON.stringify({ message: 'Unauthorized' })
+    };
+  }
+
+  const isAdmin = await isAdminResponse.json();
+
+  // Authentication check for write operations
+  if (['approve-review', 'unapprove-review', 'delete-review'].includes(action) && !isAdmin) {
+    return {
+      statusCode: 401,
+      headers: { "Access-Control-Allow-Origin": "*" },
+      body: JSON.stringify({ message: 'Unauthorized' })
+    };
+  }
 
   try {
     console.log('Starting manage-reviews function');
@@ -100,65 +139,39 @@ exports.handler = async (event, context) => {
         };
 
       case 'get-all-reviews':
-        // Get all reviews for admin
-        console.log('get-all-reviews: isAdmin check', isAdmin);
-        console.log('get-all-reviews: password provided', !!password);
-        console.log('get-all-reviews: admin password env', !!process.env.ADMIN_PASSWORD);
-        
-        if (!isAdmin) {
-          console.log('get-all-reviews: Authentication failed');
-          return {
-            statusCode: 401,
-            headers: { "Access-Control-Allow-Origin": "*" },
-            body: JSON.stringify({ message: 'Unauthorized' })
-          };
-        }
-
-        console.log('get-all-reviews: Fetching reviews from Supabase');
-        // Use service role key for admin operations to bypass RLS
-        const authKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
-        console.log('get-all-reviews: Using service role key:', !!SUPABASE_SERVICE_ROLE_KEY);
-        
-        const allReviewsResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews?select=*&order=created_at.desc`, {
+        // Return all reviews, sorted by date (newest first)
+        const allResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews?select=*&order=created_at.desc`, {
           method: 'GET',
           headers: {
-            'apikey': authKey,
-            'Authorization': `Bearer ${authKey}`,
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
 
-        console.log('get-all-reviews: Response status', allReviewsResponse.status);
-
-        if (!allReviewsResponse.ok) {
-          const errorText = await allReviewsResponse.text();
-          console.error('get-all-reviews: Response error', errorText);
-          throw new Error(`Database query failed: ${allReviewsResponse.status} - ${errorText}`);
+        if (!allResponse.ok) {
+          throw new Error(`Database query failed: ${allResponse.status}`);
         }
 
-        const allReviews = await allReviewsResponse.json();
-        console.log('get-all-reviews: Found', allReviews.length, 'reviews');
-
+        const allReviews = await allResponse.json();
+        
         // Format reviews for frontend
-        const formattedAllReviews = allReviews.map(review => ({
+        const formattedReviews = allReviews.map(review => ({
           id: review.id.toString(),
           name: review.name,
           email: review.email,
           location: review.location,
           service: review.service,
           rating: review.rating,
-          title: review.title,
-          comment: review.content,
+          comment: review.comment,
           approved: review.approved,
-          featured: review.featured,
           createdAt: review.created_at
         }));
 
-        console.log('get-all-reviews: Returning', formattedAllReviews.length, 'formatted reviews');
         return {
           statusCode: 200,
           headers: { "Access-Control-Allow-Origin": "*" },
-          body: JSON.stringify({ reviews: formattedAllReviews })
+          body: JSON.stringify({ reviews: formattedReviews })
         };
 
       case 'get-approved-reviews':
@@ -220,69 +233,28 @@ exports.handler = async (event, context) => {
         }
 
       case 'approve-review':
-        // Approve a review (admin only)
-        if (!isAdmin) {
-          return {
-            statusCode: 401,
-            headers: { "Access-Control-Allow-Origin": "*" },
-            body: JSON.stringify({ message: 'Unauthorized' })
-          };
-        }
-
-        const approveAuthKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
-        const approveResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews?id=eq.${reviewId}`, {
-          method: 'PATCH',
-          headers: {
-            'apikey': approveAuthKey,
-            'Authorization': `Bearer ${approveAuthKey}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            approved: true
-          })
-        });
-
-        if (!approveResponse.ok) {
-          throw new Error(`Failed to approve review: ${approveResponse.status}`);
-        }
-
-        return {
-          statusCode: 200,
-          headers: { "Access-Control-Allow-Origin": "*" },
-          body: JSON.stringify({ message: 'Review approved successfully' })
-        };
-
       case 'unapprove-review':
-        // Unapprove a review (admin only)
-        if (!isAdmin) {
-          return {
-            statusCode: 401,
-            headers: { "Access-Control-Allow-Origin": "*" },
-            body: JSON.stringify({ message: 'Unauthorized' })
-          };
-        }
-
-        const unapproveAuthKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
-        const unapproveResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews?id=eq.${reviewId}`, {
+        // Update review approval status
+        const updateResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews?id=eq.${reviewId}`, {
           method: 'PATCH',
           headers: {
-            'apikey': unapproveAuthKey,
-            'Authorization': `Bearer ${unapproveAuthKey}`,
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            approved: false
+            approved: action === 'approve-review'
           })
         });
 
-        if (!unapproveResponse.ok) {
-          throw new Error(`Failed to unapprove review: ${unapproveResponse.status}`);
+        if (!updateResponse.ok) {
+          throw new Error(`Failed to update review: ${updateResponse.status}`);
         }
 
         return {
           statusCode: 200,
           headers: { "Access-Control-Allow-Origin": "*" },
-          body: JSON.stringify({ message: 'Review unapproved successfully' })
+          body: JSON.stringify({ message: 'Review updated successfully' })
         };
 
       case 'approve-comment':
@@ -351,21 +323,12 @@ exports.handler = async (event, context) => {
         };
 
       case 'delete-review':
-        // Delete a review (admin only)
-        if (!isAdmin) {
-          return {
-            statusCode: 401,
-            headers: { "Access-Control-Allow-Origin": "*" },
-            body: JSON.stringify({ message: 'Unauthorized' })
-          };
-        }
-
-        const deleteAuthKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+        // Delete a review
         const deleteResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews?id=eq.${reviewId}`, {
           method: 'DELETE',
           headers: {
-            'apikey': deleteAuthKey,
-            'Authorization': `Bearer ${deleteAuthKey}`,
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
