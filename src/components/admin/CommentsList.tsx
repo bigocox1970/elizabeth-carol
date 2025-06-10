@@ -125,7 +125,7 @@ const CommentsList = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3 max-h-96 overflow-y-auto">
+        <div className="space-y-3">
           {isLoading ? (
             <div className="flex justify-center py-8">
               <RefreshCw className="w-8 h-8 animate-spin text-primary" />
