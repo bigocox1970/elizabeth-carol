@@ -391,10 +391,20 @@ const BlogPostForm = ({ editingPost, onPostSaved, onCancelEdit }: BlogPostFormPr
       }
 
       const data = await response.json();
+      console.log('Image generation response:', data);
+      
+      // Handle both response formats (new and old)
       if (data.success) {
-        setImagePreview(data.imageUrl);
-        setBlogData(prev => ({ ...prev, image_url: data.imageUrl }));
-        setImageGenMessage('Image generated successfully!');
+        // Get the image URL from either imageUrl or url property
+        const imageUrl = data.imageUrl || data.url;
+        if (imageUrl) {
+          setImagePreview(imageUrl);
+          setBlogData(prev => ({ ...prev, image_url: imageUrl }));
+          setImageGenMessage('Image generated successfully!');
+        } else {
+          console.error('No image URL in response:', data);
+          throw new Error('No image URL in response');
+        }
       } else {
         throw new Error(data.message || 'Failed to generate image');
       }
