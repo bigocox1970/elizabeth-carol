@@ -76,41 +76,62 @@ exports.handler = async (event, context) => {
     
     switch (action) {
       case 'get-all':
-        // Return all posts, sorted by date (newest first)
-        const allResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?select=*&order=created_at.desc`, {
-          method: 'GET',
-          headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+        try {
+          // Return all posts, sorted by date (newest first)
+          console.log('Fetching all posts from Supabase');
+          const allResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?select=*&order=created_at.desc`, {
+            method: 'GET',
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          console.log('All posts response status:', allResponse.status);
+          
+          if (!allResponse.ok) {
+            const errorText = await allResponse.text();
+            console.error('All posts response error:', errorText);
+            throw new Error(`Database query failed: ${allResponse.status} - ${errorText}`);
           }
-        });
 
-        if (!allResponse.ok) {
-          throw new Error(`Database query failed: ${allResponse.status}`);
+          const allPosts = await allResponse.json();
+          console.log('Retrieved posts:', allPosts);
+          
+          // Format posts for frontend
+          const formattedAllPosts = allPosts.map(post => ({
+            id: post.id.toString(),
+            title: post.title,
+            content: post.content,
+            excerpt: post.excerpt || post.content.substring(0, 200) + '...',
+            category: post.category,
+            published: post.published,
+            createdAt: post.created_at,
+            updatedAt: post.updated_at,
+            author: post.author,
+            image_url: post.image_url
+          }));
+
+          return {
+            statusCode: 200,
+            headers: { "Access-Control-Allow-Origin": "*" },
+            body: JSON.stringify({ 
+              posts: formattedAllPosts,
+              source: 'supabase'
+            })
+          };
+        } catch (error) {
+          console.error('Error getting all posts:', error);
+          return {
+            statusCode: 500,
+            headers: { "Access-Control-Allow-Origin": "*" },
+            body: JSON.stringify({ 
+              message: 'Failed to retrieve posts',
+              error: error.message
+            })
+          };
         }
-
-        const allPosts = await allResponse.json();
-        
-        // Format posts for frontend
-        const formattedAllPosts = allPosts.map(post => ({
-          id: post.id.toString(),
-          title: post.title,
-          content: post.content,
-          excerpt: post.excerpt || post.content.substring(0, 200) + '...',
-          category: post.category,
-          published: post.published,
-          createdAt: post.created_at,
-          updatedAt: post.updated_at,
-          author: post.author,
-          image_url: post.image_url
-        }));
-
-        return {
-          statusCode: 200,
-          headers: { "Access-Control-Allow-Origin": "*" },
-          body: JSON.stringify({ posts: formattedAllPosts })
-        };
 
       case 'get-published':
         try {

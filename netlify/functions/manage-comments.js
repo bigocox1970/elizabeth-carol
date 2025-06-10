@@ -17,40 +17,61 @@ exports.handler = async (event, context) => {
   // Extract the token from the Bearer header
   const token = authHeader.replace('Bearer ', '');
 
-  // Verify the user is an admin
-  const isAdminResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
-    method: 'POST',
-    headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    }
-  });
-
-  if (!isAdminResponse.ok) {
-    return {
-      statusCode: 401,
-      headers: { "Access-Control-Allow-Origin": "*" },
-      body: JSON.stringify({ message: 'Unauthorized' })
-    };
-  }
-
-  const isAdmin = await isAdminResponse.json();
-
-  // Authentication check for write operations
-  if (['approve-comment', 'unapprove-comment', 'delete-comment'].includes(action) && !isAdmin) {
-    return {
-      statusCode: 401,
-      headers: { "Access-Control-Allow-Origin": "*" },
-      body: JSON.stringify({ message: 'Unauthorized' })
-    };
-  }
-
   try {
+    // First, get the user ID from the token
+    const userResponse = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!userResponse.ok) {
+      console.error('Failed to get user info:', await userResponse.text());
+      return {
+        statusCode: 401,
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify({ message: 'Invalid token' })
+      };
+    }
+
+    const userData = await userResponse.json();
+    console.log('User data:', userData);
+
+    // Verify the user is an admin
+    const isAdminResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ user_id: userData.id })
+    });
+
+    if (!isAdminResponse.ok) {
+      return {
+        statusCode: 401,
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify({ message: 'Unauthorized' })
+      };
+    }
+
+    const isAdmin = await isAdminResponse.json();
+
+    // Authentication check for write operations
+    if (['approve-comment', 'unapprove-comment', 'delete-comment'].includes(action) && !isAdmin) {
+      return {
+        statusCode: 401,
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify({ message: 'Unauthorized' })
+      };
+    }
+
     switch (action) {
       case 'get-all-comments':
-        // Return all comments, sorted by date (newest first)
-        const allResponse = await fetch(`${SUPABASE_URL}/rest/v1/comments?select=*&order=created_at.desc`, {
+        // Return all comments with post titles, sorted by date (newest first)
+        const allResponse = await fetch(`${SUPABASE_URL}/rest/v1/comments?select=*,blog_posts(title)&order=created_at.desc`, {
           method: 'GET',
           headers: {
             'apikey': SUPABASE_ANON_KEY,
@@ -69,6 +90,7 @@ exports.handler = async (event, context) => {
         const formattedComments = allComments.map(comment => ({
           id: comment.id.toString(),
           postId: comment.post_id,
+          postTitle: comment.blog_posts?.title || 'Unknown Post',
           name: comment.name,
           email: comment.email,
           content: comment.content,

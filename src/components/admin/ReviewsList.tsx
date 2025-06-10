@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star, Trash2, RefreshCw, Check, X } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { getApiUrl } from "@/utils/api";
 
 interface Review {
   id: string;
@@ -17,21 +19,27 @@ interface Review {
 }
 
 const ReviewsList = () => {
+  const { session } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    loadReviews();
-  }, []);
+    if (session) {
+      loadReviews();
+    }
+  }, [session]);
 
   const loadReviews = async () => {
+    if (!session) return;
+
     setIsLoading(true);
     try {
       console.log('Loading reviews...');
-      const response = await fetch('/.netlify/functions/manage-reviews', {
+      const response = await fetch(getApiUrl('manage-reviews'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({ 
           action: 'get-all-reviews'
@@ -56,11 +64,14 @@ const ReviewsList = () => {
   };
 
   const handleApproveReview = async (reviewId: string, approve: boolean) => {
+    if (!session) return;
+
     try {
-      const response = await fetch('/.netlify/functions/manage-reviews', {
+      const response = await fetch(getApiUrl('manage-reviews'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
           action: approve ? 'approve-review' : 'unapprove-review',
@@ -79,13 +90,15 @@ const ReviewsList = () => {
   };
 
   const handleDeleteReview = async (reviewId: string) => {
+    if (!session) return;
     if (!confirm('Are you sure you want to delete this review?')) return;
 
     try {
-      const response = await fetch('/.netlify/functions/manage-reviews', {
+      const response = await fetch(getApiUrl('manage-reviews'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
           action: 'delete-review',
