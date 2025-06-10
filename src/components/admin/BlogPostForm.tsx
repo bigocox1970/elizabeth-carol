@@ -330,25 +330,34 @@ const BlogPostForm = ({ editingPost, onPostSaved, onCancelEdit }: BlogPostFormPr
     setAiMessage('');
 
     try {
-      const response = await fetch(getApiUrl('generate-blog'), {
+      const response = await fetch(getApiUrl('generate-blog-post'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
         },
-        body: JSON.stringify({ topic: aiTopic })
+        body: JSON.stringify({ 
+          topic: aiTopic,
+          password: 'elizabeth2024' // Using the development password
+        })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate blog post');
+        const errorData = await response.json();
+        console.error('Error from API:', errorData);
+        throw new Error(errorData.message || 'Failed to generate blog post');
       }
 
       const data = await response.json();
-      setAiOutline(data.outline);
-      setAiMessage('Blog post generated successfully!');
+      if (data.success) {
+        setAiOutline(data.content);
+        setAiMessage('Blog post generated successfully!');
+      } else {
+        throw new Error(data.message || 'Failed to generate blog post');
+      }
     } catch (error) {
       console.error('Error generating blog post:', error);
-      setAiMessage('Failed to generate blog post. Please try again.');
+      setAiMessage(error.message || 'Failed to generate blog post. Please try again.');
     } finally {
       setIsGenerating(false);
     }
