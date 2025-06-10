@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { getUserComments, getUserReviews, updateComment, updateReview, deleteComment, deleteReview } from "@/lib/supabase";
+import { getUserComments, getUserReviews, updateComment, updateReview, deleteComment, deleteReview, isUserAdmin } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -48,6 +48,7 @@ const UserProfile = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -58,6 +59,10 @@ const UserProfile = () => {
     const fetchUserContent = async () => {
       setLoading(true);
       try {
+        // Check if user is admin
+        const adminStatus = await isUserAdmin();
+        setIsAdmin(adminStatus);
+
         // Fetch user's comments
         const { data: commentsData, error: commentsError } = await getUserComments();
         if (commentsError) throw commentsError;
@@ -506,6 +511,17 @@ const UserProfile = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {isAdmin && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold">Admin Access</h3>
+                      <Button
+                        onClick={() => navigate("/admin")}
+                        className="w-full bg-gradient-mystical hover:opacity-90 text-primary-foreground"
+                      >
+                        Access Admin Dashboard
+                      </Button>
+                    </div>
+                  )}
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold">Change Password</h3>
                     <div className="space-y-2">
