@@ -15,11 +15,7 @@ interface Comment {
   createdAt: string;
 }
 
-interface CommentsListProps {
-  password: string;
-}
-
-const CommentsList = ({ password }: CommentsListProps) => {
+const CommentsList = () => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -36,8 +32,7 @@ const CommentsList = ({ password }: CommentsListProps) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          action: 'get-comments',
-          password: password
+          action: 'get-comments'
         }),
       });
 
@@ -61,7 +56,6 @@ const CommentsList = ({ password }: CommentsListProps) => {
         },
         body: JSON.stringify({
           action: 'update-comment',
-          password: password,
           commentId: commentId,
           commentData: { approved: approve }
         }),
@@ -88,7 +82,6 @@ const CommentsList = ({ password }: CommentsListProps) => {
         },
         body: JSON.stringify({
           action: 'delete-comment',
-          password: password,
           commentId: commentId
         }),
       });

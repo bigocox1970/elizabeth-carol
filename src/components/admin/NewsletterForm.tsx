@@ -7,11 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Mail, Send } from "lucide-react";
 
 interface NewsletterFormProps {
-  password: string;
   subscriberCount: number;
 }
 
-const NewsletterForm = ({ password, subscriberCount }: NewsletterFormProps) => {
+const NewsletterForm = ({ subscriberCount }: NewsletterFormProps) => {
   const [emailData, setEmailData] = useState({
     subject: '',
     message: ''
@@ -32,8 +31,7 @@ const NewsletterForm = ({ password, subscriberCount }: NewsletterFormProps) => {
         },
         body: JSON.stringify({
           subject: emailData.subject,
-          message: emailData.message,
-          password: password // Include password for verification
+          message: emailData.message
         }),
       });
 

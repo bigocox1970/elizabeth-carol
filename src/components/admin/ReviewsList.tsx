@@ -16,11 +16,7 @@ interface Review {
   createdAt: string;
 }
 
-interface ReviewsListProps {
-  password: string;
-}
-
-const ReviewsList = ({ password }: ReviewsListProps) => {
+const ReviewsList = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -38,8 +34,7 @@ const ReviewsList = ({ password }: ReviewsListProps) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          action: 'get-all-reviews',
-          password: password
+          action: 'get-all-reviews'
         }),
       });
 
@@ -69,7 +64,6 @@ const ReviewsList = ({ password }: ReviewsListProps) => {
         },
         body: JSON.stringify({
           action: approve ? 'approve-review' : 'unapprove-review',
-          password: password,
           reviewId: reviewId
         }),
       });
@@ -95,7 +89,6 @@ const ReviewsList = ({ password }: ReviewsListProps) => {
         },
         body: JSON.stringify({
           action: 'delete-review',
-          password: password,
           reviewId: reviewId
         }),
       });

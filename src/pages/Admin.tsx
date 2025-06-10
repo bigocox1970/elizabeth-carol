@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, Mail, BookOpen, Star, MessageCircle, Plus } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { isUserAdmin } from "@/lib/supabase";
 
 // Import admin components
-import LoginForm from "@/components/admin/LoginForm";
 import SubscribersList from "@/components/admin/SubscribersList";
 import NewsletterForm from "@/components/admin/NewsletterForm";
 import AdminTips from "@/components/admin/AdminTips";
@@ -15,47 +17,61 @@ import CommentsList from "@/components/admin/CommentsList";
 import { getApiUrl } from "@/utils/api";
 
 const Admin = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [password, setPassword] = useState('');
+  const { user, session, signOut } = useAuth();
+  const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [subscribers, setSubscribers] = useState([]);
   const [activeTab, setActiveTab] = useState("subscribers");
   const [editingPost, setEditingPost] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      loadSubscribers();
-    }
-  }, [isAuthenticated]);
-
-  const handleLogin = (enteredPassword: string) => {
-    // Always verify the password on the server side
-    // This way we don't expose the password in the frontend code
-            fetch(getApiUrl('verify-admin'), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ password: enteredPassword }),
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        setIsAuthenticated(true);
-        setPassword(enteredPassword);
-      } else {
-        alert(data.message || 'Incorrect password');
+    const checkAdmin = async () => {
+      if (!user || !session) {
+        navigate('/auth?redirect=/admin');
+        return;
       }
-    })
-    .catch(error => {
-      console.error('Error verifying password:', error);
-      alert('Error verifying password. Please try again.');
-    });
-  };
+
+      try {
+        const response = await fetch(getApiUrl('verify-admin'), {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        });
+
+        if (!response.ok) {
+          navigate('/');
+          return;
+        }
+
+        const { isAdmin: adminStatus } = await response.json();
+        if (!adminStatus) {
+          navigate('/');
+          return;
+        }
+
+        setIsAdmin(true);
+        setLoading(false);
+        loadSubscribers();
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        navigate('/');
+      }
+    };
+
+    checkAdmin();
+  }, [user, session, navigate]);
 
   const loadSubscribers = async () => {
+    if (!session) return;
+
     try {
-      const response = await fetch(getApiUrl('get-subscribers'));
+      const response = await fetch(getApiUrl('get-subscribers'), {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setSubscribers(data.subscribers || []);
@@ -65,8 +81,19 @@ const Admin = () => {
     }
   };
 
-  if (!isAuthenticated) {
-    return <LoginForm onLogin={handleLogin} />;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Loading...</h2>
+          <p className="text-muted-foreground">Please wait while we verify your access.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return null; // Will redirect in useEffect
   }
 
   return (
@@ -76,7 +103,7 @@ const Admin = () => {
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-3xl font-bold text-foreground">Elizabeth Carol Admin</h1>
             <Button 
-              onClick={() => setIsAuthenticated(false)}
+              onClick={() => signOut()}
               variant="outline"
             >
               Logout
@@ -132,12 +159,12 @@ const Admin = () => {
 
             {/* Subscribers Tab */}
             <TabsContent value="subscribers" className="space-y-6">
-              <SubscribersList password={password} />
+              <SubscribersList />
             </TabsContent>
 
             {/* Newsletter Tab */}
             <TabsContent value="newsletter" className="space-y-6">
-              <NewsletterForm password={password} subscriberCount={subscribers.length} />
+              <NewsletterForm subscriberCount={subscribers.length} />
               <AdminTips />
             </TabsContent>
 
@@ -145,7 +172,6 @@ const Admin = () => {
             <TabsContent value="blog" className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
                 <BlogPostForm 
-                  password={password} 
                   editingPost={editingPost} 
                   onPostSaved={() => {
                     setEditingPost(null);
@@ -156,7 +182,6 @@ const Admin = () => {
                   }}
                 />
                 <BlogPostsList 
-                  password={password} 
                   onEditPost={(postId) => {
                     setEditingPost(postId);
                   }}
@@ -167,12 +192,12 @@ const Admin = () => {
 
             {/* Reviews Tab */}
             <TabsContent value="reviews" className="space-y-6">
-              <ReviewsList password={password} />
+              <ReviewsList />
             </TabsContent>
 
             {/* Comments Tab */}
             <TabsContent value="comments" className="space-y-6">
-              <CommentsList password={password} />
+              <CommentsList />
             </TabsContent>
           </Tabs>
         </div>
