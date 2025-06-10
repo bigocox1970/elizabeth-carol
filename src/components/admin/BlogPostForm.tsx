@@ -337,8 +337,7 @@ const BlogPostForm = ({ editingPost, onPostSaved, onCancelEdit }: BlogPostFormPr
           'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({ 
-          topic: aiTopic,
-          password: 'elizabeth2024' // Using the development password
+          topic: aiTopic
         })
       });
 
