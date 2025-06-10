@@ -19,36 +19,57 @@ exports.handler = async (event, context) => {
   // Extract the token from the Bearer header
   const token = authHeader.replace('Bearer ', '');
 
-  // Verify the user is an admin
-  const isAdminResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
-    method: 'POST',
-    headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    }
-  });
-
-  if (!isAdminResponse.ok) {
-    return {
-      statusCode: 401,
-      headers: { "Access-Control-Allow-Origin": "*" },
-      body: JSON.stringify({ message: 'Unauthorized' })
-    };
-  }
-
-  const isAdmin = await isAdminResponse.json();
-
-  // Authentication check for write operations
-  if (['approve-review', 'unapprove-review', 'delete-review'].includes(action) && !isAdmin) {
-    return {
-      statusCode: 401,
-      headers: { "Access-Control-Allow-Origin": "*" },
-      body: JSON.stringify({ message: 'Unauthorized' })
-    };
-  }
-
   try {
+    // First, get the user ID from the token
+    const userResponse = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!userResponse.ok) {
+      console.error('Failed to get user info:', await userResponse.text());
+      return {
+        statusCode: 401,
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify({ message: 'Invalid token' })
+      };
+    }
+
+    const userData = await userResponse.json();
+    console.log('User data:', userData);
+
+    // Verify the user is an admin
+    const isAdminResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ user_id: userData.id })
+    });
+
+    if (!isAdminResponse.ok) {
+      return {
+        statusCode: 401,
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify({ message: 'Unauthorized' })
+      };
+    }
+
+    const isAdmin = await isAdminResponse.json();
+
+    // Authentication check for write operations
+    if (['approve-review', 'unapprove-review', 'delete-review'].includes(action) && !isAdmin) {
+      return {
+        statusCode: 401,
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify({ message: 'Unauthorized' })
+      };
+    }
+
     console.log('Starting manage-reviews function');
     console.log('SUPABASE_URL:', SUPABASE_URL ? 'Exists' : 'Missing');
     console.log('SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? 'Exists' : 'Missing');
@@ -140,6 +161,10 @@ exports.handler = async (event, context) => {
 
       case 'get-all-reviews':
         // Return all reviews, sorted by date (newest first)
+        console.log('Fetching all reviews from Supabase');
+        console.log('Using token:', token.substring(0, 10) + '...');
+        console.log('Using URL:', `${SUPABASE_URL}/rest/v1/reviews?select=*&order=created_at.desc`);
+        
         const allResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews?select=*&order=created_at.desc`, {
           method: 'GET',
           headers: {
@@ -149,11 +174,17 @@ exports.handler = async (event, context) => {
           }
         });
 
+        console.log('All reviews response status:', allResponse.status);
+        console.log('All reviews response headers:', allResponse.headers);
+
         if (!allResponse.ok) {
-          throw new Error(`Database query failed: ${allResponse.status}`);
+          const errorText = await allResponse.text();
+          console.error('All reviews response error:', errorText);
+          throw new Error(`Database query failed: ${allResponse.status} - ${errorText}`);
         }
 
         const allReviews = await allResponse.json();
+        console.log('Retrieved reviews:', JSON.stringify(allReviews, null, 2));
         
         // Format reviews for frontend
         const formattedReviews = allReviews.map(review => ({
@@ -163,10 +194,12 @@ exports.handler = async (event, context) => {
           location: review.location,
           service: review.service,
           rating: review.rating,
-          comment: review.comment,
+          comment: review.content,
           approved: review.approved,
           createdAt: review.created_at
         }));
+
+        console.log('Formatted reviews:', JSON.stringify(formattedReviews, null, 2));
 
         return {
           statusCode: 200,

@@ -79,6 +79,9 @@ exports.handler = async (event, context) => {
         try {
           // Return all posts, sorted by date (newest first)
           console.log('Fetching all posts from Supabase');
+          console.log('Using token:', token.substring(0, 10) + '...');
+          console.log('Using URL:', `${SUPABASE_URL}/rest/v1/blog_posts?select=*&order=created_at.desc`);
+          
           const allResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?select=*&order=created_at.desc`, {
             method: 'GET',
             headers: {
@@ -89,6 +92,7 @@ exports.handler = async (event, context) => {
           });
 
           console.log('All posts response status:', allResponse.status);
+          console.log('All posts response headers:', allResponse.headers);
           
           if (!allResponse.ok) {
             const errorText = await allResponse.text();
@@ -97,7 +101,7 @@ exports.handler = async (event, context) => {
           }
 
           const allPosts = await allResponse.json();
-          console.log('Retrieved posts:', allPosts);
+          console.log('Retrieved posts:', JSON.stringify(allPosts, null, 2));
           
           // Format posts for frontend
           const formattedAllPosts = allPosts.map(post => ({
@@ -112,6 +116,8 @@ exports.handler = async (event, context) => {
             author: post.author,
             image_url: post.image_url
           }));
+
+          console.log('Formatted posts:', JSON.stringify(formattedAllPosts, null, 2));
 
           return {
             statusCode: 200,
