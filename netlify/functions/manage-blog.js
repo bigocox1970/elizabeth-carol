@@ -150,7 +150,6 @@ exports.handler = async (event, context) => {
           method: 'GET',
           headers: {
             'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
@@ -164,6 +163,7 @@ exports.handler = async (event, context) => {
         }
 
         const publishedPosts = await publishedResponse.json();
+        console.log('Retrieved published posts:', JSON.stringify(publishedPosts, null, 2));
         
         // Format posts for frontend
         const formattedPublishedPosts = publishedPosts.map(post => ({
