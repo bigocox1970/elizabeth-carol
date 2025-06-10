@@ -102,14 +102,14 @@ const BlogPostsList = ({ onEditPost, refreshTrigger }: BlogPostsListProps) => {
   };
 
   return (
-    <Card>
+    <Card className="h-full flex flex-col">
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
           <BookOpen className="w-5 h-5" />
           <span>Blog Posts ({posts.length})</span>
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-grow overflow-auto">
         <div className="space-y-3">
           {isLoading ? (
             <div className="flex justify-center py-8">
