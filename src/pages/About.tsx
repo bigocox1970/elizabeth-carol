@@ -35,7 +35,7 @@ const About = () => {
                 <h2 className="text-3xl font-serif font-bold text-foreground mb-6">My Spiritual Journey</h2>
                 <div className="space-y-4 text-muted-foreground leading-relaxed">
                   <p>
-                    Born Elizabeth Carol Vincent in the beautiful valleys of Ebbw Vale, Wales, 
+                    Born Carol Elizabeth Watts in the beautiful valleys of Ebbw Vale, Wales, 
                     my connection to the spiritual world began in childhood. Growing up surrounded by 
                     the mystical Welsh landscape, I experienced my first spiritual encounter at the age of seven.
                   </p>
