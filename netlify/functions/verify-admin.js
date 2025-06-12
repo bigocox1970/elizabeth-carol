@@ -1,66 +1,121 @@
 // This function verifies the admin password without exposing it in the frontend code
 
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
+};
+
 exports.handler = async (event, context) => {
-  // Only allow POST requests
-  if (event.httpMethod !== 'POST') {
+  // Handle preflight requests
+  if (event.httpMethod === 'OPTIONS') {
     return {
-      statusCode: 405,
-      headers: { "Access-Control-Allow-Origin": "*" },
-      body: JSON.stringify({ message: 'Method not allowed' })
+      statusCode: 200,
+      headers: corsHeaders,
+      body: ''
     };
   }
 
+  // Get the user's JWT token from the Authorization header
+  const authHeader = event.headers.authorization || event.headers.Authorization;
+  if (!authHeader) {
+    console.error('No authorization header provided');
+    return {
+      statusCode: 401,
+      headers: corsHeaders,
+      body: JSON.stringify({ message: 'No authorization token provided' })
+    };
+  }
+
+  // Extract the token from the Bearer header
+  const token = authHeader.replace('Bearer ', '');
+  console.log('Verifying admin status with token:', token.substring(0, 10) + '...');
+
   try {
-    // Parse the request body
-    const { password } = JSON.parse(event.body);
-    
-    // Get the admin password from environment variable
-    const adminPassword = process.env.ADMIN_PASSWORD;
-    
-    // Log for debugging (don't log the actual passwords in production)
-    console.log('Admin password verification:', {
-      passwordProvided: password ? 'Yes' : 'No',
-      envPasswordSet: adminPassword ? 'Yes' : 'No',
-      environment: process.env.NODE_ENV || 'development'
+    // First, get the user ID from the token
+    const userResponse = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`
+      }
     });
-    
-    // For development and testing, use a fallback password if the environment variable is not set
-    // In production, this should be properly set in the Netlify dashboard
-    const isDevelopment = process.env.NODE_ENV !== 'production';
-    const usePassword = adminPassword || (isDevelopment ? 'elizabeth2024' : null);
-    
-    // Check if the admin password is set
-    if (!usePassword) {
-      console.error('ADMIN_PASSWORD environment variable is not set in production');
+
+    if (!userResponse.ok) {
+      console.error('Failed to get user info:', await userResponse.text());
       return {
-        statusCode: 500,
-        headers: { "Access-Control-Allow-Origin": "*" },
+        statusCode: 401,
+        headers: corsHeaders,
+        body: JSON.stringify({ message: 'Invalid token' })
+      };
+    }
+
+    const userData = await userResponse.json();
+    console.log('User data:', userData);
+
+    // Now verify the user is an admin
+    const isAdminResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ user_id: userData.id })
+    });
+
+    console.log('Supabase response status:', isAdminResponse.status);
+    const responseText = await isAdminResponse.text();
+    console.log('Supabase response body:', responseText);
+
+    if (!isAdminResponse.ok) {
+      console.error('Supabase admin check failed:', {
+        status: isAdminResponse.status,
+        statusText: isAdminResponse.statusText,
+        body: responseText
+      });
+      return {
+        statusCode: 401,
+        headers: corsHeaders,
         body: JSON.stringify({ 
-          success: false,
-          message: 'Server configuration error: Admin password not set'
+          message: 'Unauthorized',
+          details: responseText
         })
       };
     }
-    
-    // Verify the password
-    const isValid = password === usePassword;
-    
+
+    let isAdmin;
+    try {
+      isAdmin = JSON.parse(responseText);
+    } catch (e) {
+      console.error('Failed to parse Supabase response:', e);
+      return {
+        statusCode: 500,
+        headers: corsHeaders,
+        body: JSON.stringify({ 
+          message: 'Invalid response from Supabase',
+          details: responseText
+        })
+      };
+    }
+
+    console.log('Admin check result:', isAdmin);
+
     return {
       statusCode: 200,
-      headers: { "Access-Control-Allow-Origin": "*" },
-      body: JSON.stringify({ 
-        success: isValid,
-        message: isValid ? 'Authentication successful' : 'Invalid password'
-      })
+      headers: corsHeaders,
+      body: JSON.stringify({ isAdmin })
     };
   } catch (error) {
-    console.error('Error verifying admin password:', error);
+    console.error('Error in verify-admin function:', error);
     return {
       statusCode: 500,
-      headers: { "Access-Control-Allow-Origin": "*" },
+      headers: corsHeaders,
       body: JSON.stringify({ 
-        success: false,
-        message: 'Server error during verification'
+        message: 'Internal server error',
+        error: error.message
       })
     };
   }

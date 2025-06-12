@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { supabase, signIn, signUp, signOut } from '@/lib/supabase';
+import { supabase, signIn, signUp, signOut, updatePassword } from '@/lib/supabase';
 
 // Define the shape of the context
 interface AuthContextType {
@@ -10,6 +10,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ data: unknown; error: Error | null }>;
   signUp: (email: string, password: string, metadata?: Record<string, unknown>) => Promise<{ data: unknown; error: Error | null }>;
   signOut: () => Promise<{ error: Error | null }>;
+  updatePassword: (newPassword: string) => Promise<{ data: unknown; error: Error | null }>;
 }
 
 // Create the context with a default value
@@ -20,6 +21,7 @@ const AuthContext = createContext<AuthContextType>({
   signIn: () => Promise.resolve({ data: null, error: null }),
   signUp: () => Promise.resolve({ data: null, error: null }),
   signOut: () => Promise.resolve({ error: null }),
+  updatePassword: () => Promise.resolve({ data: null, error: null }),
 });
 
 // Custom hook to use the auth context
@@ -71,6 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signIn,
     signUp,
     signOut,
+    updatePassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

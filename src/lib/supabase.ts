@@ -179,3 +179,36 @@ export const deleteReview = async (id: number) => {
 
   return { data, error };
 };
+
+export const updatePassword = async (newPassword: string) => {
+  const { data, error } = await supabase.auth.updateUser({
+    password: newPassword
+  });
+  return { data, error };
+};
+
+export const isUserAdmin = async (): Promise<boolean> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    // First check the user's metadata
+    if (user.user_metadata?.is_admin === true) {
+      return true;
+    }
+
+    // If not in metadata, check using the database function
+    const { data, error } = await supabase
+      .rpc('is_admin', { user_id: user.id });
+
+    if (error) {
+      console.error('Error checking admin status:', error);
+      return false;
+    }
+
+    return data || false;
+  } catch (error) {
+    console.error('Error in isUserAdmin:', error);
+    return false;
+  }
+};

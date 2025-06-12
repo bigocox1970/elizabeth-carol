@@ -140,7 +140,10 @@ export default {
 				'fade-in': 'fade-in 0.6s ease-out',
 				'float': 'float 3s ease-in-out infinite',
 				'glow': 'glow 2s ease-in-out infinite'
-			}
+			},
+			screens: {
+				custom950: "950px",
+			},
 		}
 	},
 	plugins: [require("tailwindcss-animate")],

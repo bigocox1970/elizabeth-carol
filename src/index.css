@@ -7,6 +7,53 @@
 @layer base {
   :root {
     /* Professional Mystical Color Palette - Light Mode */
+    --background: 280 20% 97%;
+    --foreground: 240 15% 15%;
+
+    --card: 280 25% 99%;
+    --card-foreground: 240 15% 15%;
+
+    --popover: 280 25% 99%;
+    --popover-foreground: 240 15% 15%;
+
+    --primary: 260 50% 30%;
+    --primary-foreground: 280 20% 97%;
+
+    --secondary: 280 15% 92%;
+    --secondary-foreground: 240 15% 15%;
+
+    --muted: 280 15% 94%;
+    --muted-foreground: 240 10% 45%;
+
+    --accent: 45 100% 65%;
+    --accent-foreground: 240 15% 15%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 280 20% 97%;
+
+    --border: 280 15% 88%;
+    --input: 280 15% 94%;
+    --ring: 260 50% 30%;
+
+    /* Professional spiritual gradients - Light Mode */
+    --gradient-mystical: linear-gradient(135deg, hsl(260 60% 35%) 0%, hsl(280 50% 30%) 50%, hsl(240 40% 25%) 100%);
+    --gradient-celestial: linear-gradient(45deg, hsl(280 20% 95%) 0%, hsl(260 30% 92%) 50%, hsl(280 25% 90%) 100%);
+    --gradient-golden: linear-gradient(135deg, hsl(45 100% 60%) 0%, hsl(40 90% 55%) 100%);
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 280 20% 98%;
+    --sidebar-foreground: 240 15% 15%;
+    --sidebar-primary: 260 50% 30%;
+    --sidebar-primary-foreground: 280 20% 97%;
+    --sidebar-accent: 280 15% 92%;
+    --sidebar-accent-foreground: 240 15% 15%;
+    --sidebar-border: 280 15% 88%;
+    --sidebar-ring: 260 50% 30%;
+  }
+
+  .dark {
+    /* Enhanced Professional Dark Mode */
     --background: 240 25% 8%;
     --foreground: 280 15% 95%;
 
@@ -16,8 +63,8 @@
     --popover: 240 20% 12%;
     --popover-foreground: 280 15% 95%;
 
-    --primary: 260 50% 30%;
-    --primary-foreground: 45 100% 70%;
+    --primary: 260 50% 35%;
+    --primary-foreground: 45 100% 75%;
 
     --secondary: 240 30% 15%;
     --secondary-foreground: 280 15% 95%;
@@ -25,69 +72,21 @@
     --muted: 240 15% 18%;
     --muted-foreground: 280 8% 70%;
 
-    --accent: 45 100% 70%;
+    --accent: 45 100% 75%;
     --accent-foreground: 240 25% 8%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 62.8% 50%;
     --destructive-foreground: 280 15% 95%;
 
     --border: 240 15% 25%;
     --input: 240 15% 18%;
-    --ring: 260 50% 30%;
+    --ring: 260 50% 35%;
 
-    /* Professional spiritual gradients */
+    /* Dark mode gradients */
     --gradient-mystical: linear-gradient(135deg, hsl(260 60% 25%) 0%, hsl(280 50% 20%) 50%, hsl(240 40% 15%) 100%);
     --gradient-celestial: linear-gradient(45deg, hsl(240 25% 8%) 0%, hsl(260 30% 12%) 50%, hsl(280 20% 10%) 100%);
     --gradient-golden: linear-gradient(135deg, hsl(45 100% 60%) 0%, hsl(40 90% 55%) 100%);
 
-    --radius: 0.75rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    /* Enhanced Professional Dark Mode */
-    --background: 240 30% 4%;
-    --foreground: 280 15% 98%;
-
-    --card: 240 25% 6%;
-    --card-foreground: 280 15% 98%;
-
-    --popover: 240 25% 6%;
-    --popover-foreground: 280 15% 98%;
-
-    --primary: 260 50% 35%;
-    --primary-foreground: 45 100% 75%;
-
-    --secondary: 260 35% 15%;
-    --secondary-foreground: 280 15% 98%;
-
-    --muted: 240 20% 10%;
-    --muted-foreground: 280 10% 75%;
-
-    --accent: 45 100% 75%;
-    --accent-foreground: 240 30% 4%;
-
-    --destructive: 0 62.8% 50%;
-    --destructive-foreground: 280 15% 98%;
-
-    --border: 240 20% 15%;
-    --input: 240 20% 10%;
-    --ring: 260 50% 35%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -106,5 +105,25 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  /* Hero overlay - light in light mode, dark in dark mode */
+  .hero-overlay {
+    @apply bg-gradient-to-br from-black/20 via-black/15 to-black/20;
+  }
+  
+  .dark .hero-overlay {
+    @apply bg-gradient-to-br from-black/85 via-black/80 to-black/85;
+  }
+  
+  /* Testimonials overlay - light in light mode, dark in dark mode */
+  .testimonials-overlay {
+    @apply bg-gradient-to-br from-black/15 via-black/10 to-black/15 md:from-black/25 md:via-black/20 md:to-black/25;
+  }
+  
+  .dark .testimonials-overlay {
+    @apply bg-gradient-to-br from-black/75 via-black/70 to-black/75 md:from-black/95 md:via-black/90 md:to-black/95;
   }
 }

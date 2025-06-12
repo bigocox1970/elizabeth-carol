@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, RefreshCw } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { getApiUrl } from "@/utils/api";
 
 interface Subscriber {
   name: string;
@@ -11,49 +13,34 @@ interface Subscriber {
   dateAdded: string;
 }
 
-interface SubscribersListProps {
-  password: string;
-}
-
-const SubscribersList = ({ password }: SubscribersListProps) => {
+const SubscribersList = () => {
+  const { session } = useAuth();
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    loadSubscribers();
-  }, []);
+    if (session) {
+      loadSubscribers();
+    }
+  }, [session]);
 
   const loadSubscribers = async () => {
+    if (!session) return;
+
     setIsLoading(true);
     try {
-      // Check if we're in development mode
-      const isDevelopment = import.meta.env.DEV;
+      const response = await fetch(getApiUrl('get-subscribers'), {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
       
-      if (isDevelopment) {
-        console.log('Development mode: Loading subscribers from localStorage');
-        // In development, get subscribers from localStorage
-        try {
-          const storedSubscribers = localStorage.getItem('subscribers');
-          if (storedSubscribers) {
-            const parsedSubscribers = JSON.parse(storedSubscribers);
-            setSubscribers(parsedSubscribers);
-          } else {
-            // If no subscribers in localStorage, use empty array
-            setSubscribers([]);
-          }
-        } catch (localStorageError) {
-          console.error('Error reading from localStorage:', localStorageError);
-          setSubscribers([]);
-        }
-      } else {
-        // In production, use the Netlify function
-        const response = await fetch('/.netlify/functions/get-subscribers');
-        if (!response.ok) {
-          throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
-        }
-        const data = await response.json();
-        setSubscribers(data.subscribers || []);
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
       }
+      
+      const data = await response.json();
+      setSubscribers(data.subscribers || []);
     } catch (error) {
       console.error('Failed to load subscribers:', error);
     } finally {
@@ -70,7 +57,7 @@ const SubscribersList = ({ password }: SubscribersListProps) => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3 max-h-96 overflow-y-auto">
+        <div className="space-y-3">
           {isLoading ? (
             <div className="flex justify-center py-8">
               <RefreshCw className="w-8 h-8 animate-spin text-primary" />

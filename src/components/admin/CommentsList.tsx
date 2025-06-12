@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Trash2, RefreshCw, Check, X } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { getApiUrl } from "@/utils/api";
 
 interface Comment {
   id: string;
@@ -15,29 +17,30 @@ interface Comment {
   createdAt: string;
 }
 
-interface CommentsListProps {
-  password: string;
-}
-
-const CommentsList = ({ password }: CommentsListProps) => {
+const CommentsList = () => {
+  const { session } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    loadComments();
-  }, []);
+    if (session) {
+      loadComments();
+    }
+  }, [session]);
 
   const loadComments = async () => {
+    if (!session) return;
+
     setIsLoading(true);
     try {
-      const response = await fetch('/.netlify/functions/manage-comments', {
+      const response = await fetch(getApiUrl('manage-comments'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({ 
-          action: 'get-comments',
-          password: password
+          action: 'get-all-comments'
         }),
       });
 
@@ -53,17 +56,18 @@ const CommentsList = ({ password }: CommentsListProps) => {
   };
 
   const handleApproveComment = async (commentId: string, approve: boolean) => {
+    if (!session) return;
+
     try {
-      const response = await fetch('/.netlify/functions/manage-comments', {
+      const response = await fetch(getApiUrl('manage-comments'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
-          action: 'update-comment',
-          password: password,
-          commentId: commentId,
-          commentData: { approved: approve }
+          action: approve ? 'approve-comment' : 'unapprove-comment',
+          commentId: commentId
         }),
       });
 
@@ -78,17 +82,18 @@ const CommentsList = ({ password }: CommentsListProps) => {
   };
 
   const handleDeleteComment = async (commentId: string) => {
+    if (!session) return;
     if (!confirm('Are you sure you want to delete this comment?')) return;
 
     try {
-      const response = await fetch('/.netlify/functions/manage-comments', {
+      const response = await fetch(getApiUrl('manage-comments'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
           action: 'delete-comment',
-          password: password,
           commentId: commentId
         }),
       });
@@ -120,7 +125,7 @@ const CommentsList = ({ password }: CommentsListProps) => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3 max-h-96 overflow-y-auto">
+        <div className="space-y-3">
           {isLoading ? (
             <div className="flex justify-center py-8">
               <RefreshCw className="w-8 h-8 animate-spin text-primary" />

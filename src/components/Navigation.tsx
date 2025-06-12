@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescri
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Menu, Phone, Star, User, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,7 +26,7 @@ const Navigation = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/80">
+    <nav className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
@@ -42,7 +43,7 @@ const Navigation = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-6">
+          <div className="hidden custom950:flex items-center space-x-6">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -57,7 +58,8 @@ const Navigation = () => {
           </div>
 
           {/* Phone Number & CTA */}
-          <div className="hidden lg:flex items-center space-x-4">
+          <div className="hidden custom950:flex items-center space-x-4">
+            <ThemeToggle />
             <a
               href="tel:01865361786"
               className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors"
@@ -94,14 +96,14 @@ const Navigation = () => {
             ) : (
               <Link to="/auth">
                 <Button variant="outline" size="sm">
-                  Login / Register
+                  Login
                 </Button>
               </Link>
             )}
           </div>
 
           {/* Mobile Menu */}
-          <div className="lg:hidden">
+          <div className="custom950:hidden">
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon">
@@ -131,6 +133,10 @@ const Navigation = () => {
                     </Link>
                   ))}
                   <div className="pt-4 border-t border-border">
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-sm text-muted-foreground">Theme</span>
+                      <ThemeToggle />
+                    </div>
                     <a
                       href="tel:01865361786"
                       className="flex items-center space-x-2 text-lg text-muted-foreground hover:text-primary transition-colors mb-4"
@@ -169,7 +175,7 @@ const Navigation = () => {
                     ) : (
                       <Link to="/auth" onClick={() => setIsOpen(false)}>
                         <Button variant="outline" className="w-full">
-                          Login / Register
+                          Login
                         </Button>
                       </Link>
                     )}

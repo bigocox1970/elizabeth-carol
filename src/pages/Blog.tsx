@@ -108,17 +108,23 @@ const Blog = () => {
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {posts.map((post) => (
                   <Link key={post.id} to={`/blog/${post.id}`} className="block">
-                    <Card className="hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 group cursor-pointer h-full">
+                    <Card className="flex flex-col h-96 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 group cursor-pointer">
                       {post.image_url && (
-                        <div className="overflow-hidden rounded-t-lg">
+                        <div 
+                          className="overflow-hidden rounded-t-lg" 
+                          style={{ 
+                            height: post.image_url.includes('ai-generated') ? "240px" : "192px" 
+                          }}
+                        >
                           <img 
                             src={post.image_url} 
                             alt={post.title}
-                            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                            className="w-full h-full object-cover"
+                            style={{ objectPosition: 'center center' }}
                           />
                         </div>
                       )}
-                      <CardHeader>
+                      <CardHeader className="flex-none">
                         <div className="flex items-center justify-between mb-2">
                           <Badge variant="secondary" className="text-xs">
                             {post.category}
@@ -132,37 +138,33 @@ const Blog = () => {
                           {post.title}
                         </CardTitle>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="flex flex-col flex-1 justify-between">
                         <CardDescription className="text-sm text-muted-foreground mb-4 line-clamp-3">
                           {post.excerpt}
                         </CardDescription>
-                        
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center text-xs text-muted-foreground">
-                            <User className="w-3 h-3 mr-1" />
-                            {post.author}
+                        <div>
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center text-xs text-muted-foreground">
+                              <User className="w-3 h-3 mr-1" />
+                              {post.author}
+                            </div>
+                            <div className="flex items-center text-xs text-muted-foreground">
+                              {getReadTime(post.content)}
+                            </div>
                           </div>
-                          <div className="flex items-center text-xs text-muted-foreground">
-                            {getReadTime(post.content)}
-                          </div>
-                        </div>
-
-                        {/* Review Summary */}
-                        {post.reviews && post.reviews.length > 0 && (
-                          <div className="flex items-center text-xs text-muted-foreground mb-4">
-                            <MessageCircle className="w-3 h-3 mr-1" />
-                            {post.reviews.filter(r => r.approved).length} comments
-                            {post.reviews.filter(r => r.approved).length > 0 && (
-                              <>
-                                <Star className="w-3 h-3 ml-2 mr-1 fill-yellow-400 text-yellow-400" />
-                                {(post.reviews.filter(r => r.approved).reduce((sum, r) => sum + r.rating, 0) / post.reviews.filter(r => r.approved).length).toFixed(1)}
-                              </>
-                            )}
-                          </div>
-                        )}
-                        
-                        <div className="pt-4 border-t border-border">
-                          <div className="flex items-center text-primary group-hover:text-primary/80 transition-colors">
+                          {post.reviews && post.reviews.length > 0 && (
+                            <div className="flex items-center text-xs text-muted-foreground mb-4">
+                              <MessageCircle className="w-3 h-3 mr-1" />
+                              {post.reviews.filter(r => r.approved).length} comments
+                              {post.reviews.filter(r => r.approved).length > 0 && (
+                                <>
+                                  <Star className="w-3 h-3 ml-2 mr-1 fill-yellow-400 text-yellow-400" />
+                                  {(post.reviews.filter(r => r.approved).reduce((sum, r) => sum + r.rating, 0) / post.reviews.filter(r => r.approved).length).toFixed(1)}
+                                </>
+                              )}
+                            </div>
+                          )}
+                          <div className="flex items-center text-primary group-hover:text-primary/80 transition-colors mt-auto">
                             <span className="text-sm font-medium">Read More</span>
                             <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                           </div>

@@ -3,6 +3,7 @@ const { createClient } = require('@supabase/supabase-js');
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
 exports.handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
@@ -14,7 +15,104 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    // Check admin authentication
+    // Get the user's JWT token from the Authorization header
+    const authHeader = event.headers.authorization || event.headers.Authorization;
+    if (!authHeader) {
+      console.error('No authorization header provided');
+      return {
+        statusCode: 401,
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify({ 
+          success: false,
+          message: 'No authorization token provided'
+        })
+      };
+    }
+
+    // Extract the token from the Bearer header
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Verify the user is an admin using Supabase
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      return {
+        statusCode: 500,
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify({ 
+          success: false,
+          message: 'Server configuration error: Supabase credentials not set'
+        })
+      };
+    }
+    
+    try {
+      // First, get the user ID from the token
+      const userResponse = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!userResponse.ok) {
+        console.error('Failed to get user info:', await userResponse.text());
+        return {
+          statusCode: 401,
+          headers: { "Access-Control-Allow-Origin": "*" },
+          body: JSON.stringify({ 
+            success: false,
+            message: 'Invalid token'
+          })
+        };
+      }
+
+      const userData = await userResponse.json();
+
+      // Now verify the user is an admin
+      const isAdminResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ user_id: userData.id })
+      });
+
+      if (!isAdminResponse.ok) {
+        return {
+          statusCode: 401,
+          headers: { "Access-Control-Allow-Origin": "*" },
+          body: JSON.stringify({ 
+            success: false,
+            message: 'Unauthorized: Not an admin user'
+          })
+        };
+      }
+
+      const isAdmin = await isAdminResponse.json();
+      if (!isAdmin) {
+        return {
+          statusCode: 401,
+          headers: { "Access-Control-Allow-Origin": "*" },
+          body: JSON.stringify({ 
+            success: false,
+            message: 'Unauthorized: Not an admin user'
+          })
+        };
+      }
+    } catch (error) {
+      console.error('Error verifying admin status:', error);
+      return {
+        statusCode: 500,
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify({ 
+          success: false,
+          message: 'Server error during authentication'
+        })
+      };
+    }
+
+    // Parse multipart form data
     const boundary = event.headers['content-type']?.split('boundary=')[1];
     if (!boundary) {
       return {
@@ -26,25 +124,13 @@ exports.handler = async (event, context) => {
 
     const parts = multipart.parse(Buffer.from(event.body, 'base64'), boundary);
     
-    // Find password and image parts
-    let password = '';
+    // Find the image file
     let imageFile = null;
     
     for (const part of parts) {
-      if (part.name === 'password') {
-        password = part.data.toString();
-      } else if (part.name === 'image') {
+      if (part.name === 'file') {
         imageFile = part;
       }
-    }
-
-    // Verify admin password
-    if (password !== process.env.ADMIN_PASSWORD) {
-      return {
-        statusCode: 401,
-        headers: { "Access-Control-Allow-Origin": "*" },
-        body: JSON.stringify({ message: 'Unauthorized' })
-      };
     }
 
     if (!imageFile) {
@@ -89,7 +175,8 @@ exports.handler = async (event, context) => {
       statusCode: 200,
       headers: { "Access-Control-Allow-Origin": "*" },
       body: JSON.stringify({ 
-        imageUrl: urlData.publicUrl,
+        success: true,
+        url: urlData.publicUrl,
         message: 'Image uploaded successfully' 
       })
     };
@@ -102,4 +189,4 @@ exports.handler = async (event, context) => {
       body: JSON.stringify({ message: 'Internal server error' })
     };
   }
-}; 
+};
