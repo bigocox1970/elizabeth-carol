@@ -264,6 +264,22 @@ exports.handler = async (event, context) => {
       pass: process.env.EMAIL_PASSWORD ? 'SET' : 'MISSING'
     });
     
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+      console.error('CRITICAL: Email credentials are missing!');
+      return {
+        statusCode: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS'
+        },
+        body: JSON.stringify({ 
+          message: 'Email configuration error: Missing credentials',
+          error: 'EMAIL_USER or EMAIL_PASSWORD not set'
+        })
+      };
+    }
+    
     const transporter = nodemailer.createTransporter({
       host: 'smtpout.secureserver.net',
       port: 587,
@@ -374,7 +390,12 @@ To unsubscribe, simply reply to this email with "unsubscribe" in the subject lin
     };
 
   } catch (error) {
-    console.error('Error sending newsletter:', error);
+    console.error('=== CRITICAL ERROR IN NEWSLETTER FUNCTION ===');
+    console.error('Error type:', error.constructor.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    
     return {
       statusCode: 500,
       headers: {
@@ -382,7 +403,11 @@ To unsubscribe, simply reply to this email with "unsubscribe" in the subject lin
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Allow-Methods': 'POST, OPTIONS'
       },
-      body: JSON.stringify({ message: 'Failed to send newsletter' })
+      body: JSON.stringify({ 
+        message: 'Failed to send newsletter',
+        error: error.message,
+        errorType: error.constructor.name
+      })
     };
   }
 };
