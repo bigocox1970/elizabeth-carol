@@ -1,7 +1,9 @@
+import { getUserFromToken, isAdmin } from './utils/auth.js';
+
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
-exports.handler = async (event, context) => {
+export const handler = async (event, context) => {
   const { action, commentData, commentId } = JSON.parse(event.body || '{}');
 
   // Get the user's JWT token from the Authorization header
@@ -10,7 +12,7 @@ exports.handler = async (event, context) => {
     return {
       statusCode: 401,
       headers: { "Access-Control-Allow-Origin": "*" },
-      body: JSON.stringify({ message: 'No authorization token provided' })
+      body: JSON.stringify({ message: 'Authentication required' })
     };
   }
 
@@ -18,16 +20,9 @@ exports.handler = async (event, context) => {
   const token = authHeader.replace('Bearer ', '');
 
   try {
-    // First, get the user ID from the token
-    const userResponse = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (!userResponse.ok) {
-      console.error('Failed to get user info:', await userResponse.text());
+    // Verify the user is authenticated
+    const userData = await getUserFromToken(token);
+    if (!userData) {
       return {
         statusCode: 401,
         headers: { "Access-Control-Allow-Origin": "*" },
@@ -35,32 +30,9 @@ exports.handler = async (event, context) => {
       };
     }
 
-    const userData = await userResponse.json();
-    console.log('User data:', userData);
-
-    // Verify the user is an admin
-    const isAdminResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ user_id: userData.id })
-    });
-
-    if (!isAdminResponse.ok) {
-      return {
-        statusCode: 401,
-        headers: { "Access-Control-Allow-Origin": "*" },
-        body: JSON.stringify({ message: 'Unauthorized' })
-      };
-    }
-
-    const isAdmin = await isAdminResponse.json();
-
-    // Authentication check for write operations
-    if (['approve-comment', 'unapprove-comment', 'delete-comment'].includes(action) && !isAdmin) {
+    // Check if user is admin for admin operations
+    const isAdminUser = await isAdmin(userData.id, token);
+    if (['approve-comment', 'unapprove-comment', 'delete-comment', 'get-all-comments'].includes(action) && !isAdminUser) {
       return {
         statusCode: 401,
         headers: { "Access-Control-Allow-Origin": "*" },
@@ -69,6 +41,47 @@ exports.handler = async (event, context) => {
     }
 
     switch (action) {
+      case 'create-comment':
+        if (!commentData || !commentData.postId || !commentData.content) {
+          return {
+            statusCode: 400,
+            headers: { "Access-Control-Allow-Origin": "*" },
+            body: JSON.stringify({ message: 'Missing required comment data' })
+          };
+        }
+
+        const createResponse = await fetch(`${SUPABASE_URL}/rest/v1/comments`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify({
+            post_id: commentData.postId,
+            name: userData.user_metadata?.full_name || userData.email?.split('@')[0] || 'Anonymous',
+            email: userData.email,
+            content: commentData.content,
+            user_id: userData.id,
+            approved: false // Comments start unapproved
+          })
+        });
+
+        if (!createResponse.ok) {
+          throw new Error(`Failed to create comment: ${createResponse.status}`);
+        }
+
+        const newComment = await createResponse.json();
+        return {
+          statusCode: 200,
+          headers: { "Access-Control-Allow-Origin": "*" },
+          body: JSON.stringify({ 
+            message: 'Comment submitted successfully',
+            comment: newComment[0]
+          })
+        };
+
       case 'get-all-comments':
         // Return all comments with post titles, sorted by date (newest first)
         const allResponse = await fetch(`${SUPABASE_URL}/rest/v1/comments?select=*,blog_posts(title)&order=created_at.desc`, {
@@ -95,7 +108,8 @@ exports.handler = async (event, context) => {
           email: comment.email,
           content: comment.content,
           approved: comment.approved,
-          createdAt: comment.created_at
+          createdAt: comment.created_at,
+          userId: comment.user_id
         }));
 
         return {
