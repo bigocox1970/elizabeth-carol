@@ -296,28 +296,107 @@ exports.handler = async (event, context) => {
 
       case 'approve-review':
       case 'unapprove-review':
-        // Update review approval status
-        const updateResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews?id=eq.${reviewId}`, {
-          method: 'PATCH',
-          headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            approved: action === 'approve-review'
-          })
-        });
-
-        if (!updateResponse.ok) {
-          throw new Error(`Failed to update review: ${updateResponse.status}`);
+        // Check if user is authenticated and is admin
+        if (!token) {
+          return {
+            statusCode: 401,
+            headers,
+            body: JSON.stringify({ message: 'Authentication required' })
+          };
         }
 
-        return {
-          statusCode: 200,
-          headers,
-          body: JSON.stringify({ message: 'Review updated successfully' })
-        };
+        // Verify admin status
+        try {
+          const userResponse = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+            method: 'GET',
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (!userResponse.ok) {
+            return {
+              statusCode: 401,
+              headers,
+              body: JSON.stringify({ message: 'Invalid token' })
+            };
+          }
+
+          const userData = await userResponse.json();
+          
+          // Check if user is admin
+          const adminCheckResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ user_id: userData.id })
+          });
+
+          if (!adminCheckResponse.ok) {
+            return {
+              statusCode: 500,
+              headers,
+              body: JSON.stringify({ message: 'Failed to verify admin status' })
+            };
+          }
+
+          const isAdminResult = await adminCheckResponse.json();
+          if (!isAdminResult) {
+            return {
+              statusCode: 403,
+              headers,
+              body: JSON.stringify({ message: 'Admin access required' })
+            };
+          }
+
+          // Update review approval status
+          const updateResponse = await fetch(`${SUPABASE_URL}/rest/v1/reviews?id=eq.${reviewId}`, {
+            method: 'PATCH',
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify({
+              approved: action === 'approve-review'
+            })
+          });
+
+          if (!updateResponse.ok) {
+            const errorText = await updateResponse.text();
+            console.error('Review update error:', errorText);
+            throw new Error(`Failed to update review: ${updateResponse.status} - ${errorText}`);
+          }
+
+          const updatedReview = await updateResponse.json();
+          console.log('Review updated successfully:', updatedReview);
+
+          return {
+            statusCode: 200,
+            headers,
+            body: JSON.stringify({ 
+              message: 'Review updated successfully',
+              review: updatedReview[0]
+            })
+          };
+
+        } catch (error) {
+          console.error('Error in review approval:', error);
+          return {
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({ 
+              message: 'Failed to update review',
+              error: error.message
+            })
+          };
+        }
 
       case 'approve-comment':
         // Approve a blog comment (admin only)
