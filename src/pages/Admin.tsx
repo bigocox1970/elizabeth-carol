@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Mail, BookOpen, Star, MessageCircle, Plus } from "lucide-react";
+import { Users, Mail, BookOpen, Star, MessageCircle, Plus, Calendar } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { isUserAdmin } from "@/lib/supabase";
 
@@ -14,6 +14,7 @@ import BlogPostForm from "@/components/admin/BlogPostForm";
 import BlogPostsList from "@/components/admin/BlogPostsList";
 import ReviewsList from "@/components/admin/ReviewsList";
 import CommentsList from "@/components/admin/CommentsList";
+import AvailabilityManager from "@/components/admin/AvailabilityManager";
 import { getApiUrl } from "@/utils/api";
 
 const Admin = () => {
@@ -128,51 +129,67 @@ const Admin = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="flex flex-wrap gap-2 w-full h-auto p-2">
-              <TabsTrigger 
-                value="subscribers" 
-                onClick={() => setActiveTab("subscribers")} 
-                className="flex items-center justify-center gap-2 h-11 min-w-0 flex-1 sm:flex-none sm:min-w-[120px]"
-              >
-                <Users className="w-4 h-4" />
-                <span className="hidden sm:inline">Subscribers</span>
-                <span className="sm:hidden">Subs</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="newsletter" 
-                onClick={() => setActiveTab("newsletter")} 
-                className="flex items-center justify-center gap-2 h-11 min-w-0 flex-1 sm:flex-none sm:min-w-[120px]"
-              >
-                <Mail className="w-4 h-4" />
-                <span className="hidden sm:inline">Newsletter</span>
-                <span className="sm:hidden">Email</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="blog" 
-                onClick={() => setActiveTab("blog")} 
-                className="flex items-center justify-center gap-2 h-11 min-w-0 flex-1 sm:flex-none sm:min-w-[100px]"
-              >
-                <BookOpen className="w-4 h-4" />
-                <span>Blog</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="reviews" 
-                onClick={() => setActiveTab("reviews")} 
-                className="flex items-center justify-center gap-2 h-11 min-w-0 flex-1 sm:flex-none sm:min-w-[110px]"
-              >
-                <Star className="w-4 h-4" />
-                <span>Reviews</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="comments" 
-                onClick={() => setActiveTab("comments")} 
-                className="flex items-center justify-center gap-2 h-11 min-w-0 flex-1 sm:flex-none sm:min-w-[120px]"
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span className="hidden sm:inline">Comments</span>
-                <span className="sm:hidden">Cmts</span>
-              </TabsTrigger>
-            </TabsList>
+            <div className="space-y-2">
+              {/* First row of tabs */}
+              <TabsList className="flex flex-wrap gap-2 w-full h-auto p-2">
+                <TabsTrigger 
+                  value="subscribers" 
+                  onClick={() => setActiveTab("subscribers")} 
+                  className="flex items-center justify-center gap-2 h-11 min-w-0 flex-1 sm:flex-none sm:min-w-[120px]"
+                >
+                  <Users className="w-4 h-4" />
+                  <span className="hidden sm:inline">Subscribers</span>
+                  <span className="sm:hidden">Subs</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="newsletter" 
+                  onClick={() => setActiveTab("newsletter")} 
+                  className="flex items-center justify-center gap-2 h-11 min-w-0 flex-1 sm:flex-none sm:min-w-[120px]"
+                >
+                  <Mail className="w-4 h-4" />
+                  <span className="hidden sm:inline">Newsletter</span>
+                  <span className="sm:hidden">Email</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="blog" 
+                  onClick={() => setActiveTab("blog")} 
+                  className="flex items-center justify-center gap-2 h-11 min-w-0 flex-1 sm:flex-none sm:min-w-[100px]"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  <span>Blog</span>
+                </TabsTrigger>
+              </TabsList>
+              
+              {/* Second row of tabs */}
+              <TabsList className="flex flex-wrap gap-2 w-full h-auto p-2">
+                <TabsTrigger 
+                  value="reviews" 
+                  onClick={() => setActiveTab("reviews")} 
+                  className="flex items-center justify-center gap-2 h-11 min-w-0 flex-1 sm:flex-none sm:min-w-[110px]"
+                >
+                  <Star className="w-4 h-4" />
+                  <span>Reviews</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="comments" 
+                  onClick={() => setActiveTab("comments")} 
+                  className="flex items-center justify-center gap-2 h-11 min-w-0 flex-1 sm:flex-none sm:min-w-[120px]"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span className="hidden sm:inline">Comments</span>
+                  <span className="sm:hidden">Cmts</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="availability" 
+                  onClick={() => setActiveTab("availability")} 
+                  className="flex items-center justify-center gap-2 h-11 min-w-0 flex-1 sm:flex-none sm:min-w-[120px]"
+                >
+                  <Calendar className="w-4 h-4" />
+                  <span className="hidden sm:inline">Availability</span>
+                  <span className="sm:hidden">Times</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
             {/* Subscribers Tab */}
             <TabsContent value="subscribers" className="space-y-6">
@@ -225,6 +242,11 @@ const Admin = () => {
             {/* Comments Tab */}
             <TabsContent value="comments" className="space-y-6">
               <CommentsList />
+            </TabsContent>
+
+            {/* Availability Tab */}
+            <TabsContent value="availability" className="space-y-6">
+              <AvailabilityManager />
             </TabsContent>
           </Tabs>
         </div>
