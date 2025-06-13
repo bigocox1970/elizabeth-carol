@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Plus, Trash2, Save, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { Calendar, Clock, Plus, Trash2, Save, ChevronLeft, ChevronRight, Eye, Copy } from "lucide-react";
 import { toast } from "sonner";
 
 interface AvailabilitySlot {
@@ -23,6 +23,9 @@ const AvailabilityManager = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showTimeSlots, setShowTimeSlots] = useState(false);
+  const [showCopyModal, setShowCopyModal] = useState(false);
+  const [copyFromDate, setCopyFromDate] = useState<string | null>(null);
+  const [selectedCopyDates, setSelectedCopyDates] = useState<string[]>([]);
   const [newSlot, setNewSlot] = useState<AvailabilitySlot>({
     date: '',
     start_time: '',
@@ -177,6 +180,24 @@ const AvailabilityManager = () => {
     setShowTimeSlots(true);
   };
 
+  // Generate 15-minute interval times
+  const generateTimeOptions = () => {
+    const times = [];
+    for (let hour = 8; hour <= 20; hour++) {
+      for (let minute = 0; minute < 60; minute += 15) {
+        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        const displayTime = new Date(`2000-01-01 ${timeString}`).toLocaleTimeString('en-GB', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        times.push({ value: timeString, display: displayTime });
+      }
+    }
+    return times;
+  };
+
+  const timeOptions = generateTimeOptions();
+
   const addTimeSlot = () => {
     if (!newSlot.date || !newSlot.start_time || !newSlot.end_time) {
       toast.error('Please fill in all required fields');
@@ -201,6 +222,49 @@ const AvailabilityManager = () => {
       end_time: '',
       notes: ''
     });
+  };
+
+  const copyTimesToDates = () => {
+    if (!copyFromDate || selectedCopyDates.length === 0) {
+      toast.error('Please select dates to copy to');
+      return;
+    }
+
+    const sourceSlots = getSlotsForDate(new Date(copyFromDate));
+    if (sourceSlots.length === 0) {
+      toast.error('No time slots found for the selected date');
+      return;
+    }
+
+    const newSlots = [];
+    selectedCopyDates.forEach(targetDate => {
+      sourceSlots.forEach(sourceSlot => {
+        newSlots.push({
+          ...sourceSlot,
+          id: Date.now() + Math.random(), // Unique ID
+          date: targetDate
+        });
+      });
+    });
+
+    const updatedSlots = [...slots, ...newSlots].sort((a, b) => 
+      new Date(a.date + ' ' + a.start_time).getTime() - new Date(b.date + ' ' + b.start_time).getTime()
+    );
+
+    saveAvailability(updatedSlots);
+    setShowCopyModal(false);
+    setSelectedCopyDates([]);
+    setCopyFromDate(null);
+    
+    toast.success(`Copied ${sourceSlots.length} time slot(s) to ${selectedCopyDates.length} date(s)`);
+  };
+
+  const toggleCopyDate = (dateString: string) => {
+    setSelectedCopyDates(prev => 
+      prev.includes(dateString) 
+        ? prev.filter(d => d !== dateString)
+        : [...prev, dateString]
+    );
   };
 
   if (loading) {
@@ -421,21 +485,31 @@ const AvailabilityManager = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="start_time">Start Time</Label>
-                <Input
+                <select
                   id="start_time"
-                  type="time"
                   value={newSlot.start_time}
                   onChange={(e) => setNewSlot({ ...newSlot, start_time: e.target.value })}
-                />
+                  className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
+                >
+                  <option value="">Select start time</option>
+                  {timeOptions.map(time => (
+                    <option key={time.value} value={time.value}>{time.display}</option>
+                  ))}
+                </select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="end_time">End Time</Label>
-                <Input
+                <select
                   id="end_time"
-                  type="time"
                   value={newSlot.end_time}
                   onChange={(e) => setNewSlot({ ...newSlot, end_time: e.target.value })}
-                />
+                  className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
+                >
+                  <option value="">Select end time</option>
+                  {timeOptions.map(time => (
+                    <option key={time.value} value={time.value}>{time.display}</option>
+                  ))}
+                </select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="service_type">Service Type</Label>
@@ -502,10 +576,23 @@ const AvailabilityManager = () => {
       {/* Summary */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Eye className="w-5 h-5" />
-            Availability Summary
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              Availability Summary
+            </CardTitle>
+            {slots.length > 0 && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowCopyModal(true)}
+                className="flex items-center gap-2"
+              >
+                <Copy className="w-4 h-4" />
+                Copy Times
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {slots.length === 0 ? (
@@ -552,8 +639,138 @@ const AvailabilityManager = () => {
       {slots.length > 0 && (
         <div className="text-center p-4 bg-muted/50 rounded-lg">
           <p className="text-sm text-muted-foreground">
-            💡 <strong>Tip:</strong> Green dates show when you're available. Click any date to add or manage time slots.
+            💡 <strong>Tip:</strong> Green dates show when you're available. Click any date to add or manage time slots. Use "Copy Times" to duplicate your schedule to multiple days.
           </p>
+        </div>
+      )}
+
+      {/* Copy Times Modal */}
+      {showCopyModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Copy className="w-5 h-5" />
+                  Copy Times to Multiple Days
+                </CardTitle>
+                <Button variant="outline" size="sm" onClick={() => setShowCopyModal(false)}>
+                  Close
+                </Button>
+              </div>
+              <CardDescription>
+                Select a date to copy from, then select the dates you want to copy to
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Step 1: Select source date */}
+              <div className="space-y-3">
+                <h4 className="font-medium">Step 1: Choose date to copy FROM</h4>
+                <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto">
+                  {Array.from(new Set(slots.map(slot => slot.date)))
+                    .sort()
+                    .map(date => {
+                      const dateObj = new Date(date);
+                      const slotsForDate = getSlotsForDate(dateObj);
+                      return (
+                        <Button
+                          key={date}
+                          variant={copyFromDate === date ? "default" : "outline"}
+                          className="justify-start h-auto p-3"
+                          onClick={() => setCopyFromDate(date)}
+                        >
+                          <div className="text-left">
+                            <div className="font-medium">
+                              {formatDate(date)}
+                            </div>
+                            <div className="text-sm opacity-75">
+                              {slotsForDate.length} time slot{slotsForDate.length === 1 ? '' : 's'}: {' '}
+                              {slotsForDate.map(slot => `${formatTime(slot.start_time)}-${formatTime(slot.end_time)}`).join(', ')}
+                            </div>
+                          </div>
+                        </Button>
+                      );
+                    })}
+                </div>
+              </div>
+
+              {/* Step 2: Select target dates */}
+              {copyFromDate && (
+                <div className="space-y-3">
+                  <h4 className="font-medium">Step 2: Choose dates to copy TO</h4>
+                  <div className="text-sm text-muted-foreground mb-2">
+                    Click dates to select/deselect. Selected: {selectedCopyDates.length}
+                  </div>
+                  
+                  {/* Mini calendar for date selection */}
+                  <div className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <Button variant="outline" size="sm" onClick={() => navigateDate('prev')}>
+                        <ChevronLeft className="w-4 h-4" />
+                      </Button>
+                      <h5 className="font-medium">
+                        {currentDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
+                      </h5>
+                      <Button variant="outline" size="sm" onClick={() => navigateDate('next')}>
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    
+                    {/* Day headers */}
+                    <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-muted-foreground mb-2">
+                      <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                    </div>
+                    
+                    {/* Calendar days */}
+                    <div className="grid grid-cols-7 gap-1">
+                      {getDaysInMonth(currentDate).map((date, index) => {
+                        if (!date) return <div key={index}></div>;
+                        
+                        const dateString = date.toISOString().split('T')[0];
+                        const isSelected = selectedCopyDates.includes(dateString);
+                        const isSourceDate = dateString === copyFromDate;
+                        const isPastDate = date < new Date(new Date().setHours(0,0,0,0));
+                        
+                        return (
+                          <Button
+                            key={index}
+                            variant="ghost"
+                            size="sm"
+                            className={`h-8 p-1 text-xs ${
+                              isSourceDate 
+                                ? 'bg-blue-100 text-blue-800 cursor-not-allowed' 
+                                : isSelected 
+                                  ? 'bg-green-100 text-green-800 border border-green-300'
+                                  : isPastDate
+                                    ? 'opacity-50 cursor-not-allowed'
+                                    : 'hover:bg-muted'
+                            }`}
+                            onClick={() => !isSourceDate && !isPastDate && toggleCopyDate(dateString)}
+                            disabled={isSourceDate || isPastDate}
+                          >
+                            {date.getDate()}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Action buttons */}
+              {copyFromDate && selectedCopyDates.length > 0 && (
+                <div className="flex gap-2 pt-4 border-t">
+                  <Button onClick={copyTimesToDates} className="flex-1">
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy to {selectedCopyDates.length} date{selectedCopyDates.length === 1 ? '' : 's'}
+                  </Button>
+                  <Button variant="outline" onClick={() => setSelectedCopyDates([])}>
+                    Clear Selection
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>
