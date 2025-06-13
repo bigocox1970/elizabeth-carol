@@ -130,6 +130,10 @@ const AvailabilityManager = () => {
       
       if (profilesError) {
         console.error('Error loading profiles:', profilesError);
+        // If profiles table doesn't exist yet, show helpful message
+        if (profilesError.code === '42P01') {
+          toast.error('Profiles table not found. Please run the database migration first.');
+        }
         setClients([]);
         return;
       }
@@ -156,16 +160,17 @@ const AvailabilityManager = () => {
 
     setIsSearchingClients(true);
     try {
-      // Search profiles by name or email
+      // Search profiles by name, email, or phone - comprehensive search
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('id, name, email, phone')
-        .or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`)
+        .or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
         .order('name', { ascending: true })
         .limit(20);
       
       if (profilesError) {
         console.error('Error searching profiles:', profilesError);
+        // If profiles table doesn't exist yet, fall back to empty array
         setClients([]);
         return;
       }
@@ -808,7 +813,7 @@ const AvailabilityManager = () => {
       {/* Day View Modal */}
       {showDayView && selectedDate && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4" onClick={(e) => e.target === e.currentTarget && setShowDayView(false)}>
-          <Card className="w-full max-w-lg sm:max-w-2xl lg:max-w-3xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto shadow-2xl">
+          <Card className="w-full max-w-[95vw] sm:max-w-2xl lg:max-w-4xl max-h-[95vh] overflow-y-auto shadow-2xl">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-lg">
