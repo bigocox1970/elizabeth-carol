@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ import { Calendar, User, ArrowLeft, Star, MessageCircle, Send, LogIn } from "luc
 import { useAuth } from "@/contexts/AuthContext";
 import SocialShare from "@/components/SocialShare";
 import { getCategoryStyle } from "@/utils/blogCategories";
+import { generateBlogPostSEO } from "@/utils/seo";
 
 const BlogPost = () => {
   const { postId } = useParams();
@@ -168,8 +170,12 @@ const BlogPost = () => {
 
   const approvedReviews = post.reviews ? post.reviews.filter(r => r.approved) : [];
 
+  // Generate dynamic SEO for this blog post
+  const seoData = post ? generateBlogPostSEO(post.title, post.excerpt, postId) : null;
+
   return (
     <div className="min-h-screen bg-background">
+      {seoData && <SEO {...seoData} />}
       <Navigation />
       
       {/* Back Button */}

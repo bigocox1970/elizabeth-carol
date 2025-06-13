@@ -2,6 +2,7 @@ import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import Services from "@/components/Services";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +10,7 @@ import { Star, Quote, Phone, MapPin, Heart, Users, Award } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { getApiUrl } from "@/utils/api";
+import { getPageSEO } from "@/utils/seo";
 import SocialShare from "@/components/SocialShare";
 
 interface Testimonial {
@@ -106,8 +108,11 @@ const Index = () => {
     }
   ];
 
+  const seoData = getPageSEO('home');
+
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoData} />
       <Navigation />
       <Hero />
       <Services />

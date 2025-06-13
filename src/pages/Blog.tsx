@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,8 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, User, ArrowRight, MessageCircle, Star, Search, Filter } from "lucide-react";
 import { getCategoryStyle } from "@/utils/blogCategories";
+import { getPageSEO } from "@/utils/seo";
 
 const Blog = () => {
+  const seoData = getPageSEO('blog');
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -90,6 +93,7 @@ const Blog = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoData} />
       <Navigation />
       
       {/* Hero Section */}

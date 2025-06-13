@@ -1,14 +1,19 @@
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Heart, Star, Users, Phone, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
+import { getPageSEO } from "@/utils/seo";
 
 const About = () => {
+  const seoData = getPageSEO('about');
+
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoData} />
       <Navigation />
       
       {/* Hero Section */}

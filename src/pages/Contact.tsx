@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 import NewsletterSignup from "@/components/NewsletterSignup";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,8 +11,10 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Phone, Mail, MapPin, Clock, MessageCircle, Star, Check, AlertCircle, Loader2 } from "lucide-react";
 import { getApiUrl } from "@/utils/api";
+import { getPageSEO } from "@/utils/seo";
 
 const Contact = () => {
+  const seoData = getPageSEO('contact');
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -110,6 +113,7 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoData} />
       <Navigation />
       
       {/* Hero Section */}

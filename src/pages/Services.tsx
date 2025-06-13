@@ -1,12 +1,16 @@
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 import Services from "@/components/Services";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Phone, Clock, MapPin, Heart, Star, Users } from "lucide-react";
+import { getPageSEO } from "@/utils/seo";
 
 const ServicesPage = () => {
+  const seoData = getPageSEO('services');
+
   const faqs = [
     {
       question: "How long does a reading take?",
@@ -32,6 +36,7 @@ const ServicesPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoData} />
       <Navigation />
       
       {/* Hero Section */}

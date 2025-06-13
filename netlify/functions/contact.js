@@ -180,12 +180,80 @@ This is an automated confirmation. Please do not reply to this email - I will re
 
         await transporter.sendMail(confirmationEmail);
         console.log('Confirmation email sent successfully to:', email);
+
+        // CRITICAL: Send the enquiry to Elizabeth Carol's business email
+        const businessEmail = {
+          from: '"Website Contact Form" <info@elizabethcarol.co.uk>',
+          to: 'info@elizabethcarol.co.uk',
+          subject: `New Enquiry from ${firstName} ${lastName}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h2 style="color: #4c1d95;">New Website Enquiry</h2>
+              
+              <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="color: #4c1d95; margin-top: 0;">Contact Details:</h3>
+                <p><strong>Name:</strong> ${firstName} ${lastName}</p>
+                <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
+                ${phone ? `<p><strong>Phone:</strong> <a href="tel:${phone}">${phone}</a></p>` : ''}
+                ${service ? `<p><strong>Service Interest:</strong> ${service}</p>` : ''}
+                
+                <h3 style="color: #4c1d95; margin-top: 20px;">Message:</h3>
+                <div style="background-color: white; padding: 15px; border-radius: 4px; margin-top: 10px;">
+                  ${message.replace(/\n/g, '<br>')}
+                </div>
+              </div>
+              
+              <p style="font-size: 14px; color: #666;">
+                <strong>Submitted:</strong> ${new Date().toLocaleString('en-GB', { 
+                  timeZone: 'Europe/London',
+                  dateStyle: 'full',
+                  timeStyle: 'short'
+                })}<br>
+                <strong>Source:</strong> Website Contact Form
+              </p>
+              
+              <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+              
+              <p style="font-size: 12px; color: #999;">
+                The customer has been sent an automatic confirmation email. 
+                Please respond to their enquiry directly at: ${email}
+              </p>
+            </div>
+          `,
+          text: `
+NEW WEBSITE ENQUIRY
+
+Contact Details:
+Name: ${firstName} ${lastName}
+Email: ${email}
+${phone ? `Phone: ${phone}` : ''}
+${service ? `Service Interest: ${service}` : ''}
+
+Message:
+${message}
+
+---
+Submitted: ${new Date().toLocaleString('en-GB', { 
+  timeZone: 'Europe/London',
+  dateStyle: 'full',
+  timeStyle: 'short'
+})}
+Source: Website Contact Form
+
+The customer has been sent an automatic confirmation email. 
+Please respond to their enquiry directly at: ${email}
+          `
+        };
+
+        await transporter.sendMail(businessEmail);
+        console.log('Business enquiry email sent successfully to info@elizabethcarol.co.uk');
+
       } catch (emailError) {
-        console.error('Failed to send confirmation email:', emailError);
+        console.error('Failed to send emails:', emailError);
         // Don't fail the contact form if email sending fails
       }
     } else {
-      console.log('Email credentials not configured - skipping confirmation email');
+      console.log('Email credentials not configured - skipping emails');
     }
 
     return {
