@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Star, Trash2, RefreshCw, Check, X } from "lucide-react";
+import { Star, Trash2, RefreshCw, Check, X, Quote } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getApiUrl } from "@/utils/api";
 
@@ -22,12 +22,28 @@ const ReviewsList = () => {
   const { session } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [expandedReviews, setExpandedReviews] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (session) {
       loadReviews();
     }
   }, [session]);
+
+  const toggleExpanded = (reviewId: string) => {
+    const newExpanded = new Set(expandedReviews);
+    if (newExpanded.has(reviewId)) {
+      newExpanded.delete(reviewId);
+    } else {
+      newExpanded.add(reviewId);
+    }
+    setExpandedReviews(newExpanded);
+  };
+
+  const truncateText = (text: string, maxLength: number = 150) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength).trim() + '...';
+  };
 
   const loadReviews = async () => {
     if (!session) return;
@@ -142,78 +158,112 @@ const ReviewsList = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <RefreshCw className="w-8 h-8 animate-spin text-primary" />
-            </div>
-          ) : reviews.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">
-              No reviews yet
-            </p>
-          ) : (
-            reviews.map((review) => (
-              <div key={review.id} className="p-3 bg-secondary/20 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <h3 className="font-medium">{review.name}</h3>
-                    <p className="text-xs text-muted-foreground">{review.email}</p>
-                    {review.location && (
-                      <p className="text-xs text-muted-foreground">📍 {review.location}</p>
-                    )}
-                    {review.service && (
-                      <p className="text-xs text-blue-600 font-medium">🔮 {review.service}</p>
-                    )}
-                  </div>
-                  <div className="flex space-x-2">
-                    {!review.approved && (
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <RefreshCw className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : reviews.length === 0 ? (
+          <p className="text-muted-foreground text-center py-4">
+            No reviews yet
+          </p>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {reviews.map((review) => {
+              const isExpanded = expandedReviews.has(review.id);
+              const shouldTruncate = review.comment && review.comment.length > 150;
+              const displayText = shouldTruncate && !isExpanded 
+                ? truncateText(review.comment, 150)
+                : review.comment;
+
+              return (
+                <Card key={review.id} className="h-fit hover:shadow-lg transition-shadow duration-300">
+                  <CardContent className="p-4">
+                    {/* Admin Actions */}
+                    <div className="flex justify-end space-x-1 mb-3">
+                      {!review.approved && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleApproveReview(review.id, true)}
+                          className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
+                          title="Approve"
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {review.approved && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleApproveReview(review.id, false)}
+                          className="h-8 w-8 p-0 text-amber-600 hover:text-amber-700"
+                          title="Unapprove"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => handleApproveReview(review.id, true)}
-                        className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
+                        onClick={() => handleDeleteReview(review.id)}
+                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                        title="Delete"
                       >
-                        <Check className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
-                    )}
-                    {review.approved && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => handleApproveReview(review.id, false)}
-                        className="h-8 w-8 p-0 text-amber-600 hover:text-amber-700"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleDeleteReview(review.id)}
-                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="flex mb-2">
-                  {renderStars(review.rating)}
-                </div>
-                <p className="text-sm text-muted-foreground mb-2">
-                  {review.comment}
-                </p>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">
-                    {formatDate(review.createdAt)}
-                  </span>
-                  <Badge variant={review.approved ? "default" : "outline"}>
-                    {review.approved ? "Approved" : "Pending"}
-                  </Badge>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+                    </div>
+
+                    {/* Quote Icon */}
+                    <Quote className="w-6 h-6 text-primary mb-3" />
+
+                    {/* Review Content */}
+                    <blockquote className="mb-4 text-sm">
+                      "{displayText}"
+                      {shouldTruncate && (
+                        <button
+                          onClick={() => toggleExpanded(review.id)}
+                          className="ml-2 text-primary hover:text-primary/80 font-medium text-sm underline"
+                        >
+                          {isExpanded ? 'Read less' : 'Read more'}
+                        </button>
+                      )}
+                    </blockquote>
+
+                    {/* Review Details */}
+                    <div className="space-y-2">
+                      <div className="flex mb-2">
+                        {renderStars(review.rating)}
+                      </div>
+                      
+                      <div>
+                        <h4 className="font-medium text-sm">{review.name}</h4>
+                        <p className="text-xs text-muted-foreground">{review.email}</p>
+                        
+                        {review.location && (
+                          <p className="text-xs text-muted-foreground">📍 {review.location}</p>
+                        )}
+                        
+                        {review.service && (
+                          <p className="text-xs text-blue-600 font-medium">🔮 {review.service}</p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">
+                          {formatDate(review.createdAt)}
+                        </span>
+                        <Badge variant={review.approved ? "default" : "outline"}>
+                          {review.approved ? "Approved" : "Pending"}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+        
         <Button 
           onClick={loadReviews}
           variant="outline"

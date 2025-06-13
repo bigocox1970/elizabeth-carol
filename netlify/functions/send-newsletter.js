@@ -7,14 +7,9 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
 exports.handler = async (event, context) => {
-  console.log('=== NEWSLETTER FUNCTION START ===');
-  console.log('Environment check:', {
-    SUPABASE_URL: SUPABASE_URL ? 'SET' : 'MISSING',
-    SUPABASE_ANON_KEY: SUPABASE_ANON_KEY ? 'SET' : 'MISSING'
-  });
-
+  console.log('=== NEWSLETTER FUNCTION STARTED ===');
+  
   if (event.httpMethod !== 'POST') {
-    console.log('Method not allowed:', event.httpMethod);
     return {
       statusCode: 405,
       body: JSON.stringify({ message: 'Method not allowed' })
@@ -46,48 +41,51 @@ exports.handler = async (event, context) => {
   console.log('Request body:', event.body);
   
   try {
-    const { subject, message } = JSON.parse(event.body);
-    console.log('Parsed request:', {
-      subject: subject ? 'PROVIDED' : 'MISSING',
-      message: message ? 'PROVIDED' : 'MISSING'
+    const { subject, message, sendToMode = 'all', selectedSubscribers } = JSON.parse(event.body);
+    console.log('Parsed request body:', { 
+      hasSubject: !!subject, 
+      hasMessage: !!message,
+      sendToMode,
+      selectedSubscribersCount: selectedSubscribers?.length || 0
     });
 
-    // Get the authorization header
-    const authHeader = event.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('Missing or invalid authorization header');
+    // Get the user's JWT token from the Authorization header
+    const authHeader = event.headers.authorization || event.headers.Authorization;
+    if (!authHeader) {
+      console.log('No authorization header found');
       return {
         statusCode: 401,
-        body: JSON.stringify({ message: 'Unauthorized' })
+        body: JSON.stringify({ message: 'No authorization token provided' })
       };
     }
 
-    // Extract the token
-    const token = authHeader.split(' ')[1];
-    console.log('Token extracted from header');
+    // Extract the token from the Bearer header
+    const token = authHeader.replace('Bearer ', '');
+    console.log('Token extracted, length:', token.length);
 
-    // Verify the token with Supabase
+    // Verify the user is authenticated and is an admin
     try {
-      const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      // First, get the user ID from the token
+      const userResponse = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
         headers: {
           'apikey': SUPABASE_ANON_KEY,
           'Authorization': `Bearer ${token}`
         }
       });
 
-      if (!response.ok) {
-        console.log('Token verification failed:', response.status);
+      if (!userResponse.ok) {
+        console.error('Failed to get user info:', await userResponse.text());
         return {
           statusCode: 401,
-          body: JSON.stringify({ message: 'Unauthorized' })
+          body: JSON.stringify({ message: 'Invalid token' })
         };
       }
 
-      const userData = await response.json();
-      console.log('User data retrieved:', userData);
+      const userData = await userResponse.json();
+      console.log('User authenticated:', userData.email);
 
-      // Check if user is admin
-      const adminResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
+      // Verify the user is an admin
+      const isAdminResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
         method: 'POST',
         headers: {
           'apikey': SUPABASE_ANON_KEY,
@@ -97,15 +95,9 @@ exports.handler = async (event, context) => {
         body: JSON.stringify({ user_id: userData.id })
       });
 
-      if (!adminResponse.ok) {
-        console.log('Admin check failed:', adminResponse.status);
-        return {
-          statusCode: 401,
-          body: JSON.stringify({ message: 'Unauthorized' })
-        };
-      }
+      const isAdmin = await isAdminResponse.json();
+      console.log('Admin check result:', isAdmin);
 
-      const isAdmin = await adminResponse.json();
       if (!isAdmin) {
         console.log('User is not an admin');
         return {
@@ -138,7 +130,14 @@ exports.handler = async (event, context) => {
     
     try {
       console.log('Fetching subscribers from Supabase...');
-      const url = `${SUPABASE_URL}/rest/v1/subscribers?select=*`;
+      let url = `${SUPABASE_URL}/rest/v1/subscribers?select=*`;
+      
+      // If sending to selected subscribers only, filter by IDs
+      if (sendToMode === 'selected' && selectedSubscribers && selectedSubscribers.length > 0) {
+        const idFilter = selectedSubscribers.map(id => `id.eq.${id}`).join(',');
+        url += `&or=(${idFilter})`;
+        console.log('Filtering for selected subscribers:', selectedSubscribers);
+      }
       
       const response = await fetch(url, {
         method: 'GET',
@@ -161,14 +160,13 @@ exports.handler = async (event, context) => {
       
       if (supabaseSubscribers.length > 0) {
         console.log('First subscriber raw data:', JSON.stringify(supabaseSubscribers[0], null, 2));
-        console.log('All subscribers raw data:', JSON.stringify(supabaseSubscribers, null, 2));
       }
       
-      // Just use all subscribers for now to test
-      const activeSubscribers = supabaseSubscribers;
+      // Filter for active subscribers only
+      const activeSubscribers = supabaseSubscribers.filter(sub => sub.active !== false);
       console.log(`Total subscribers: ${supabaseSubscribers.length}, Active: ${activeSubscribers.length}`);
       
-      // Debug the mapping process
+      // Map to the format expected by email sending
       subscribers = activeSubscribers.map(sub => {
         const mappedSubscriber = {
           email: sub.email,
@@ -198,9 +196,12 @@ exports.handler = async (event, context) => {
     }
 
     if (subscribers.length === 0) {
+      const noSubscribersMessage = sendToMode === 'selected' 
+        ? 'No selected subscribers found or they are inactive'
+        : 'No active subscribers found';
       return {
         statusCode: 400,
-        body: JSON.stringify({ message: 'No active subscribers found' })
+        body: JSON.stringify({ message: noSubscribersMessage })
       };
     }
 
@@ -211,7 +212,7 @@ exports.handler = async (event, context) => {
       pass: process.env.EMAIL_PASSWORD ? 'SET' : 'MISSING'
     });
     
-    const transporter = nodemailer.createTransport({
+    const transporter = nodemailer.createTransporter({
       host: 'smtpout.secureserver.net',
       port: 587,
       secure: false,
@@ -292,12 +293,17 @@ To unsubscribe, simply reply to this email with "unsubscribe" in the subject lin
 
     await Promise.all(emailPromises);
 
+    const successMessage = sendToMode === 'selected' 
+      ? `Newsletter sent successfully to ${sentCount} selected subscribers!`
+      : `Newsletter sent successfully to ${sentCount} subscribers!`;
+
     return {
       statusCode: 200,
       body: JSON.stringify({ 
-        message: `Newsletter sent successfully to ${sentCount} subscribers!`,
+        message: successMessage,
         sentCount: sentCount,
-        totalSubscribers: subscribers.length
+        totalSubscribers: subscribers.length,
+        sendToMode: sendToMode
       })
     };
 
