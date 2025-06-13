@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Plus, Trash2, Save, ChevronLeft, ChevronRight, Copy, X, List, Grid3X3, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 
 interface AvailabilitySlot {
   id?: number;
@@ -16,8 +17,20 @@ interface AvailabilitySlot {
   notes?: string;
 }
 
+interface Booking {
+  id?: number;
+  availability_slot_id: number;
+  client_name?: string;
+  client_email?: string;
+  client_phone?: string;
+  booking_type: 'manual' | 'online';
+  status: 'confirmed' | 'cancelled' | 'completed';
+  notes?: string;
+}
+
 const AvailabilityManager = () => {
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -26,7 +39,6 @@ const AvailabilityManager = () => {
   const [selectedSlots, setSelectedSlots] = useState<number[]>([]);
   const [selectedCopyDates, setSelectedCopyDates] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
-  const [bookedSlots, setBookedSlots] = useState<number[]>([]);
   const [newSlot, setNewSlot] = useState<AvailabilitySlot>({
     date: '',
     start_time: '',
@@ -42,14 +54,34 @@ const AvailabilityManager = () => {
   const loadAvailability = async () => {
     try {
       setLoading(true);
-      const stored = localStorage.getItem('elizabeth_availability');
-      if (stored) {
-        setSlots(JSON.parse(stored));
+      
+      // Load availability slots from Supabase
+      const { data: slotsData, error: slotsError } = await supabase
+        .from('availability_slots')
+        .select('*')
+        .order('date', { ascending: true })
+        .order('start_time', { ascending: true });
+
+      if (slotsError) {
+        console.error('Error loading slots:', slotsError);
+        toast.error('Failed to load availability slots');
+        return;
       }
-      const bookedStored = localStorage.getItem('elizabeth_booked_slots');
-      if (bookedStored) {
-        setBookedSlots(JSON.parse(bookedStored));
+
+      // Load bookings from Supabase
+      const { data: bookingsData, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('status', 'confirmed');
+
+      if (bookingsError) {
+        console.error('Error loading bookings:', bookingsError);
+        toast.error('Failed to load bookings');
+        return;
       }
+
+      setSlots(slotsData || []);
+      setBookings(bookingsData || []);
     } catch (error) {
       console.error('Error loading availability:', error);
       toast.error('Failed to load availability');
@@ -120,22 +152,63 @@ const AvailabilityManager = () => {
   const hasBookings = (date: Date) => {
     const dateString = date.toISOString().split('T')[0];
     const slotsForDate = slots.filter(slot => slot.date === dateString);
-    return slotsForDate.some(slot => bookedSlots.includes(slot.id!));
+    return slotsForDate.some(slot => 
+      bookings.some(booking => booking.availability_slot_id === slot.id && booking.status === 'confirmed')
+    );
   };
 
   const isSlotBooked = (slotId: number) => {
-    return bookedSlots.includes(slotId);
+    return bookings.some(booking => 
+      booking.availability_slot_id === slotId && booking.status === 'confirmed'
+    );
   };
 
-  const toggleSlotBooking = (slotId: number) => {
-    const newBookedSlots = isSlotBooked(slotId)
-      ? bookedSlots.filter(id => id !== slotId)
-      : [...bookedSlots, slotId];
-    
-    setBookedSlots(newBookedSlots);
-    localStorage.setItem('elizabeth_booked_slots', JSON.stringify(newBookedSlots));
-    
-    toast.success(isSlotBooked(slotId) ? 'Slot marked as available' : 'Slot marked as booked');
+  const toggleSlotBooking = async (slotId: number) => {
+    try {
+      const existingBooking = bookings.find(booking => 
+        booking.availability_slot_id === slotId && booking.status === 'confirmed'
+      );
+
+      if (existingBooking) {
+        // Remove booking (mark slot as available)
+        const { error } = await supabase
+          .from('bookings')
+          .delete()
+          .eq('id', existingBooking.id);
+
+        if (error) {
+          console.error('Error removing booking:', error);
+          toast.error('Failed to remove booking');
+          return;
+        }
+
+        setBookings(prev => prev.filter(b => b.id !== existingBooking.id));
+        toast.success('Slot marked as available');
+      } else {
+        // Add booking (mark slot as booked)
+        const { data, error } = await supabase
+          .from('bookings')
+          .insert({
+            availability_slot_id: slotId,
+            booking_type: 'manual',
+            status: 'confirmed'
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error creating booking:', error);
+          toast.error('Failed to create booking');
+          return;
+        }
+
+        setBookings(prev => [...prev, data]);
+        toast.success('Slot marked as booked');
+      }
+    } catch (error) {
+      console.error('Error toggling booking:', error);
+      toast.error('Failed to update booking status');
+    }
   };
 
   const navigateDate = (direction: 'prev' | 'next') => {
@@ -151,34 +224,74 @@ const AvailabilityManager = () => {
     setShowDayView(true);
   };
 
-  const addTimeSlot = () => {
+  const addTimeSlot = async () => {
     if (!newSlot.date || !newSlot.start_time || !newSlot.end_time) {
       toast.error('Please fill in all required fields');
       return;
     }
 
-    const slotWithId = {
-      ...newSlot,
-      id: Date.now()
-    };
+    try {
+      const { data, error } = await supabase
+        .from('availability_slots')
+        .insert({
+          date: newSlot.date,
+          start_time: newSlot.start_time,
+          end_time: newSlot.end_time,
+          service_type: newSlot.service_type,
+          notes: newSlot.notes
+        })
+        .select()
+        .single();
 
-    const updatedSlots = [...slots, slotWithId].sort((a, b) => 
-      new Date(a.date + ' ' + a.start_time).getTime() - new Date(b.date + ' ' + b.start_time).getTime()
-    );
+      if (error) {
+        console.error('Error adding slot:', error);
+        toast.error('Failed to add time slot');
+        return;
+      }
 
-    saveAvailability(updatedSlots);
-    
-    setNewSlot({
-      ...newSlot,
-      start_time: '',
-      end_time: '',
-      notes: ''
-    });
+      const updatedSlots = [...slots, data].sort((a, b) => 
+        new Date(a.date + ' ' + a.start_time).getTime() - new Date(b.date + ' ' + b.start_time).getTime()
+      );
+
+      setSlots(updatedSlots);
+      toast.success('Time slot added successfully');
+      
+      setNewSlot({
+        ...newSlot,
+        start_time: '',
+        end_time: '',
+        notes: ''
+      });
+    } catch (error) {
+      console.error('Error adding time slot:', error);
+      toast.error('Failed to add time slot');
+    }
   };
 
-  const removeSlot = (id: number) => {
-    const updatedSlots = slots.filter(slot => slot.id !== id);
-    saveAvailability(updatedSlots);
+  const removeSlot = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('availability_slots')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error removing slot:', error);
+        toast.error('Failed to remove time slot');
+        return;
+      }
+
+      const updatedSlots = slots.filter(slot => slot.id !== id);
+      setSlots(updatedSlots);
+      
+      // Also remove any bookings for this slot
+      setBookings(prev => prev.filter(booking => booking.availability_slot_id !== id));
+      
+      toast.success('Time slot removed successfully');
+    } catch (error) {
+      console.error('Error removing time slot:', error);
+      toast.error('Failed to remove time slot');
+    }
   };
 
   const toggleSlotSelection = (slotId: number) => {
@@ -189,35 +302,53 @@ const AvailabilityManager = () => {
     );
   };
 
-  const copySelectedSlots = () => {
+  const copySelectedSlots = async () => {
     if (selectedSlots.length === 0 || selectedCopyDates.length === 0) {
       toast.error('Please select time slots and dates to copy to');
       return;
     }
 
-    const slotsToCopy = slots.filter(slot => selectedSlots.includes(slot.id!));
-    
-    const newSlots = [];
-    selectedCopyDates.forEach(targetDate => {
-      slotsToCopy.forEach(sourceSlot => {
-        newSlots.push({
-          ...sourceSlot,
-          id: Date.now() + Math.random(),
-          date: targetDate
+    try {
+      const slotsToCopy = slots.filter(slot => selectedSlots.includes(slot.id!));
+      
+      const newSlots = [];
+      selectedCopyDates.forEach(targetDate => {
+        slotsToCopy.forEach(sourceSlot => {
+          newSlots.push({
+            date: targetDate,
+            start_time: sourceSlot.start_time,
+            end_time: sourceSlot.end_time,
+            service_type: sourceSlot.service_type,
+            notes: sourceSlot.notes
+          });
         });
       });
-    });
 
-    const updatedSlots = [...slots, ...newSlots].sort((a, b) => 
-      new Date(a.date + ' ' + a.start_time).getTime() - new Date(b.date + ' ' + b.start_time).getTime()
-    );
+      const { data, error } = await supabase
+        .from('availability_slots')
+        .insert(newSlots)
+        .select();
 
-    saveAvailability(updatedSlots);
-    setShowCopyModal(false);
-    setSelectedCopyDates([]);
-    setSelectedSlots([]);
-    
-    toast.success(`Copied ${slotsToCopy.length} time slot(s) to ${selectedCopyDates.length} date(s)`);
+      if (error) {
+        console.error('Error copying slots:', error);
+        toast.error('Failed to copy time slots');
+        return;
+      }
+
+      const updatedSlots = [...slots, ...data].sort((a, b) => 
+        new Date(a.date + ' ' + a.start_time).getTime() - new Date(b.date + ' ' + b.start_time).getTime()
+      );
+
+      setSlots(updatedSlots);
+      setShowCopyModal(false);
+      setSelectedCopyDates([]);
+      setSelectedSlots([]);
+      
+      toast.success(`Copied ${slotsToCopy.length} time slot(s) to ${selectedCopyDates.length} date(s)`);
+    } catch (error) {
+      console.error('Error copying time slots:', error);
+      toast.error('Failed to copy time slots');
+    }
   };
 
   const toggleCopyDate = (dateString: string) => {
