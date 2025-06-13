@@ -70,13 +70,12 @@ export const handler = async (event, context) => {
               'Prefer': 'return=representation'
             },
             body: JSON.stringify({
-              post_id: commentData.postId,
+              post_id: parseInt(commentData.postId, 10),
               content: commentData.content,
               author_name: userData.user_metadata?.name || userData.email?.split('@')[0] || 'Anonymous',
               author_email: userData.email,
               user_id: userData.id,
-              approved: false,
-              rating: commentData.rating || 5
+              approved: false
             })
           });
 
