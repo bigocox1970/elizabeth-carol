@@ -134,9 +134,11 @@ exports.handler = async (event, context) => {
       
       // If sending to selected subscribers only, filter by IDs
       if (sendToMode === 'selected' && selectedSubscribers && selectedSubscribers.length > 0) {
-        const idFilter = selectedSubscribers.map(id => `id.eq.${id}`).join(',');
-        url += `&or=(${idFilter})`;
+        // Use the correct PostgREST syntax for filtering by multiple IDs
+        const idFilter = selectedSubscribers.join(',');
+        url += `&id=in.(${idFilter})`;
         console.log('Filtering for selected subscribers:', selectedSubscribers);
+        console.log('Final URL:', url);
       }
       
       const response = await fetch(url, {
@@ -234,6 +236,7 @@ exports.handler = async (event, context) => {
     console.log(`Attempting to send to ${subscribers.length} subscribers`);
     
     let sentCount = 0;
+    let failedCount = 0;
     const emailPromises = subscribers.map(async (subscriber, index) => {
       try {
         console.log(`Sending email ${index + 1} to:`, subscriber.email);
@@ -285,13 +288,20 @@ To unsubscribe, simply reply to this email with "unsubscribe" in the subject lin
         const result = await transporter.sendMail(mailOptions);
         console.log(`Email sent successfully to ${subscriber.email}:`, result.messageId);
         sentCount++;
+        return { success: true, email: subscriber.email };
       } catch (error) {
         console.error(`Failed to send to ${subscriber.email}:`, error.message);
         console.error('Full error:', error);
+        failedCount++;
+        return { success: false, email: subscriber.email, error: error.message };
       }
     });
 
-    await Promise.all(emailPromises);
+    const results = await Promise.all(emailPromises);
+    
+    console.log('=== EMAIL SENDING COMPLETE ===');
+    console.log(`Sent: ${sentCount}, Failed: ${failedCount}, Total attempted: ${subscribers.length}`);
+    console.log('Results summary:', results.map(r => ({ email: r.email, success: r.success })));
 
     const successMessage = sendToMode === 'selected' 
       ? `Newsletter sent successfully to ${sentCount} selected subscribers!`
@@ -302,6 +312,7 @@ To unsubscribe, simply reply to this email with "unsubscribe" in the subject lin
       body: JSON.stringify({ 
         message: successMessage,
         sentCount: sentCount,
+        failedCount: failedCount,
         totalSubscribers: subscribers.length,
         sendToMode: sendToMode
       })
