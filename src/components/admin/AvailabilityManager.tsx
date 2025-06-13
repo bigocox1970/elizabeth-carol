@@ -28,6 +28,13 @@ interface Booking {
   notes?: string;
 }
 
+interface Client {
+  id: string;
+  email: string;
+  name?: string;
+  phone?: string;
+}
+
 const AvailabilityManager = () => {
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -39,6 +46,13 @@ const AvailabilityManager = () => {
   const [selectedSlots, setSelectedSlots] = useState<number[]>([]);
   const [selectedCopyDates, setSelectedCopyDates] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+  const [showAddSlotForm, setShowAddSlotForm] = useState(false);
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [selectedSlotForBooking, setSelectedSlotForBooking] = useState<number | null>(null);
+  const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [clientSearch, setClientSearch] = useState('');
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [newSlot, setNewSlot] = useState<AvailabilitySlot>({
     date: '',
     start_time: '',
@@ -49,6 +63,7 @@ const AvailabilityManager = () => {
 
   useEffect(() => {
     loadAvailability();
+    loadClients();
   }, []);
 
   const loadAvailability = async () => {
@@ -64,7 +79,8 @@ const AvailabilityManager = () => {
 
       if (slotsError) {
         console.error('Error loading slots:', slotsError);
-        toast.error('Failed to load availability slots');
+        console.error('Error details:', JSON.stringify(slotsError, null, 2));
+        toast.error(`Failed to load availability slots: ${slotsError.message}`);
         return;
       }
 
@@ -87,6 +103,32 @@ const AvailabilityManager = () => {
       toast.error('Failed to load availability');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadClients = async () => {
+    try {
+      // Load clients from auth.users (registered users)
+      const { data: usersData, error: usersError } = await supabase.auth.admin.listUsers();
+      
+      if (usersError) {
+        console.error('Error loading users:', usersError);
+        // Fallback to empty array if we can't load users
+        setClients([]);
+        return;
+      }
+
+      const clientsFromUsers = usersData.users.map(user => ({
+        id: user.id,
+        email: user.email || '',
+        name: user.user_metadata?.name || user.email?.split('@')[0] || 'Unknown',
+        phone: user.user_metadata?.phone || ''
+      }));
+
+      setClients(clientsFromUsers);
+    } catch (error) {
+      console.error('Error loading clients:', error);
+      setClients([]);
     }
   };
 
@@ -164,34 +206,53 @@ const AvailabilityManager = () => {
   };
 
   const toggleSlotBooking = async (slotId: number) => {
-    try {
-      const existingBooking = bookings.find(booking => 
-        booking.availability_slot_id === slotId && booking.status === 'confirmed'
-      );
+    const existingBooking = bookings.find(booking => 
+      booking.availability_slot_id === slotId && booking.status === 'confirmed'
+    );
 
-      if (existingBooking) {
-        // Remove booking (mark slot as available)
+    if (existingBooking) {
+      // Edit existing booking
+      setEditingBooking(existingBooking);
+      setSelectedSlotForBooking(slotId);
+      setShowBookingModal(true);
+    } else {
+      // Create new booking - show client selection modal
+      setSelectedSlotForBooking(slotId);
+      setEditingBooking(null);
+      setSelectedClient(null);
+      setClientSearch('');
+      setShowBookingModal(true);
+    }
+  };
+
+  const saveBooking = async (bookingData: Partial<Booking>) => {
+    try {
+      if (editingBooking) {
+        // Update existing booking
         const { error } = await supabase
           .from('bookings')
-          .delete()
-          .eq('id', existingBooking.id);
+          .update(bookingData)
+          .eq('id', editingBooking.id);
 
         if (error) {
-          console.error('Error removing booking:', error);
-          toast.error('Failed to remove booking');
+          console.error('Error updating booking:', error);
+          toast.error('Failed to update booking');
           return;
         }
 
-        setBookings(prev => prev.filter(b => b.id !== existingBooking.id));
-        toast.success('Slot marked as available');
+        setBookings(prev => prev.map(b => 
+          b.id === editingBooking.id ? { ...b, ...bookingData } : b
+        ));
+        toast.success('Booking updated successfully');
       } else {
-        // Add booking (mark slot as booked)
+        // Create new booking
         const { data, error } = await supabase
           .from('bookings')
           .insert({
-            availability_slot_id: slotId,
+            availability_slot_id: selectedSlotForBooking!,
             booking_type: 'manual',
-            status: 'confirmed'
+            status: 'confirmed',
+            ...bookingData
           })
           .select()
           .single();
@@ -203,11 +264,37 @@ const AvailabilityManager = () => {
         }
 
         setBookings(prev => [...prev, data]);
-        toast.success('Slot marked as booked');
+        toast.success('Booking created successfully');
       }
+
+      setShowBookingModal(false);
+      setEditingBooking(null);
+      setSelectedSlotForBooking(null);
     } catch (error) {
-      console.error('Error toggling booking:', error);
-      toast.error('Failed to update booking status');
+      console.error('Error saving booking:', error);
+      toast.error('Failed to save booking');
+    }
+  };
+
+  const deleteBooking = async (bookingId: number) => {
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .delete()
+        .eq('id', bookingId);
+
+      if (error) {
+        console.error('Error deleting booking:', error);
+        toast.error('Failed to delete booking');
+        return;
+      }
+
+      setBookings(prev => prev.filter(b => b.id !== bookingId));
+      toast.success('Booking deleted successfully');
+      setShowBookingModal(false);
+    } catch (error) {
+      console.error('Error deleting booking:', error);
+      toast.error('Failed to delete booking');
     }
   };
 
@@ -245,7 +332,8 @@ const AvailabilityManager = () => {
 
       if (error) {
         console.error('Error adding slot:', error);
-        toast.error('Failed to add time slot');
+        console.error('Error details:', JSON.stringify(error, null, 2));
+        toast.error(`Failed to add time slot: ${error.message}`);
         return;
       }
 
@@ -502,10 +590,10 @@ const AvailabilityManager = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <List className="w-5 h-5" />
-              Your Availability List
+              Your Bookings List
             </CardTitle>
             <CardDescription>
-              Your upcoming booked sessions in chronological order
+              Your upcoming booked sessions grouped by day
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -526,81 +614,137 @@ const AvailabilityManager = () => {
                 </Button>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="mb-4">
                   <p className="text-sm text-muted-foreground">
                     {slots.filter(slot => isSlotBooked(slot.id!)).length} booking{slots.filter(slot => isSlotBooked(slot.id!)).length === 1 ? '' : 's'}
                   </p>
                 </div>
                 
-                <div className="space-y-3">
-                  {slots
+                {/* Group bookings by day */}
+                {(() => {
+                  const bookedSlots = slots
                     .filter(slot => isSlotBooked(slot.id!))
-                    .sort((a, b) => new Date(a.date + ' ' + a.start_time).getTime() - new Date(b.date + ' ' + b.start_time).getTime())
-                    .map((slot) => (
-                      <Card key={slot.id} className="hover:shadow-md transition-shadow">
-                        <CardContent className="p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="flex-1">
-                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                                <div>
-                                  <div className="font-medium text-lg">
-                                    {formatDate(slot.date)}
+                    .sort((a, b) => new Date(a.date + ' ' + a.start_time).getTime() - new Date(b.date + ' ' + b.start_time).getTime());
+                  
+                  const groupedByDay = bookedSlots.reduce((groups, slot) => {
+                    const date = slot.date;
+                    if (!groups[date]) {
+                      groups[date] = [];
+                    }
+                    groups[date].push(slot);
+                    return groups;
+                  }, {} as Record<string, typeof bookedSlots>);
+
+                  return Object.entries(groupedByDay).map(([date, daySlots]) => (
+                    <div key={date} className="space-y-3">
+                      <div className="flex items-center gap-3 pb-2 border-b">
+                        <h3 className="text-lg font-semibold">{formatDate(date)}</h3>
+                        <Badge variant="outline" className="text-xs">
+                          {daySlots.length} session{daySlots.length === 1 ? '' : 's'}
+                        </Badge>
+                      </div>
+                      
+                      <div className="space-y-2 ml-4">
+                        {daySlots.map((slot) => {
+                          const booking = bookings.find(b => b.availability_slot_id === slot.id && b.status === 'confirmed');
+                          return (
+                            <Card key={slot.id} className="hover:shadow-md transition-shadow">
+                              <CardContent className="p-4">
+                                <div className="flex items-start gap-3">
+                                  <div className="flex-1">
+                                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                                      <div className="space-y-2">
+                                        <div className="font-medium text-lg">
+                                          {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
+                                        </div>
+                                        
+                                        {/* Client Information - Prominent Display */}
+                                        {booking && (booking.client_name || booking.client_email) && (
+                                          <div className="bg-muted/50 p-3 rounded-lg">
+                                            <div className="font-medium text-foreground">
+                                              {booking.client_name || 'Client'}
+                                            </div>
+                                            {booking.client_email && (
+                                              <div className="text-sm text-muted-foreground">
+                                                📧 {booking.client_email}
+                                              </div>
+                                            )}
+                                            {booking.client_phone && (
+                                              <div className="text-sm text-muted-foreground">
+                                                📞 {booking.client_phone}
+                                              </div>
+                                            )}
+                                            {booking.notes && (
+                                              <div className="text-sm text-muted-foreground mt-1 italic">
+                                                "{booking.notes}"
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
+                                        
+                                        <div className="flex gap-2">
+                                          <Badge variant="default">
+                                            🔵 Booked
+                                          </Badge>
+                                          <Badge variant="outline" className="text-xs">
+                                            {slot.service_type === 'both' ? 'In-person & Remote' :
+                                             slot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only'}
+                                          </Badge>
+                                        </div>
+                                        
+                                        {slot.notes && (
+                                          <p className="text-sm text-muted-foreground italic">
+                                            Session notes: "{slot.notes}"
+                                          </p>
+                                        )}
+                                      </div>
+                                      
+                                      <div className="flex flex-col gap-2">
+                                        <Button
+                                          variant="default"
+                                          size="sm"
+                                          onClick={() => toggleSlotBooking(slot.id!)}
+                                          className="text-xs"
+                                        >
+                                          <CheckCircle className="w-3 h-3 mr-1" />
+                                          Edit
+                                        </Button>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => selectDate(new Date(slot.date))}
+                                          className="text-xs"
+                                        >
+                                          Edit Day
+                                        </Button>
+                                      </div>
+                                    </div>
                                   </div>
-                                  <div className="text-sm text-muted-foreground">
-                                    {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
-                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => slot.id && removeSlot(slot.id)}
+                                    className="text-destructive hover:text-destructive"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
                                 </div>
-                                <div className="flex flex-col sm:items-end gap-2">
-                                  <div className="flex flex-col gap-1">
-                                    <Badge variant={isSlotBooked(slot.id!) ? "default" : "secondary"}>
-                                      {isSlotBooked(slot.id!) ? '🔵 Booked' : '🟢 Available'}
-                                    </Badge>
-                                    <Badge variant="outline" className="text-xs">
-                                      {slot.service_type === 'both' ? 'In-person & Remote' :
-                                       slot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only'}
-                                    </Badge>
-                                  </div>
-                                  <div className="flex gap-1">
-                                    <Button
-                                      variant={isSlotBooked(slot.id!) ? "default" : "outline"}
-                                      size="sm"
-                                      onClick={() => toggleSlotBooking(slot.id!)}
-                                      className="text-xs"
-                                    >
-                                      <CheckCircle className="w-3 h-3 mr-1" />
-                                      {isSlotBooked(slot.id!) ? 'Booked' : 'Mark Booked'}
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => selectDate(new Date(slot.date))}
-                                      className="text-xs"
-                                    >
-                                      Edit Day
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                              {slot.notes && (
-                                <p className="text-sm text-muted-foreground mt-2 italic">
-                                  "{slot.notes}"
-                                </p>
-                              )}
-                            </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => slot.id && removeSlot(slot.id)}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ));
+                })()}
+                
+                {slots.filter(slot => isSlotBooked(slot.id!)).length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p>No bookings yet. Switch to Calendar view to manage your availability.</p>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
@@ -623,9 +767,113 @@ const AvailabilityManager = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
-              {/* Add New Time Slot */}
-              <div className="space-y-4">
-                <h4 className="font-medium">Add New Time Slot</h4>
+              {/* Existing Time Slots - Now First */}
+              {getSlotsForDate(new Date(selectedDate)).length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <h4 className="font-medium">Your Times for This Day</h4>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setShowAddSlotForm(!showAddSlotForm)}
+                        className="flex items-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add Time
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => {
+                          if (selectedSlots.length === 0) {
+                            toast.error('Please select time slots first by ticking the checkboxes');
+                            return;
+                          }
+                          setShowCopyModal(true);
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <Copy className="w-4 h-4" />
+                        {selectedSlots.length > 0 ? `Copy (${selectedSlots.length})` : 'Copy'}
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    {getSlotsForDate(new Date(selectedDate)).map((slot) => {
+                      const booking = bookings.find(b => b.availability_slot_id === slot.id && b.status === 'confirmed');
+                      return (
+                        <div key={slot.id} className="flex items-center gap-3 p-3 border rounded-lg bg-muted/50">
+                          <input
+                            type="checkbox"
+                            checked={selectedSlots.includes(slot.id!)}
+                            onChange={() => toggleSlotSelection(slot.id!)}
+                            className="rounded"
+                          />
+                          <div className="flex-1">
+                            <div className="font-medium">
+                              {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
+                            </div>
+                            <div className="flex gap-2 mt-1">
+                              <Badge variant={isSlotBooked(slot.id!) ? "default" : "secondary"}>
+                                {isSlotBooked(slot.id!) ? '🔵 Booked' : '🟢 Available'}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                {slot.service_type === 'both' ? 'In-person & Remote' :
+                                 slot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only'}
+                              </Badge>
+                            </div>
+                            {booking && (booking.client_name || booking.client_email) && (
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Client: {booking.client_name || booking.client_email}
+                              </p>
+                            )}
+                            {slot.notes && (
+                              <p className="text-sm text-muted-foreground mt-1">{slot.notes}</p>
+                            )}
+                          </div>
+                          <Button
+                            variant={isSlotBooked(slot.id!) ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => toggleSlotBooking(slot.id!)}
+                            className="text-xs mr-2"
+                          >
+                            {isSlotBooked(slot.id!) ? 'Edit' : 'Book'}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => slot.id && removeSlot(slot.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {selectedSlots.length > 0 && (
+                    <div className="text-sm text-muted-foreground bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                      💡 <strong>Tip:</strong> {selectedSlots.length} slot{selectedSlots.length === 1 ? '' : 's'} selected. Click "Copy" to duplicate to other days.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Add New Time Slot - Now Collapsible */}
+              {(showAddSlotForm || getSlotsForDate(new Date(selectedDate)).length === 0) && (
+                <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium flex items-center gap-2">
+                      <Plus className="w-4 h-4" />
+                      Add New Time Slot
+                    </h4>
+                    {getSlotsForDate(new Date(selectedDate)).length > 0 && (
+                      <Button variant="ghost" size="sm" onClick={() => setShowAddSlotForm(false)}>
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="start_time">Start Time</Label>
@@ -682,80 +930,8 @@ const AvailabilityManager = () => {
                   <Save className="w-4 h-4 mr-2" />
                   Add Time Slot
                 </Button>
-              </div>
-
-              {/* Existing Time Slots */}
-              {getSlotsForDate(new Date(selectedDate)).length > 0 && (
-                <div className="space-y-4 border-t pt-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                    <h4 className="font-medium">Your Times for This Day</h4>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => {
-                        if (selectedSlots.length === 0) {
-                          toast.error('Please select time slots first by ticking the checkboxes');
-                          return;
-                        }
-                        setShowCopyModal(true);
-                      }}
-                      className="flex items-center gap-2 w-full sm:w-auto"
-                    >
-                      <Copy className="w-4 h-4" />
-                      {selectedSlots.length > 0 ? `Copy Selected (${selectedSlots.length})` : 'Copy Times'}
-                    </Button>
-                  </div>
-                  <div className="text-sm text-muted-foreground bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
-                    💡 <strong>Tip:</strong> Tick the checkboxes next to time slots, then click "Copy Times" to duplicate them to other days
-                  </div>
-                  <div className="space-y-2">
-                    {getSlotsForDate(new Date(selectedDate)).map((slot) => (
-                      <div key={slot.id} className="flex items-center gap-3 p-3 border rounded-lg bg-muted/50">
-                        <input
-                          type="checkbox"
-                          checked={selectedSlots.includes(slot.id!)}
-                          onChange={() => toggleSlotSelection(slot.id!)}
-                          className="rounded"
-                        />
-                        <div className="flex-1">
-                          <div className="font-medium">
-                            {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
-                          </div>
-                          <div className="flex gap-2 mt-1">
-                            <Badge variant={isSlotBooked(slot.id!) ? "default" : "secondary"}>
-                              {isSlotBooked(slot.id!) ? '🔵 Booked' : '🟢 Available'}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              {slot.service_type === 'both' ? 'In-person & Remote' :
-                               slot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only'}
-                            </Badge>
-                          </div>
-                          {slot.notes && (
-                            <p className="text-sm text-muted-foreground mt-1">{slot.notes}</p>
-                          )}
-                        </div>
-                        <Button
-                          variant={isSlotBooked(slot.id!) ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => toggleSlotBooking(slot.id!)}
-                          className="text-xs mr-2"
-                        >
-                          <CheckCircle className="w-3 h-3 mr-1" />
-                          {isSlotBooked(slot.id!) ? 'Booked' : 'Mark Booked'}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => slot.id && removeSlot(slot.id)}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                              </div>
+                )}
             </CardContent>
           </Card>
         </div>
@@ -856,6 +1032,156 @@ const AvailabilityManager = () => {
                   </Button>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Booking Modal */}
+      {showBookingModal && selectedSlotForBooking && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4" onClick={(e) => e.target === e.currentTarget && setShowBookingModal(false)}>
+          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5" />
+                  {editingBooking ? 'Edit Booking' : 'Book Time Slot'}
+                </CardTitle>
+                <Button variant="outline" size="sm" onClick={() => setShowBookingModal(false)}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              <CardDescription>
+                {editingBooking ? 'Update booking details' : 'Assign a client to this time slot'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Client Selection */}
+              <div className="space-y-3">
+                <Label>Select Client</Label>
+                <div className="space-y-2">
+                  <Input
+                    placeholder="Search clients by name or email..."
+                    value={clientSearch}
+                    onChange={(e) => setClientSearch(e.target.value)}
+                  />
+                  <div className="max-h-32 overflow-y-auto border rounded-md">
+                    {clients
+                      .filter(client => 
+                        client.name?.toLowerCase().includes(clientSearch.toLowerCase()) ||
+                        client.email.toLowerCase().includes(clientSearch.toLowerCase())
+                      )
+                      .map(client => (
+                        <div
+                          key={client.id}
+                          className={`p-2 cursor-pointer hover:bg-muted ${
+                            selectedClient?.id === client.id ? 'bg-blue-100 dark:bg-blue-950' : ''
+                          }`}
+                          onClick={() => setSelectedClient(client)}
+                        >
+                          <div className="font-medium">{client.name || client.email}</div>
+                          <div className="text-sm text-muted-foreground">{client.email}</div>
+                        </div>
+                      ))
+                    }
+                    <div
+                      className={`p-2 cursor-pointer hover:bg-muted border-t ${
+                        selectedClient?.id === 'not-registered' ? 'bg-blue-100 dark:bg-blue-950' : ''
+                      }`}
+                      onClick={() => setSelectedClient({ id: 'not-registered', email: '', name: 'Not Registered' })}
+                    >
+                      <div className="font-medium">Not Registered</div>
+                      <div className="text-sm text-muted-foreground">Manual booking for non-registered client</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Manual Client Details (if not registered selected) */}
+              {selectedClient?.id === 'not-registered' && (
+                <div className="space-y-3 p-3 border rounded-lg bg-muted/30">
+                  <h4 className="font-medium">Client Details</h4>
+                  <div className="space-y-2">
+                    <div>
+                      <Label htmlFor="client_name">Name</Label>
+                      <Input
+                        id="client_name"
+                        placeholder="Client's name"
+                        defaultValue={editingBooking?.client_name || ''}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="client_email">Email (Optional)</Label>
+                      <Input
+                        id="client_email"
+                        type="email"
+                        placeholder="Client's email"
+                        defaultValue={editingBooking?.client_email || ''}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="client_phone">Phone (Optional)</Label>
+                      <Input
+                        id="client_phone"
+                        placeholder="Client's phone number"
+                        defaultValue={editingBooking?.client_phone || ''}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Booking Notes */}
+              <div className="space-y-2">
+                <Label htmlFor="booking_notes">Notes (Optional)</Label>
+                <Input
+                  id="booking_notes"
+                  placeholder="Any special notes for this booking..."
+                  defaultValue={editingBooking?.notes || ''}
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-4 border-t">
+                {editingBooking && (
+                  <Button
+                    variant="destructive"
+                    onClick={() => editingBooking.id && deleteBooking(editingBooking.id)}
+                    className="flex-1"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete Booking
+                  </Button>
+                )}
+                <Button
+                  onClick={() => {
+                    const clientNameInput = document.getElementById('client_name') as HTMLInputElement;
+                    const clientEmailInput = document.getElementById('client_email') as HTMLInputElement;
+                    const clientPhoneInput = document.getElementById('client_phone') as HTMLInputElement;
+                    const notesInput = document.getElementById('booking_notes') as HTMLInputElement;
+
+                    const bookingData: Partial<Booking> = {
+                      client_name: selectedClient?.id === 'not-registered' 
+                        ? clientNameInput?.value || ''
+                        : selectedClient?.name || selectedClient?.email || '',
+                      client_email: selectedClient?.id === 'not-registered'
+                        ? clientEmailInput?.value || ''
+                        : selectedClient?.email || '',
+                      client_phone: selectedClient?.id === 'not-registered'
+                        ? clientPhoneInput?.value || ''
+                        : selectedClient?.phone || '',
+                      notes: notesInput?.value || ''
+                    };
+
+                    saveBooking(bookingData);
+                  }}
+                  className="flex-1"
+                  disabled={!selectedClient}
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {editingBooking ? 'Update Booking' : 'Create Booking'}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
