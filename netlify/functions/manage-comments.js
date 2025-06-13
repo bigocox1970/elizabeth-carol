@@ -61,7 +61,7 @@ export const handler = async (event, context) => {
           }
 
           console.log('Creating comment for user:', userData ? userData.id : 'No user');
-          const createResponse = await fetch(`${SUPABASE_URL}/rest/v1/comments`, {
+          const createResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_comments`, {
             method: 'POST',
             headers: {
               'apikey': SUPABASE_ANON_KEY,
@@ -71,24 +71,29 @@ export const handler = async (event, context) => {
             },
             body: JSON.stringify({
               post_id: commentData.postId,
-              name: userData.user_metadata?.full_name || userData.email?.split('@')[0] || 'Anonymous',
-              email: userData.email,
               content: commentData.content,
+              author_name: userData.user_metadata?.name || userData.email?.split('@')[0] || 'Anonymous',
+              author_email: userData.email,
               user_id: userData.id,
-              approved: false // Comments start unapproved
+              approved: false,
+              rating: commentData.rating || 5
             })
           });
 
           if (!createResponse.ok) {
-            throw new Error(`Failed to create comment: ${createResponse.status}`);
+            const errorText = await createResponse.text();
+            console.error('Comment creation error details:', errorText);
+            throw new Error(`Failed to create comment: ${createResponse.status} - ${errorText}`);
           }
 
           const newComment = await createResponse.json();
+          console.log('Comment created successfully:', newComment);
+
           return {
             statusCode: 200,
             headers: { "Access-Control-Allow-Origin": "*" },
             body: JSON.stringify({ 
-              message: 'Comment submitted successfully',
+              message: 'Comment submitted successfully and awaiting approval',
               comment: newComment[0]
             })
           };

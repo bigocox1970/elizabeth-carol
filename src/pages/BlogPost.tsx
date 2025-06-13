@@ -77,7 +77,11 @@ const BlogPost = () => {
           action: 'create-comment',
           commentData: {
             postId: postId,
-            content: reviewForm.comment
+            content: reviewForm.comment,
+            rating: reviewForm.rating,
+            userId: user.id,
+            author_name: user.user_metadata?.name || user.email?.split('@')[0] || 'Anonymous',
+            author_email: user.email
           }
         }),
       });
@@ -85,7 +89,7 @@ const BlogPost = () => {
       const data = await response.json();
 
       if (response.ok) {
-        setReviewMessage(data.message);
+        setReviewMessage('Thank you for your comment! It will be published after approval.');
         setReviewForm({ name: '', email: '', rating: 5, comment: '' });
         // Reload post to show new review count
         loadPost();
@@ -93,6 +97,7 @@ const BlogPost = () => {
         setReviewMessage(data.message || 'Failed to submit comment.');
       }
     } catch (error) {
+      console.error('Failed to submit comment:', error);
       setReviewMessage('Failed to submit comment. Please try again.');
     } finally {
       setIsSubmittingReview(false);
