@@ -83,12 +83,20 @@ const NewsletterForm = ({ subscriberCount }: NewsletterFormProps) => {
 
   const handleSendEmail = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('=== NEWSLETTER FORM SUBMIT ===');
+    console.log('Session:', session ? 'EXISTS' : 'MISSING');
+    console.log('Send mode:', sendToMode);
+    console.log('Selected subscribers:', Array.from(selectedSubscribers));
+    console.log('Email data:', emailData);
+    
     if (!session) {
       setSendMessage('You must be logged in to send newsletters.');
       return;
     }
 
     const recipientCount = sendToMode === 'all' ? subscriberCount : selectedSubscribers.size;
+    console.log('Recipient count:', recipientCount);
+    
     if (recipientCount === 0) {
       setSendMessage('No subscribers selected to send to.');
       return;
@@ -98,21 +106,30 @@ const NewsletterForm = ({ subscriberCount }: NewsletterFormProps) => {
     setSendMessage('');
 
     try {
+      const requestBody = {
+        subject: emailData.subject,
+        message: emailData.message,
+        sendToMode: sendToMode,
+        selectedSubscribers: sendToMode === 'selected' ? Array.from(selectedSubscribers) : undefined
+      };
+      
+      console.log('Request body:', requestBody);
+      console.log('Making request to /.netlify/functions/send-newsletter');
+      
       const response = await fetch('/.netlify/functions/send-newsletter', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
         },
-        body: JSON.stringify({
-          subject: emailData.subject,
-          message: emailData.message,
-          sendToMode: sendToMode,
-          selectedSubscribers: sendToMode === 'selected' ? Array.from(selectedSubscribers) : undefined
-        }),
+        body: JSON.stringify(requestBody),
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+      
       const data = await response.json();
+      console.log('Response data:', data);
 
       if (response.ok) {
         setSendMessage(`Email sent successfully to ${data.sentCount} subscribers!`);
@@ -124,6 +141,7 @@ const NewsletterForm = ({ subscriberCount }: NewsletterFormProps) => {
         setSendMessage(data.message || 'Failed to send email.');
       }
     } catch (error) {
+      console.error('Newsletter request error:', error);
       setSendMessage('Failed to send email. Please try again.');
     } finally {
       setIsSending(false);
