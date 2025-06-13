@@ -14,7 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const BlogPost = () => {
   const { postId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [reviewForm, setReviewForm] = useState({
@@ -58,7 +58,7 @@ const BlogPost = () => {
 
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
-    if (!user) {
+    if (!user || !session) {
       setReviewMessage('You must be logged in to comment.');
       return;
     }
@@ -71,16 +71,13 @@ const BlogPost = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
-                  body: JSON.stringify({
-            action: 'add-comment',
+        body: JSON.stringify({
+          action: 'create-comment',
+          commentData: {
             postId: postId,
-            commentData: {
-            name: user.email.split('@')[0], // Use email username as name
-            email: user.email,
-            rating: reviewForm.rating,
-            comment: reviewForm.comment,
-            userId: user.id // Add the user ID for linking
+            content: reviewForm.comment
           }
         }),
       });
@@ -93,10 +90,10 @@ const BlogPost = () => {
         // Reload post to show new review count
         loadPost();
       } else {
-        setReviewMessage(data.message || 'Failed to submit review.');
+        setReviewMessage(data.message || 'Failed to submit comment.');
       }
     } catch (error) {
-      setReviewMessage('Failed to submit review. Please try again.');
+      setReviewMessage('Failed to submit comment. Please try again.');
     } finally {
       setIsSubmittingReview(false);
     }

@@ -3,34 +3,39 @@ import { getUserFromToken, isAdmin } from './utils/auth.js';
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
+console.log('--- manage-comments function invoked ---');
+
 export const handler = async (event, context) => {
   const { action, commentData, commentId } = JSON.parse(event.body || '{}');
 
   // Get the user's JWT token from the Authorization header
-  const authHeader = event.headers.authorization || event.headers.Authorization;
-  if (!authHeader) {
-    return {
-      statusCode: 401,
-      headers: { "Access-Control-Allow-Origin": "*" },
-      body: JSON.stringify({ message: 'Authentication required' })
-    };
-  }
+  const authHeader = event.headers['authorization'] || event.headers['Authorization'];
+  console.log('Authorization header:', authHeader);
 
-  // Extract the token from the Bearer header
-  const token = authHeader.replace('Bearer ', '');
+  let token = null;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.replace('Bearer ', '');
+    console.log('Extracted token:', token ? '[REDACTED]' : 'None');
+  } else {
+    console.log('No valid Authorization header found');
+  }
 
   try {
     // Verify the user is authenticated
+    console.log('Verifying token with Supabase...');
     const userData = await getUserFromToken(token);
     if (!userData) {
+      console.log('Token verification failed or user not found');
       return {
         statusCode: 401,
         headers: { "Access-Control-Allow-Origin": "*" },
         body: JSON.stringify({ message: 'Invalid token' })
       };
     }
+    console.log('User verified:', userData.id);
 
     // Check if user is admin for admin operations
+    console.log('Checking admin status for user:', userData ? userData.id : 'No user');
     const isAdminUser = await isAdmin(userData.id, token);
     if (['approve-comment', 'unapprove-comment', 'delete-comment', 'get-all-comments'].includes(action) && !isAdminUser) {
       return {
@@ -50,6 +55,7 @@ export const handler = async (event, context) => {
           };
         }
 
+        console.log('Creating comment for user:', userData ? userData.id : 'No user');
         const createResponse = await fetch(`${SUPABASE_URL}/rest/v1/comments`, {
           method: 'POST',
           headers: {
