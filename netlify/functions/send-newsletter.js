@@ -2,6 +2,9 @@ const nodemailer = require('nodemailer');
 const fs = require('fs').promises;
 const path = require('path');
 
+// Import our beautiful email templates
+const { createNewsletterTemplate } = require('../../src/utils/emailTemplates.js');
+
 // Get Supabase credentials from environment variables
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
@@ -305,47 +308,20 @@ exports.handler = async (event, context) => {
         console.log(`Sending email ${index + 1} to:`, subscriber.email);
         const personalizedMessage = message.replace(/\n/g, '<br>');
         
+        // Create beautiful newsletter email using our template
+        const emailTemplate = createNewsletterTemplate({
+          subscriberName: subscriber.name || 'Beautiful Soul',
+          subject: subject,
+          content: personalizedMessage,
+          websiteUrl: 'https://www.elizabethcarol.co.uk'
+        });
+
         const mailOptions = {
-          from: '"Elizabeth Carol" <info@elizabethcarol.co.uk>',
+          from: '"Elizabeth Carol - Spiritual Guidance" <info@elizabethcarol.co.uk>',
           to: subscriber.email,
           subject: subject,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #4c1d95;">Hello ${subscriber.name || 'Friend'},</h2>
-              
-              <div style="margin: 20px 0;">
-                ${personalizedMessage}
-              </div>
-              
-              <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-              
-              <p style="font-size: 14px; color: #666; margin: 20px 0;">
-                <strong>Elizabeth Carol</strong><br>
-                Psychic Medium & Spiritual Guide<br>
-                Phone: 01865 361 786<br>
-                Email: info@elizabethcarol.co.uk
-              </p>
-              
-              <p style="font-size: 12px; color: #999; margin-top: 30px;">
-                You're receiving this because you subscribed to updates from Elizabeth Carol. 
-                To unsubscribe, simply reply to this email with "unsubscribe" in the subject line.
-              </p>
-            </div>
-          `,
-          text: `
-Hello ${subscriber.name || 'Friend'},
-
-${message}
-
----
-Elizabeth Carol
-Psychic Medium & Spiritual Guide
-Phone: 01865 361 786
-Email: info@elizabethcarol.co.uk
-
-You're receiving this because you subscribed to updates from Elizabeth Carol. 
-To unsubscribe, simply reply to this email with "unsubscribe" in the subject line.
-          `
+          html: emailTemplate.html,
+          text: emailTemplate.text
         };
 
         const result = await transporter.sendMail(mailOptions);

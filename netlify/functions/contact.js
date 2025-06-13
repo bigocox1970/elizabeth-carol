@@ -1,6 +1,9 @@
 const nodemailer = require('nodemailer');
 const fs = require('fs').promises;
 const path = require('path');
+
+// Import our beautiful email templates
+const { createContactEnquiryTemplate, createCustomerConfirmationTemplate } = require('../../src/utils/emailTemplates.js');
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
@@ -112,137 +115,43 @@ exports.handler = async (event, context) => {
           }
         });
 
+        // Create beautiful customer confirmation email
+        const customerTemplate = createCustomerConfirmationTemplate({
+          customerName: firstName,
+          customerEmail: email,
+          customerPhone: phone,
+          service: service,
+          message: message,
+          websiteUrl: 'https://www.elizabethcarol.co.uk'
+        });
+
         const confirmationEmail = {
-          from: '"Elizabeth Carol" <info@elizabethcarol.co.uk>',
+          from: '"Elizabeth Carol - Spiritual Guidance" <info@elizabethcarol.co.uk>',
           to: email,
-          subject: 'Thank you for contacting Elizabeth Carol',
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h2 style="color: #4c1d95;">Hello ${firstName},</h2>
-              
-              <p>Thank you for reaching out to me through my website. I've received your message and wanted to confirm that it came through successfully.</p>
-              
-              <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #4c1d95; margin-top: 0;">Your Message Details:</h3>
-                <p><strong>Name:</strong> ${firstName} ${lastName}</p>
-                ${service ? `<p><strong>Service Interest:</strong> ${service}</p>` : ''}
-                ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ''}
-                <p><strong>Message:</strong></p>
-                <div style="background-color: white; padding: 15px; border-radius: 4px; margin-top: 10px;">
-                  ${message.replace(/\n/g, '<br>')}
-                </div>
-              </div>
-              
-              <p>I typically respond to all enquiries within 24 hours. For urgent matters, please feel free to call me directly at <strong>01865 361 786</strong>.</p>
-              
-              <p>I look forward to connecting with you soon!</p>
-              
-              <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-              
-              <p style="font-size: 14px; color: #666; margin: 20px 0;">
-                <strong>Elizabeth Carol</strong><br>
-                Psychic Medium & Spiritual Guide<br>
-                Phone: 01865 361 786<br>
-                Email: info@elizabethcarol.co.uk<br>
-                Oxford, Oxfordshire, UK
-              </p>
-              
-              <p style="font-size: 12px; color: #999; margin-top: 30px;">
-                This is an automated confirmation. Please do not reply to this email - I will respond to your enquiry from my main email address.
-              </p>
-            </div>
-          `,
-          text: `
-Hello ${firstName},
-
-Thank you for reaching out to me through my website. I've received your message and wanted to confirm that it came through successfully.
-
-Your Message Details:
-Name: ${firstName} ${lastName}
-${service ? `Service Interest: ${service}` : ''}
-${phone ? `Phone: ${phone}` : ''}
-Message: ${message}
-
-I typically respond to all enquiries within 24 hours. For urgent matters, please feel free to call me directly at 01865 361 786.
-
-I look forward to connecting with you soon!
-
----
-Elizabeth Carol
-Psychic Medium & Spiritual Guide
-Phone: 01865 361 786
-Email: info@elizabethcarol.co.uk
-Oxford, Oxfordshire, UK
-
-This is an automated confirmation. Please do not reply to this email - I will respond to your enquiry from my main email address.
-          `
+          subject: '✨ Thank you for contacting Elizabeth Carol',
+          html: customerTemplate.html,
+          text: customerTemplate.text
         };
 
         await transporter.sendMail(confirmationEmail);
         console.log('Confirmation email sent successfully to:', email);
 
         // CRITICAL: Send the enquiry to Elizabeth Carol's business email
+        const businessTemplate = createContactEnquiryTemplate({
+          customerName: `${firstName} ${lastName}`,
+          customerEmail: email,
+          customerPhone: phone,
+          service: service,
+          message: message,
+          websiteUrl: 'https://www.elizabethcarol.co.uk'
+        });
+
         const businessEmail = {
           from: '"Website Contact Form" <info@elizabethcarol.co.uk>',
           to: 'info@elizabethcarol.co.uk',
-          subject: `New Enquiry from ${firstName} ${lastName}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h2 style="color: #4c1d95;">New Website Enquiry</h2>
-              
-              <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #4c1d95; margin-top: 0;">Contact Details:</h3>
-                <p><strong>Name:</strong> ${firstName} ${lastName}</p>
-                <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
-                ${phone ? `<p><strong>Phone:</strong> <a href="tel:${phone}">${phone}</a></p>` : ''}
-                ${service ? `<p><strong>Service Interest:</strong> ${service}</p>` : ''}
-                
-                <h3 style="color: #4c1d95; margin-top: 20px;">Message:</h3>
-                <div style="background-color: white; padding: 15px; border-radius: 4px; margin-top: 10px;">
-                  ${message.replace(/\n/g, '<br>')}
-                </div>
-              </div>
-              
-              <p style="font-size: 14px; color: #666;">
-                <strong>Submitted:</strong> ${new Date().toLocaleString('en-GB', { 
-                  timeZone: 'Europe/London',
-                  dateStyle: 'full',
-                  timeStyle: 'short'
-                })}<br>
-                <strong>Source:</strong> Website Contact Form
-              </p>
-              
-              <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-              
-              <p style="font-size: 12px; color: #999;">
-                The customer has been sent an automatic confirmation email. 
-                Please respond to their enquiry directly at: ${email}
-              </p>
-            </div>
-          `,
-          text: `
-NEW WEBSITE ENQUIRY
-
-Contact Details:
-Name: ${firstName} ${lastName}
-Email: ${email}
-${phone ? `Phone: ${phone}` : ''}
-${service ? `Service Interest: ${service}` : ''}
-
-Message:
-${message}
-
----
-Submitted: ${new Date().toLocaleString('en-GB', { 
-  timeZone: 'Europe/London',
-  dateStyle: 'full',
-  timeStyle: 'short'
-})}
-Source: Website Contact Form
-
-The customer has been sent an automatic confirmation email. 
-Please respond to their enquiry directly at: ${email}
-          `
+          subject: `📧 New Enquiry from ${firstName} ${lastName}`,
+          html: businessTemplate.html,
+          text: businessTemplate.text
         };
 
         await transporter.sendMail(businessEmail);
