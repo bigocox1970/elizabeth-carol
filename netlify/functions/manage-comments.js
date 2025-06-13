@@ -134,33 +134,98 @@ export const handler = async (event, context) => {
           };
 
         case 'approve-comment':
-        case 'unapprove-comment':
-          // Update comment approval status
-          const updateResponse = await fetch(`${SUPABASE_URL}/rest/v1/comments?id=eq.${commentId}`, {
+          if (!commentId) {
+            return {
+              statusCode: 400,
+              headers: { "Access-Control-Allow-Origin": "*" },
+              body: JSON.stringify({ message: 'Comment ID is required' })
+            };
+          }
+
+          console.log('Approving comment:', commentId);
+          const approveResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_comments?id=eq.${commentId}`, {
             method: 'PATCH',
             headers: {
               'apikey': SUPABASE_ANON_KEY,
               'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
             },
             body: JSON.stringify({
-              approved: action === 'approve-comment'
+              approved: true
             })
           });
 
-          if (!updateResponse.ok) {
-            throw new Error(`Failed to update comment: ${updateResponse.status}`);
+          if (!approveResponse.ok) {
+            const errorText = await approveResponse.text();
+            console.error('Comment approval error details:', errorText);
+            throw new Error(`Failed to approve comment: ${approveResponse.status} - ${errorText}`);
           }
+
+          const approvedComment = await approveResponse.json();
+          console.log('Comment approved successfully:', approvedComment);
 
           return {
             statusCode: 200,
             headers: { "Access-Control-Allow-Origin": "*" },
-            body: JSON.stringify({ message: 'Comment updated successfully' })
+            body: JSON.stringify({ 
+              message: 'Comment approved successfully',
+              comment: approvedComment[0]
+            })
+          };
+
+        case 'unapprove-comment':
+          if (!commentId) {
+            return {
+              statusCode: 400,
+              headers: { "Access-Control-Allow-Origin": "*" },
+              body: JSON.stringify({ message: 'Comment ID is required' })
+            };
+          }
+
+          console.log('Unapproving comment:', commentId);
+          const unapproveResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_comments?id=eq.${commentId}`, {
+            method: 'PATCH',
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify({
+              approved: false
+            })
+          });
+
+          if (!unapproveResponse.ok) {
+            const errorText = await unapproveResponse.text();
+            console.error('Comment unapproval error details:', errorText);
+            throw new Error(`Failed to unapprove comment: ${unapproveResponse.status} - ${errorText}`);
+          }
+
+          const unapprovedComment = await unapproveResponse.json();
+          console.log('Comment unapproved successfully:', unapprovedComment);
+
+          return {
+            statusCode: 200,
+            headers: { "Access-Control-Allow-Origin": "*" },
+            body: JSON.stringify({ 
+              message: 'Comment unapproved successfully',
+              comment: unapprovedComment[0]
+            })
           };
 
         case 'delete-comment':
-          // Delete a comment
-          const deleteResponse = await fetch(`${SUPABASE_URL}/rest/v1/comments?id=eq.${commentId}`, {
+          if (!commentId) {
+            return {
+              statusCode: 400,
+              headers: { "Access-Control-Allow-Origin": "*" },
+              body: JSON.stringify({ message: 'Comment ID is required' })
+            };
+          }
+
+          console.log('Deleting comment:', commentId);
+          const deleteResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_comments?id=eq.${commentId}`, {
             method: 'DELETE',
             headers: {
               'apikey': SUPABASE_ANON_KEY,
@@ -170,7 +235,9 @@ export const handler = async (event, context) => {
           });
 
           if (!deleteResponse.ok) {
-            throw new Error(`Failed to delete comment: ${deleteResponse.status}`);
+            const errorText = await deleteResponse.text();
+            console.error('Comment deletion error details:', errorText);
+            throw new Error(`Failed to delete comment: ${deleteResponse.status} - ${errorText}`);
           }
 
           return {
