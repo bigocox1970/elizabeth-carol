@@ -86,17 +86,66 @@ export const onAuthStateChange = (callback: (event: string, session: unknown) =>
   });
 };
 
-// User content functions
+// User content functions - now querying original tables directly
 export const getUserContent = async () => {
   const { data: user } = await supabase.auth.getUser();
   if (!user.user) return { data: null, error: new Error('Not authenticated') };
 
-  const { data, error } = await supabase
-    .from('user_content')
-    .select('*')
-    .eq('user_id', user.user.id);
+  // Get user's comments with blog post titles
+  const { data: comments, error: commentsError } = await supabase
+    .from('blog_comments')
+    .select(`
+      id,
+      content,
+      post_id,
+      approved,
+      created_at,
+      blog_posts(title)
+    `)
+    .eq('user_id', user.user.id)
+    .order('created_at', { ascending: false });
 
-  return { data, error };
+  if (commentsError) return { data: null, error: commentsError };
+
+  // Get user's reviews
+  const { data: reviews, error: reviewsError } = await supabase
+    .from('reviews')
+    .select('id, content, rating, service, approved, created_at')
+    .eq('user_id', user.user.id)
+    .order('created_at', { ascending: false });
+
+  if (reviewsError) return { data: null, error: reviewsError };
+
+  // Combine and format the data
+  const combinedData = [
+    ...(comments || []).map(comment => ({
+      id: comment.id,
+      content_type: 'comment' as const,
+      title: (comment as any).blog_posts?.title || 'Blog Comment',
+      content: comment.content,
+      metadata: {
+        post_id: comment.post_id,
+        approved: comment.approved
+      },
+      created_at: comment.created_at,
+      approved: comment.approved
+    })),
+    ...(reviews || []).map(review => ({
+      id: review.id,
+      content_type: 'review' as const,
+      title: `Review: ${(review as any).service || 'General'}`,
+      content: review.content,
+      metadata: {
+        rating: (review as any).rating,
+        service: (review as any).service,
+        approved: review.approved
+      },
+      created_at: review.created_at,
+      approved: review.approved
+    }))
+  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  return { data: combinedData, error: null };
 };
 
 export const getUserComments = async () => {
