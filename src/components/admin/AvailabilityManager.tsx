@@ -26,7 +26,6 @@ const AvailabilityManager = () => {
   const [selectedSlots, setSelectedSlots] = useState<number[]>([]);
   const [selectedCopyDates, setSelectedCopyDates] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
-  const [showBookingsOnly, setShowBookingsOnly] = useState(false);
   const [bookedSlots, setBookedSlots] = useState<number[]>([]);
   const [newSlot, setNewSlot] = useState<AvailabilitySlot>({
     date: '',
@@ -260,7 +259,7 @@ const AvailabilityManager = () => {
         <p className="text-muted-foreground mb-4">
           {viewMode === 'calendar' 
             ? 'Click dates to add times. Select time slots to copy them to other days.'
-            : 'View all your availability in chronological order. Click any slot to edit that day.'
+            : 'View your upcoming booked sessions in chronological order.'
           }
         </p>
         
@@ -278,14 +277,11 @@ const AvailabilityManager = () => {
           <Button
             variant={viewMode === 'list' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => {
-              setViewMode('list');
-              setShowBookingsOnly(true);
-            }}
+            onClick={() => setViewMode('list')}
             className="flex items-center gap-2"
           >
             <List className="w-4 h-4" />
-            List View
+            Bookings
           </Button>
         </div>
       </div>
@@ -378,26 +374,10 @@ const AvailabilityManager = () => {
               Your Availability List
             </CardTitle>
             <CardDescription>
-              All your available time slots in chronological order
+              Your upcoming booked sessions in chronological order
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Bookings Filter Toggle */}
-            <div className="flex items-center justify-between mb-4 p-3 bg-muted/50 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Eye className="w-4 h-4" />
-                <span className="font-medium">Show Bookings Only</span>
-              </div>
-              <Button
-                variant={showBookingsOnly ? "default" : "outline"}
-                size="sm"
-                onClick={() => setShowBookingsOnly(!showBookingsOnly)}
-                className="flex items-center gap-2"
-              >
-                {showBookingsOnly ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                {showBookingsOnly ? 'Show All' : 'Bookings Only'}
-              </Button>
-            </div>
 
             {slots.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
@@ -416,44 +396,20 @@ const AvailabilityManager = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4">
                   <p className="text-sm text-muted-foreground">
-                    {showBookingsOnly 
-                      ? `${slots.filter(slot => isSlotBooked(slot.id!)).length} booking${slots.filter(slot => isSlotBooked(slot.id!)).length === 1 ? '' : 's'}`
-                      : `${slots.length} time slot${slots.length === 1 ? '' : 's'} available`
-                    }
+                    {slots.filter(slot => isSlotBooked(slot.id!)).length} booking{slots.filter(slot => isSlotBooked(slot.id!)).length === 1 ? '' : 's'}
                   </p>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => {
-                      if (selectedSlots.length === 0) {
-                        toast.error('Please select time slots first by ticking the checkboxes');
-                        return;
-                      }
-                      setShowCopyModal(true);
-                    }}
-                    className="flex items-center gap-2"
-                  >
-                    <Copy className="w-4 h-4" />
-                    {selectedSlots.length > 0 ? `Copy Selected (${selectedSlots.length})` : 'Copy Times'}
-                  </Button>
                 </div>
                 
                 <div className="space-y-3">
                   {slots
-                    .filter(slot => showBookingsOnly ? isSlotBooked(slot.id!) : true)
+                    .filter(slot => isSlotBooked(slot.id!))
                     .sort((a, b) => new Date(a.date + ' ' + a.start_time).getTime() - new Date(b.date + ' ' + b.start_time).getTime())
                     .map((slot) => (
                       <Card key={slot.id} className="hover:shadow-md transition-shadow">
                         <CardContent className="p-4">
                           <div className="flex items-center gap-3">
-                            <input
-                              type="checkbox"
-                              checked={selectedSlots.includes(slot.id!)}
-                              onChange={() => toggleSlotSelection(slot.id!)}
-                              className="rounded"
-                            />
                             <div className="flex-1">
                               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                                 <div>
@@ -523,23 +479,23 @@ const AvailabilityManager = () => {
       {/* Day View Modal */}
       {showDayView && selectedDate && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4" onClick={(e) => e.target === e.currentTarget && setShowDayView(false)}>
-          <Card className="w-full max-w-3xl max-h-[95vh] overflow-y-auto shadow-2xl">
-            <CardHeader>
+          <Card className="w-full max-w-lg sm:max-w-2xl lg:max-w-3xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto shadow-2xl">
+            <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5" />
-                  {formatDate(selectedDate)}
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="truncate">{formatDate(selectedDate)}</span>
                 </CardTitle>
                 <Button variant="outline" size="sm" onClick={() => setShowDayView(false)}>
                   <X className="w-4 h-4" />
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4 sm:space-y-6">
+            <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
               {/* Add New Time Slot */}
               <div className="space-y-4">
                 <h4 className="font-medium">Add New Time Slot</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="start_time">Start Time</Label>
                     <select
@@ -568,19 +524,19 @@ const AvailabilityManager = () => {
                       ))}
                     </select>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="service_type">Service Type</Label>
-                    <select
-                      id="service_type"
-                      value={newSlot.service_type}
-                      onChange={(e) => setNewSlot({ ...newSlot, service_type: e.target.value })}
-                      className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
-                    >
-                      <option value="both">Both (In-person & Remote)</option>
-                      <option value="in_person">In-person Only</option>
-                      <option value="remote">Remote Only</option>
-                    </select>
-                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="service_type">Service Type</Label>
+                  <select
+                    id="service_type"
+                    value={newSlot.service_type}
+                    onChange={(e) => setNewSlot({ ...newSlot, service_type: e.target.value })}
+                    className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
+                  >
+                    <option value="both">Both (In-person & Remote)</option>
+                    <option value="in_person">In-person Only</option>
+                    <option value="remote">Remote Only</option>
+                  </select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="notes">Notes (Optional)</Label>
@@ -677,7 +633,7 @@ const AvailabilityManager = () => {
       {/* Copy Modal */}
       {showCopyModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4" onClick={(e) => e.target === e.currentTarget && setShowCopyModal(false)}>
-          <Card className="w-full max-w-3xl max-h-[95vh] overflow-y-auto shadow-2xl">
+          <Card className="w-full max-w-lg sm:max-w-2xl lg:max-w-3xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto shadow-2xl">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
