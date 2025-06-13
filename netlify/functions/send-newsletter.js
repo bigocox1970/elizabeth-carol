@@ -12,12 +12,17 @@ exports.handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS'
+      },
       body: JSON.stringify({ message: 'Method not allowed' })
     };
   }
 
-  // Handle CORS
-  if (event.headers.origin) {
+  // Handle CORS preflight (OPTIONS requests only)
+  if (event.httpMethod === 'OPTIONS') {
     const allowedOrigins = [
       'https://elizabethcarol.co.uk',
       'https://www.elizabethcarol.co.uk',
@@ -25,11 +30,12 @@ exports.handler = async (event, context) => {
       'http://localhost:3000'
     ];
     
-    if (allowedOrigins.includes(event.headers.origin)) {
+    const origin = event.headers.origin || event.headers.Origin;
+    if (allowedOrigins.includes(origin)) {
       return {
         statusCode: 200,
         headers: {
-          'Access-Control-Allow-Origin': event.headers.origin,
+          'Access-Control-Allow-Origin': origin,
           'Access-Control-Allow-Headers': 'Content-Type, Authorization',
           'Access-Control-Allow-Methods': 'POST, OPTIONS'
         },
@@ -55,6 +61,11 @@ exports.handler = async (event, context) => {
       console.log('No authorization header found');
       return {
         statusCode: 401,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS'
+        },
         body: JSON.stringify({ message: 'No authorization token provided' })
       };
     }
@@ -77,6 +88,11 @@ exports.handler = async (event, context) => {
         console.error('Failed to get user info:', await userResponse.text());
         return {
           statusCode: 401,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS'
+          },
           body: JSON.stringify({ message: 'Invalid token' })
         };
       }
@@ -102,6 +118,11 @@ exports.handler = async (event, context) => {
         console.log('User is not an admin');
         return {
           statusCode: 401,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS'
+          },
           body: JSON.stringify({ message: 'Unauthorized' })
         };
       }
@@ -110,6 +131,11 @@ exports.handler = async (event, context) => {
       console.error('Error verifying token:', error);
       return {
         statusCode: 401,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS'
+        },
         body: JSON.stringify({ message: 'Unauthorized' })
       };
     }
@@ -119,6 +145,11 @@ exports.handler = async (event, context) => {
       console.log('Missing subject or message');
       return {
         statusCode: 400,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS'
+        },
         body: JSON.stringify({ message: 'Subject and message are required' })
       };
     }
@@ -146,6 +177,11 @@ exports.handler = async (event, context) => {
         console.log('ERROR: Selected mode but no subscribers provided!');
         return {
           statusCode: 400,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS'
+          },
           body: JSON.stringify({ message: 'No subscribers selected for sending' })
         };
       }
@@ -212,6 +248,11 @@ exports.handler = async (event, context) => {
       console.error('Failed to get subscribers from Supabase:', supabaseError);
       return {
         statusCode: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS'
+        },
         body: JSON.stringify({ 
           message: 'Failed to retrieve subscribers from database',
           error: supabaseError.message
@@ -225,6 +266,11 @@ exports.handler = async (event, context) => {
         : 'No active subscribers found';
       return {
         statusCode: 400,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS'
+        },
         body: JSON.stringify({ message: noSubscribersMessage })
       };
     }
@@ -331,6 +377,11 @@ To unsubscribe, simply reply to this email with "unsubscribe" in the subject lin
 
     return {
       statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS'
+      },
       body: JSON.stringify({ 
         message: successMessage,
         sentCount: sentCount,
@@ -344,6 +395,11 @@ To unsubscribe, simply reply to this email with "unsubscribe" in the subject lin
     console.error('Error sending newsletter:', error);
     return {
       statusCode: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS'
+      },
       body: JSON.stringify({ message: 'Failed to send newsletter' })
     };
   }
