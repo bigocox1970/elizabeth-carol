@@ -122,24 +122,26 @@ const AvailabilityManager = () => {
 
   const loadClients = async () => {
     try {
-      // Load clients from auth.users (registered users)
-      const { data: usersData, error: usersError } = await supabase.auth.admin.listUsers();
+      // Load clients from profiles table (actual registered users)
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name, email, phone')
+        .order('name', { ascending: true });
       
-      if (usersError) {
-        console.error('Error loading users:', usersError);
-        // Fallback to empty array if we can't load users
+      if (profilesError) {
+        console.error('Error loading profiles:', profilesError);
         setClients([]);
         return;
       }
 
-      const clientsFromUsers = usersData.users.map(user => ({
-        id: user.id,
-        email: user.email || '',
-        name: user.user_metadata?.name || user.email?.split('@')[0] || 'Unknown',
-        phone: user.user_metadata?.phone || ''
+      const clientsFromProfiles = (profilesData || []).map(profile => ({
+        id: profile.id,
+        email: profile.email || '',
+        name: profile.name || profile.email?.split('@')[0] || 'Unknown',
+        phone: profile.phone || ''
       }));
 
-      setClients(clientsFromUsers);
+      setClients(clientsFromProfiles);
     } catch (error) {
       console.error('Error loading clients:', error);
       setClients([]);
@@ -154,27 +156,26 @@ const AvailabilityManager = () => {
 
     setIsSearchingClients(true);
     try {
-      // Load all users and filter client-side since we're using auth.admin.listUsers
-      const { data: usersData, error: usersError } = await supabase.auth.admin.listUsers();
+      // Search profiles by name or email
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name, email, phone')
+        .or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`)
+        .order('name', { ascending: true })
+        .limit(20);
       
-      if (usersError) {
-        console.error('Error searching users:', usersError);
+      if (profilesError) {
+        console.error('Error searching profiles:', profilesError);
         setClients([]);
         return;
       }
 
-      const filteredClients = usersData.users
-        .map(user => ({
-          id: user.id,
-          email: user.email || '',
-          name: user.user_metadata?.name || user.email?.split('@')[0] || 'Unknown',
-          phone: user.user_metadata?.phone || ''
-        }))
-        .filter(client => 
-          client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          client.email.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-        .slice(0, 20); // Limit to 20 results
+      const filteredClients = (profilesData || []).map(profile => ({
+        id: profile.id,
+        email: profile.email || '',
+        name: profile.name || profile.email?.split('@')[0] || 'Unknown',
+        phone: profile.phone || ''
+      }));
 
       setClients(filteredClients);
     } catch (error) {
