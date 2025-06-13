@@ -122,6 +122,7 @@ const AvailabilityManager = () => {
 
   const loadClients = async () => {
     try {
+      console.log('🔍 Loading clients from profiles table...');
       // Load clients from profiles table (actual registered users)
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
@@ -129,7 +130,7 @@ const AvailabilityManager = () => {
         .order('name', { ascending: true });
       
       if (profilesError) {
-        console.error('Error loading profiles:', profilesError);
+        console.error('❌ Error loading profiles:', profilesError);
         // If profiles table doesn't exist yet, show helpful message
         if (profilesError.code === '42P01') {
           toast.error('Profiles table not found. Please run the database migration first.');
@@ -138,6 +139,8 @@ const AvailabilityManager = () => {
         return;
       }
 
+      console.log('✅ Raw profiles data:', profilesData);
+
       const clientsFromProfiles = (profilesData || []).map(profile => ({
         id: profile.id,
         email: profile.email || '',
@@ -145,9 +148,10 @@ const AvailabilityManager = () => {
         phone: profile.phone || ''
       }));
 
+      console.log('✅ Processed clients:', clientsFromProfiles);
       setClients(clientsFromProfiles);
     } catch (error) {
-      console.error('Error loading clients:', error);
+      console.error('❌ Error loading clients:', error);
       setClients([]);
     }
   };
@@ -158,6 +162,7 @@ const AvailabilityManager = () => {
       return;
     }
 
+    console.log('🔍 Searching profiles for:', searchTerm);
     setIsSearchingClients(true);
     try {
       // Search profiles by name, email, or phone - comprehensive search
@@ -169,11 +174,13 @@ const AvailabilityManager = () => {
         .limit(20);
       
       if (profilesError) {
-        console.error('Error searching profiles:', profilesError);
+        console.error('❌ Error searching profiles:', profilesError);
         // If profiles table doesn't exist yet, fall back to empty array
         setClients([]);
         return;
       }
+
+      console.log('✅ Search results from profiles:', profilesData);
 
       const filteredClients = (profilesData || []).map(profile => ({
         id: profile.id,
@@ -182,9 +189,10 @@ const AvailabilityManager = () => {
         phone: profile.phone || ''
       }));
 
+      console.log('✅ Processed search results:', filteredClients);
       setClients(filteredClients);
     } catch (error) {
-      console.error('Error searching clients:', error);
+      console.error('❌ Error searching clients:', error);
       setClients([]);
     } finally {
       setIsSearchingClients(false);
