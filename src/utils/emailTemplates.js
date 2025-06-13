@@ -42,7 +42,7 @@ export const createNewsletterTemplate = ({
         }
         
         /* Colors for easy reuse - Elizabeth Carol brand colors */
-        .purple-bg { background-color: #6b21a8; }
+        .purple-bg { background-color: #1f2937; }
         .light-purple-bg { background-color: #f3e8ff; }
         .white-bg { background-color: #ffffff; }
         .dark-bg { background-color: #1f2937; }
@@ -246,7 +246,7 @@ export const createContactEnquiryTemplate = ({
         }
         .enquiry-box { 
             background: #f8fafc; 
-            border-left: 4px solid #6b21a8; 
+            border-left: 4px solid #1f2937; 
             padding: 20px; 
             margin: 20px 0; 
             border-radius: 8px;
@@ -259,7 +259,7 @@ export const createContactEnquiryTemplate = ({
         }
         .label { 
             font-weight: bold; 
-            color: #6b21a8; 
+            color: #374151; 
             margin-bottom: 5px;
         }
         .value { 
@@ -290,7 +290,7 @@ export const createContactEnquiryTemplate = ({
             display: inline-block;
             margin: 0 10px;
             padding: 10px 20px;
-            background: #6b21a8;
+            background: #1f2937;
             color: white;
             text-decoration: none;
             border-radius: 6px;
@@ -311,11 +311,11 @@ export const createContactEnquiryTemplate = ({
                 <div class="value">${customerName}</div>
                 
                 <div class="label">Email Address:</div>
-                <div class="value"><a href="mailto:${customerEmail}" style="color: #6b21a8;">${customerEmail}</a></div>
+                <div class="value"><a href="mailto:${customerEmail}" style="color: #1f2937;">${customerEmail}</a></div>
                 
                 ${customerPhone ? `
                 <div class="label">Phone Number:</div>
-                <div class="value"><a href="tel:${customerPhone}" style="color: #6b21a8;">${customerPhone}</a></div>
+                <div class="value"><a href="tel:${customerPhone}" style="color: #1f2937;">${customerPhone}</a></div>
                 ` : ''}
                 
                 ${service ? `
@@ -407,7 +407,7 @@ export const createCustomerConfirmationTemplate = ({
         }
         .message-summary { 
             background: #f8fafc; 
-            border-left: 4px solid #6b21a8; 
+            border-left: 4px solid #1f2937; 
             padding: 20px; 
             margin: 25px 0; 
             border-radius: 8px;
@@ -418,7 +418,7 @@ export const createCustomerConfirmationTemplate = ({
         }
         .cta-button {
             display: inline-block;
-            background: #6b21a8;
+            background: #1f2937;
             color: white;
             text-decoration: none;
             padding: 15px 30px;
@@ -447,7 +447,7 @@ export const createCustomerConfirmationTemplate = ({
             <p>Thank you for reaching out through my website. I've received your message and wanted to confirm that it came through successfully. I'm honored that you're considering me for your spiritual guidance.</p>
             
             <div class="message-summary">
-                <h3 style="color: #6b21a8; margin-top: 0;">Your Message Details:</h3>
+                <h3 style="color: #374151; margin-top: 0;">Your Message Details:</h3>
                 <p><strong>Name:</strong> ${customerName}</p>
                 <p><strong>Email:</strong> ${customerEmail}</p>
                 ${customerPhone ? `<p><strong>Phone:</strong> ${customerPhone}</p>` : ''}
