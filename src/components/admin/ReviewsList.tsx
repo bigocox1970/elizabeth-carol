@@ -144,7 +144,7 @@ const ReviewsList = () => {
     return Array(5).fill(0).map((_, i) => (
       <Star 
         key={i} 
-        className={`w-4 h-4 ${i < rating ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`} 
+        className={`w-4 h-4 ${i < rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} 
       />
     ));
   };
@@ -231,8 +231,11 @@ const ReviewsList = () => {
 
                     {/* Review Details */}
                     <div className="space-y-2">
-                      <div className="flex mb-2">
+                      <div className="flex items-center gap-1 mb-2">
                         {renderStars(review.rating)}
+                        <span className="text-xs text-muted-foreground ml-1">
+                          ({review.rating}/5)
+                        </span>
                       </div>
                       
                       <div>
