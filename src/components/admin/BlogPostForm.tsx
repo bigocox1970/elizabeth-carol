@@ -472,7 +472,7 @@ const BlogPostForm = ({ editingPost, onPostSaved, onCancelEdit }: BlogPostFormPr
                   className="cursor-pointer flex items-center space-x-2 px-4 py-2 border rounded-md hover:bg-secondary"
                 >
                   <Upload className="w-4 h-4" />
-                  <span>Upload Image</span>
+                  <span>Upload</span>
                 </Label>
                 <Button
                   type="button"

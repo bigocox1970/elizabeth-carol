@@ -140,51 +140,51 @@ const SubscribersList = () => {
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center space-x-2">
-            <Users className="w-5 h-5" />
-            <span>Subscribers ({subscribers.length})</span>
-          </CardTitle>
-          <div className="flex items-center space-x-2">
-            {/* Edit Mode Toggle */}
-            <Button
-              onClick={() => setIsEditMode(!isEditMode)}
-              variant={isEditMode ? "default" : "outline"}
-              size="sm"
-              className="h-8 w-8 p-0"
-              title={isEditMode ? 'Done editing' : 'Edit subscribers'}
-            >
-              <Edit className="w-4 h-4" />
-            </Button>
-            
-            {/* Show action buttons when in edit mode with selections */}
-            {isEditMode && selectedSubscribers.size > 0 && (
-              <>
-                <Badge variant="secondary">
-                  {selectedSubscribers.size}
-                </Badge>
-                <Button
-                  onClick={handleSuspendSelected}
-                  variant="outline"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  title={`Suspend ${selectedSubscribers.size} selected subscribers`}
-                >
-                  <UserX className="w-4 h-4" />
-                </Button>
-                <Button
-                  onClick={handleDeleteSelected}
-                  variant="destructive"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  title={`Delete ${selectedSubscribers.size} selected subscribers`}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </>
-            )}
-          </div>
+      <CardHeader className="space-y-3">
+        <CardTitle className="flex items-center space-x-2">
+          <Users className="w-5 h-5" />
+          <span className="sm:hidden">Subs ({subscribers.length})</span>
+          <span className="hidden sm:inline">Subscribers ({subscribers.length})</span>
+        </CardTitle>
+        
+        <div className="flex items-center space-x-2">
+          {/* Edit Mode Toggle */}
+          <Button
+            onClick={() => setIsEditMode(!isEditMode)}
+            variant={isEditMode ? "default" : "outline"}
+            size="sm"
+            className="h-8 w-8 p-0"
+            title={isEditMode ? 'Done editing' : 'Edit subscribers'}
+          >
+            <Edit className="w-4 h-4" />
+          </Button>
+          
+          {/* Show action buttons when in edit mode with selections */}
+          {isEditMode && selectedSubscribers.size > 0 && (
+            <>
+              <Badge variant="secondary">
+                {selectedSubscribers.size}
+              </Badge>
+              <Button
+                onClick={handleSuspendSelected}
+                variant="outline"
+                size="sm"
+                className="h-8 w-8 p-0"
+                title={`Suspend ${selectedSubscribers.size} selected subscribers`}
+              >
+                <UserX className="w-4 h-4" />
+              </Button>
+              <Button
+                onClick={handleDeleteSelected}
+                variant="destructive"
+                size="sm"
+                className="h-8 w-8 p-0"
+                title={`Delete ${selectedSubscribers.size} selected subscribers`}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </>
+          )}
         </div>
       </CardHeader>
       
