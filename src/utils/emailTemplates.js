@@ -74,7 +74,7 @@ export const createNewsletterTemplate = ({
                         
                         <!-- Header Section -->
                         <tr>
-                            <td align="center" valign="top" style="background-color: #6b21a8; padding: 40px 20px;">
+                            <td align="center" valign="top" style="background-color: #1f2937; padding: 40px 20px;">
                                 <table border="0" cellpadding="0" cellspacing="0" width="100%">
                                     <tr>
                                         <td align="center" style="padding-bottom: 20px;">
@@ -236,7 +236,7 @@ export const createContactEnquiryTemplate = ({
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         .header { 
-            background-color: #6b21a8; 
+            background-color: #1f2937; 
             color: white; 
             padding: 30px; 
             text-align: center; 
@@ -397,7 +397,7 @@ export const createCustomerConfirmationTemplate = ({
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         .header { 
-            background-color: #6b21a8; 
+            background-color: #1f2937; 
             color: white; 
             padding: 40px 30px; 
             text-align: center; 
