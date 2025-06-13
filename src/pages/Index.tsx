@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Star, Quote, Phone, MapPin, Heart, Users, Award } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { getApiUrl } from "@/utils/api";
 
 interface Testimonial {
   id: number | string;
@@ -32,25 +32,32 @@ const Index = () => {
 
   const loadFeaturedReviews = async () => {
     try {
-      const { data, error } = await supabase
-        .from('reviews')
-        .select('*')
-        .eq('approved', true)
-        .order('created_at', { ascending: false })
-        .limit(3);
+      const response = await fetch(getApiUrl('manage-reviews'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'get-approved-reviews' }),
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error(`Failed to load reviews: ${response.status}`);
+      }
 
-      if (data && data.length > 0) {
-        const formattedReviews = data.map(review => ({
-          id: review.id,
-          name: review.name,
-          location: review.location,
-          text: review.comment || review.content,
-          rating: review.rating,
-          service: review.service,
-          createdAt: review.created_at
-        }));
+      const data = await response.json();
+      
+      if (data.reviews && data.reviews.length > 0) {
+        const formattedReviews = data.reviews
+          .slice(0, 3) // Only take the first 3 reviews
+          .map(review => ({
+            id: review.id,
+            name: review.name,
+            location: review.location,
+            text: review.comment || review.content,
+            rating: review.rating,
+            service: review.service,
+            createdAt: review.createdAt
+          }));
         setQuickTestimonials(formattedReviews);
       }
     } catch (error) {

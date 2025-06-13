@@ -1,8 +1,9 @@
+import { getUserFromToken, isAdmin } from './utils/auth.js';
+
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
-const { getUserFromToken, isAdmin } = require('./utils/auth');
 
-exports.handler = async (event, context) => {
+export const handler = async (event, context) => {
   const { httpMethod } = event;
   const { action, postId, postData, commentId, commentData } = JSON.parse(event.body || '{}');
 

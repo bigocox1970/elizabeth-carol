@@ -1,5 +1,9 @@
 // This function generates blog posts using OpenAI's API
 
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const { getUserFromToken, isAdmin } = require('./utils/auth');
+
 exports.handler = async (event, context) => {
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
@@ -32,9 +36,6 @@ exports.handler = async (event, context) => {
     const token = authHeader.replace('Bearer ', '');
     
     // Verify the user is an admin using Supabase
-    const SUPABASE_URL = process.env.SUPABASE_URL;
-    const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
-    
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
       return {
         statusCode: 500,
@@ -47,16 +48,8 @@ exports.handler = async (event, context) => {
     }
     
     try {
-      // First, get the user ID from the token
-      const userResponse = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!userResponse.ok) {
-        console.error('Failed to get user info:', await userResponse.text());
+      const userData = await getUserFromToken(token);
+      if (!userData) {
         return {
           statusCode: 401,
           headers: { "Access-Control-Allow-Origin": "*" },
@@ -67,32 +60,8 @@ exports.handler = async (event, context) => {
         };
       }
 
-      const userData = await userResponse.json();
-
-      // Now verify the user is an admin
-      const isAdminResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ user_id: userData.id })
-      });
-
-      if (!isAdminResponse.ok) {
-        return {
-          statusCode: 401,
-          headers: { "Access-Control-Allow-Origin": "*" },
-          body: JSON.stringify({ 
-            success: false,
-            message: 'Unauthorized: Not an admin user'
-          })
-        };
-      }
-
-      const isAdmin = await isAdminResponse.json();
-      if (!isAdmin) {
+      const adminStatus = await isAdmin(userData.id, token);
+      if (!adminStatus) {
         return {
           statusCode: 401,
           headers: { "Access-Control-Allow-Origin": "*" },
@@ -257,13 +226,14 @@ Format your response as JSON with the following structure:
     };
 
   } catch (error) {
-    console.error('Error generating blog post:', error);
+    console.error('Error in generate-blog-post function:', error);
     return {
       statusCode: 500,
       headers: { "Access-Control-Allow-Origin": "*" },
       body: JSON.stringify({ 
         success: false,
-        message: 'Server error during blog post generation. Please try again.'
+        message: 'Internal server error',
+        error: error.message
       })
     };
   }
