@@ -30,10 +30,15 @@ const SocialShare = ({
   const encodedTitle = encodeURIComponent(title);
   const encodedExcerpt = encodeURIComponent(excerpt);
 
+  // Create a more personal email body
+  const emailBody = encodeURIComponent(
+    `Hi there!\n\nI thought you might be interested in this...\n\n${title}\n\n${excerpt}\n\nYou can read more here: ${url}\n\nHope you find it helpful!\n\nBest regards`
+  );
+
   const shareLinks = {
     facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedTitle}`,
     twitter: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`,
-    email: `mailto:?subject=${encodedTitle}&body=${encodedExcerpt}%0A%0A${encodedUrl}`,
+    email: `mailto:?subject=${encodedTitle}&body=${emailBody}`,
     whatsapp: `https://wa.me/?text=${encodedTitle}%20${encodedUrl}`,
   };
 
@@ -58,7 +63,7 @@ const SocialShare = ({
   const buttonSize = size === 'sm' ? 'sm' : size === 'lg' ? 'lg' : 'default';
 
   const ShareButtons = () => (
-    <div className="flex items-center space-x-2">
+    <div className="flex items-center justify-center gap-2 flex-wrap">
       <Button
         variant="outline"
         size={buttonSize}
@@ -66,7 +71,7 @@ const SocialShare = ({
         className="text-blue-600 hover:bg-blue-50 hover:text-blue-700 border-blue-200"
       >
         <Facebook className={iconSize} />
-        {size === 'lg' && <span className="ml-2">Facebook</span>}
+        {size === 'lg' && <span className="ml-2 hidden lg:inline">Facebook</span>}
       </Button>
       
       <Button
@@ -76,7 +81,7 @@ const SocialShare = ({
         className="text-sky-600 hover:bg-sky-50 hover:text-sky-700 border-sky-200"
       >
         <Twitter className={iconSize} />
-        {size === 'lg' && <span className="ml-2">Twitter</span>}
+        {size === 'lg' && <span className="ml-2 hidden lg:inline">Twitter</span>}
       </Button>
       
       <Button
@@ -86,7 +91,7 @@ const SocialShare = ({
         className="text-green-600 hover:bg-green-50 hover:text-green-700 border-green-200"
       >
         <MessageCircle className={iconSize} />
-        {size === 'lg' && <span className="ml-2">WhatsApp</span>}
+        {size === 'lg' && <span className="ml-2 hidden lg:inline">WhatsApp</span>}
       </Button>
       
       <Button
@@ -96,7 +101,7 @@ const SocialShare = ({
         className="text-purple-600 hover:bg-purple-50 hover:text-purple-700 border-purple-200"
       >
         <Mail className={iconSize} />
-        {size === 'lg' && <span className="ml-2">Email</span>}
+        {size === 'lg' && <span className="ml-2 hidden lg:inline">Email</span>}
       </Button>
       
       <Button
@@ -111,7 +116,7 @@ const SocialShare = ({
           <Link2 className={iconSize} />
         )}
         {size === 'lg' && (
-          <span className="ml-2">{copied ? 'Copied!' : 'Copy Link'}</span>
+          <span className="ml-2 hidden lg:inline">{copied ? 'Copied!' : 'Copy Link'}</span>
         )}
       </Button>
     </div>
@@ -122,7 +127,7 @@ const SocialShare = ({
       <Card className={className}>
         <CardContent className="p-4">
           {showTitle && (
-            <div className="flex items-center space-x-2 mb-3">
+            <div className="flex items-center justify-center space-x-2 mb-3">
               <Share2 className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm font-medium text-muted-foreground">{shareTitle.toLowerCase()}</span>
             </div>
@@ -135,7 +140,7 @@ const SocialShare = ({
 
   if (variant === 'inline') {
     return (
-      <div className={`flex items-center space-x-4 ${className}`}>
+      <div className={`flex flex-col sm:flex-row items-center gap-4 ${className}`}>
         {showTitle && (
           <div className="flex items-center space-x-2">
             <Share2 className="w-4 h-4 text-muted-foreground" />
@@ -150,7 +155,7 @@ const SocialShare = ({
   return (
     <div className={className}>
       {showTitle && (
-        <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center space-x-2">
+        <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center justify-center space-x-2">
           <Share2 className="w-5 h-5" />
           <span>{shareTitle}</span>
         </h3>
