@@ -99,7 +99,7 @@ export const handler = async (event, context) => {
 
         case 'get-all-comments':
           // Return all comments with post titles, sorted by date (newest first)
-          const allResponse = await fetch(`${SUPABASE_URL}/rest/v1/comments?select=*,blog_posts(title)&order=created_at.desc`, {
+          const allResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_comments?select=id,post_id,content,author_name,author_email,approved,created_at,user_id,blog_posts!inner(title)&order=created_at.desc`, {
             method: 'GET',
             headers: {
               'apikey': SUPABASE_ANON_KEY,
@@ -109,23 +109,28 @@ export const handler = async (event, context) => {
           });
 
           if (!allResponse.ok) {
-            throw new Error(`Database query failed: ${allResponse.status}`);
+            const errorText = await allResponse.text();
+            console.error('Failed to fetch all comments:', errorText);
+            throw new Error(`Failed to fetch all comments: ${allResponse.status} - ${errorText}`);
           }
 
           const allComments = await allResponse.json();
+          console.log('Fetched all comments:', allComments);
           
           // Format comments for frontend
           const formattedComments = allComments.map(comment => ({
             id: comment.id.toString(),
-            postId: comment.post_id,
+            postId: comment.post_id.toString(),
             postTitle: comment.blog_posts?.title || 'Unknown Post',
-            name: comment.name,
-            email: comment.email,
+            name: comment.author_name,
+            email: comment.author_email,
             content: comment.content,
             approved: comment.approved,
             createdAt: comment.created_at,
             userId: comment.user_id
           }));
+
+          console.log('Formatted comments:', formattedComments);
 
           return {
             statusCode: 200,

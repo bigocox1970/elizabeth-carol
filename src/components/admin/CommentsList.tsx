@@ -48,12 +48,12 @@ const CommentsList = () => {
         }),
       });
 
+      const data = await response.json();
+      
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to load comments');
+        throw new Error(data.message || data.error || 'Failed to load comments');
       }
 
-      const data = await response.json();
       setComments(data.comments || []);
     } catch (error) {
       console.error('Failed to load comments:', error);
