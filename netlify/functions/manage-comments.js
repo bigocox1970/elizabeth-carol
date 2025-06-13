@@ -10,8 +10,8 @@ export const handler = async (event, context) => {
     console.log('--- manage-comments function invoked ---');
     console.log('Event body:', event.body);
     
-    const { action, commentData, commentId } = JSON.parse(event.body || '{}');
-    console.log('Parsed request:', { action, commentId, commentData: commentData ? '[REDACTED]' : null });
+    const { action, commentData, commentId, postId } = JSON.parse(event.body || '{}');
+    console.log('Parsed request:', { action, commentId, commentData: commentData ? '[REDACTED]' : null, postId });
 
     // Get the user's JWT token from the Authorization header
     const authHeader = event.headers['authorization'] || event.headers['Authorization'];
@@ -42,7 +42,7 @@ export const handler = async (event, context) => {
       // Check if user is admin for admin operations
       console.log('Checking admin status for user:', userData ? userData.id : 'No user');
       const isAdminUser = await isAdmin(userData.id, token);
-      if (['approve-comment', 'unapprove-comment', 'delete-comment', 'get-all-comments'].includes(action) && !isAdminUser) {
+      if (['approve-comment', 'unapprove-comment', 'delete-comment', 'get-all-comments', 'get-comments'].includes(action) && !isAdminUser) {
         return {
           statusCode: 401,
           headers: { "Access-Control-Allow-Origin": "*" },
@@ -244,6 +244,32 @@ export const handler = async (event, context) => {
             statusCode: 200,
             headers: { "Access-Control-Allow-Origin": "*" },
             body: JSON.stringify({ message: 'Comment deleted successfully' })
+          };
+
+        case 'get-comments':
+          console.log('Getting comments for post:', postId);
+          const commentsResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_comments?post_id=eq.${postId}&order=created_at.desc`, {
+            method: 'GET',
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (!commentsResponse.ok) {
+            const errorText = await commentsResponse.text();
+            console.error('Failed to fetch comments:', errorText);
+            throw new Error(`Failed to fetch comments: ${commentsResponse.status} - ${errorText}`);
+          }
+
+          const comments = await commentsResponse.json();
+          console.log('Fetched comments:', comments);
+
+          return {
+            statusCode: 200,
+            headers: { "Access-Control-Allow-Origin": "*" },
+            body: JSON.stringify({ comments })
           };
 
         default:
