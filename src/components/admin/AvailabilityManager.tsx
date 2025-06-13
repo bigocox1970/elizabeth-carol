@@ -854,8 +854,8 @@ const AvailabilityManager = () => {
 
       {/* Day View Modal */}
       {showDayView && selectedDate && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-1" onClick={(e) => e.target === e.currentTarget && setShowDayView(false)}>
-          <Card className="w-[98vw] max-w-4xl h-[98vh] max-h-[98vh] overflow-y-auto shadow-2xl m-1">
+        <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-2 overflow-y-auto" onClick={(e) => e.target === e.currentTarget && setShowDayView(false)}>
+          <Card className="w-[94vw] max-w-4xl min-h-0 shadow-2xl my-2">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-lg">
@@ -1040,8 +1040,8 @@ const AvailabilityManager = () => {
 
       {/* Copy Modal */}
       {showCopyModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-1" onClick={(e) => e.target === e.currentTarget && setShowCopyModal(false)}>
-          <Card className="w-[98vw] max-w-3xl h-[95vh] max-h-[95vh] overflow-y-auto shadow-2xl m-1">
+        <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-2 overflow-y-auto" onClick={(e) => e.target === e.currentTarget && setShowCopyModal(false)}>
+          <Card className="w-[94vw] max-w-3xl min-h-0 shadow-2xl my-2">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
@@ -1140,8 +1140,8 @@ const AvailabilityManager = () => {
 
       {/* Booking Modal */}
       {showBookingModal && selectedSlotForBooking && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-1" onClick={(e) => e.target === e.currentTarget && setShowBookingModal(false)}>
-          <Card className="w-[98vw] max-w-lg h-[95vh] max-h-[95vh] overflow-y-auto shadow-2xl m-1">
+        <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-2 overflow-y-auto" onClick={(e) => e.target === e.currentTarget && setShowBookingModal(false)}>
+          <Card className="w-[94vw] max-w-lg min-h-0 shadow-2xl my-2">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
