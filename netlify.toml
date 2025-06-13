@@ -6,7 +6,7 @@
 [dev]
   command = "npm run dev"
   port = 8888
-  targetPort = 5173
+  targetPort = 8081
   publish = "dist"
   autoLaunch = true
 
