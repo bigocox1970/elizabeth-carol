@@ -123,23 +123,57 @@ const AvailabilityManager = () => {
   const loadClients = async () => {
     try {
       console.log('🔍 Loading clients from profiles table...');
-      // Load clients from profiles table (actual registered users)
-      const { data: profilesData, error: profilesError } = await supabase
+      
+      // First try to load from profiles table
+      let { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('id, name, email, phone')
         .order('name', { ascending: true });
       
-      if (profilesError) {
-        console.error('❌ Error loading profiles:', profilesError);
-        // If profiles table doesn't exist yet, show helpful message
-        if (profilesError.code === '42P01') {
-          toast.error('Profiles table not found. Please run the database migration first.');
+      // If profiles table is empty or has issues, try to populate it from reviews
+      if (!profilesData || profilesData.length === 0) {
+        console.log('📝 Profiles table empty, trying to populate from reviews...');
+        
+        // Get unique users from reviews table
+        const { data: reviewsData, error: reviewsError } = await supabase
+          .from('reviews')
+          .select('name, email')
+          .not('email', 'is', null);
+        
+        if (reviewsData && reviewsData.length > 0) {
+          console.log('✅ Found review data:', reviewsData);
+          
+          // Create profiles for each unique email from reviews
+          for (const review of reviewsData) {
+            if (review.email) {
+              await supabase
+                .from('profiles')
+                .upsert({
+                  id: crypto.randomUUID(),
+                  email: review.email,
+                  name: review.name || review.email.split('@')[0],
+                  created_at: new Date().toISOString()
+                }, { onConflict: 'email' });
+            }
+          }
+          
+          // Try loading profiles again
+          const { data: newProfilesData } = await supabase
+            .from('profiles')
+            .select('id, name, email, phone')
+            .order('name', { ascending: true });
+          
+          profilesData = newProfilesData;
         }
+      }
+      
+      if (profilesError && profilesError.code === '42P01') {
+        toast.error('Profiles table not found. Please run the database migration first.');
         setClients([]);
         return;
       }
 
-      console.log('✅ Raw profiles data:', profilesData);
+      console.log('✅ Final profiles data:', profilesData);
 
       const clientsFromProfiles = (profilesData || []).map(profile => ({
         id: profile.id,
@@ -165,13 +199,13 @@ const AvailabilityManager = () => {
     console.log('🔍 Searching profiles for:', searchTerm);
     setIsSearchingClients(true);
     try {
-      // Search profiles by name, email, or phone - comprehensive search
+      // Search profiles table by name, email, or phone - ALL FIELDS
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('id, name, email, phone')
         .or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
         .order('name', { ascending: true })
-        .limit(20);
+        .limit(50);
       
       if (profilesError) {
         console.error('❌ Error searching profiles:', profilesError);
