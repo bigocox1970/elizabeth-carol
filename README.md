@@ -11,25 +11,25 @@ This is the website for Elizabeth Carol, a psychic medium and spiritual guide. T
 - User authentication system
 - User profile management
 - Admin panel for managing all content
-- **AI Blog Post Generation** - Generate blog posts using OpenAI's GPT-3.5
+- **AI Writing Assistant** - AI-powered tools to help brainstorm, spellcheck, and enhance blog content
 
-### AI Blog Post Generation
+### AI Writing Assistant
 
-The admin panel now includes an AI-powered blog post generator that allows Elizabeth to:
+The admin panel includes AI-powered tools to assist Elizabeth with content creation:
 
-- Enter a topic or brief outline
-- Generate a complete blog post in her authentic 77-year-old British voice
-- **Automatically generate a beautiful spiritual image** to accompany the post
-- Edit and customise both the content and image before publishing
-- Save time while maintaining quality and personal touch
+- **Content Brainstorming** - Generate ideas and outlines for blog posts
+- **Writing Assistance** - Help with structuring thoughts and improving content
+- **Spellcheck & Grammar** - Ensure professional, polished writing
+- **Image Generation** - Create beautiful spiritual images to accompany posts
+- **British English Support** - All AI assistance maintains proper British English
 
-The AI is specifically trained to write as Elizabeth Carol would - a wise, 77-year-old clairvoyant with proper British English grammar and expressions. Generated posts include:
-- Compelling titles (British English)
-- Brief excerpts for previews (British English)
-- Full blog content (800-1200 words, British English throughout)
-- Practical spiritual advice drawn from decades of experience
-- Personal, slightly formal but warm tone befitting her age and wisdom
+The AI assistant helps Elizabeth maintain her authentic voice while providing support with:
+- Topic suggestions and content outlines
+- Grammar and spelling assistance
+- Professional formatting and structure
 - **Beautiful, calming spiritual images** created with DALL-E 3
+
+Elizabeth retains full creative control, with the AI serving as a helpful writing companion rather than replacing her personal touch and spiritual insights.
 
 ## Environment Variables
 
@@ -51,14 +51,14 @@ To set these variables in Netlify:
 
 ### Setting up OpenAI API Key
 
-To enable the AI blog post and image generation feature:
+To enable the AI writing assistant features:
 
 1. Create an account at [OpenAI](https://platform.openai.com/)
 2. Generate an API key from your OpenAI dashboard
 3. Add the `OPENAI_API_KEY` environment variable with your API key
-4. The AI feature will use GPT-3.5-turbo for blog content and DALL-E 3 for image generation
+4. The AI assistant will use GPT-3.5-turbo for writing assistance and DALL-E 3 for image generation
 
-**Note**: The AI generation feature requires the OpenAI API key to be configured. Without it, the feature will show an error message to configure the API key. The same API key is used for both text generation (blog posts) and image generation.
+**Note**: The AI assistant features require the OpenAI API key to be configured. Without it, the features will show an error message to configure the API key. The same API key is used for both writing assistance and image generation.
 
 ## Local Development
 
@@ -175,11 +175,12 @@ A beautiful, modern website for Elizabeth Carol, a psychic medium and spiritual 
 - **AI-Powered Content**: Advanced AI integration for blog post and image generation
 - **Image Management**: Automatic image optimization and cloud storage
 
-### 🤖 AI Features
-- **Blog Post Generation**: AI generates authentic blog content in Elizabeth's voice
+### 🤖 AI Writing Assistant
+- **Content Brainstorming**: AI helps generate topic ideas and content outlines
+- **Writing Support**: Assists with structuring thoughts and improving content flow
+- **Spellcheck & Grammar**: Ensures professional, polished writing in British English
 - **Image Generation**: AI creates beautiful spiritual images using DALL-E
-- **Separate Workflows**: Independent blog and image generation for optimal performance
-- **British English**: All AI content uses proper British English and terminology
+- **Creative Control**: Elizabeth maintains full control over her authentic voice and message
 
 ### 📱 User Experience
 - **Fast Loading**: Optimized performance with lazy loading and image compression

@@ -13,6 +13,7 @@ const AdminTips = () => {
         <p>• <strong>Frequency:</strong> Monthly newsletters work well - not too often, but keeps you connected</p>
         <p>• <strong>Personal Touch:</strong> Share your spiritual insights and connect personally with your clients</p>
         <p>• <strong>Blog Posts:</strong> Regular blog posts help with SEO and keep your website fresh</p>
+        <p>• <strong>AI Assistant:</strong> Use the AI tools to help brainstorm blog topics, check spelling and grammar, and generate beautiful spiritual images for your posts</p>
         <p>• <strong>Reviews:</strong> Encourage clients to leave reviews to build trust with new visitors</p>
       </CardContent>
     </Card>

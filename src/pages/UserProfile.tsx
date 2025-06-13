@@ -43,6 +43,8 @@ const UserProfile = () => {
   const [activeTab, setActiveTab] = useState("comments");
   const [editingComment, setEditingComment] = useState<Comment | null>(null);
   const [editingReview, setEditingReview] = useState<Review | null>(null);
+  const [commentDialogOpen, setCommentDialogOpen] = useState(false);
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [editedContent, setEditedContent] = useState("");
   const [editedRating, setEditedRating] = useState(5);
   const [newPassword, setNewPassword] = useState("");
@@ -95,12 +97,14 @@ const UserProfile = () => {
   const handleEditComment = (comment: Comment) => {
     setEditingComment(comment);
     setEditedContent(comment.content);
+    setCommentDialogOpen(true);
   };
 
   const handleEditReview = (review: Review) => {
     setEditingReview(review);
     setEditedContent(review.content);
     setEditedRating(review.rating);
+    setReviewDialogOpen(true);
   };
 
   const handleSaveComment = async () => {
@@ -123,6 +127,7 @@ const UserProfile = () => {
       });
 
       setEditingComment(null);
+      setCommentDialogOpen(false);
     } catch (error) {
       console.error("Error updating comment:", error);
       toast({
@@ -153,6 +158,7 @@ const UserProfile = () => {
       });
 
       setEditingReview(null);
+      setReviewDialogOpen(false);
     } catch (error) {
       console.error("Error updating review:", error);
       toast({
@@ -205,6 +211,19 @@ const UserProfile = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleCancelCommentEdit = () => {
+    setEditingComment(null);
+    setCommentDialogOpen(false);
+    setEditedContent("");
+  };
+
+  const handleCancelReviewEdit = () => {
+    setEditingReview(null);
+    setReviewDialogOpen(false);
+    setEditedContent("");
+    setEditedRating(5);
   };
 
   const handlePasswordChange = async () => {
@@ -308,7 +327,7 @@ const UserProfile = () => {
                         <Card key={comment.id} className="relative">
                           <CardContent className="pt-6">
                             <div className="absolute top-2 right-2 flex space-x-1">
-                              <Dialog>
+                              <Dialog open={commentDialogOpen} onOpenChange={setCommentDialogOpen}>
                                 <DialogTrigger asChild>
                                   <Button variant="ghost" size="icon" onClick={() => handleEditComment(comment)}>
                                     <Edit className="w-4 h-4" />
@@ -329,7 +348,7 @@ const UserProfile = () => {
                                     />
                                   </div>
                                   <DialogFooter>
-                                    <Button variant="outline" onClick={() => setEditingComment(null)}>
+                                    <Button variant="outline" onClick={handleCancelCommentEdit}>
                                       Cancel
                                     </Button>
                                     <Button onClick={handleSaveComment}>Save Changes</Button>
@@ -403,7 +422,7 @@ const UserProfile = () => {
                         <Card key={review.id} className="relative">
                           <CardContent className="pt-6">
                             <div className="absolute top-2 right-2 flex space-x-1">
-                              <Dialog>
+                              <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
                                 <DialogTrigger asChild>
                                   <Button variant="ghost" size="icon" onClick={() => handleEditReview(review)}>
                                     <Edit className="w-4 h-4" />
@@ -450,7 +469,7 @@ const UserProfile = () => {
                                     </div>
                                   </div>
                                   <DialogFooter>
-                                    <Button variant="outline" onClick={() => setEditingReview(null)}>
+                                    <Button variant="outline" onClick={handleCancelReviewEdit}>
                                       Cancel
                                     </Button>
                                     <Button onClick={handleSaveReview}>Save Changes</Button>

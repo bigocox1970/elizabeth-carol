@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Heart, Star, Users, Phone, MapPin } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const About = () => {
   return (
@@ -192,9 +193,11 @@ const About = () => {
                   Call 01865 361 786
                 </Button>
               </a>
-              <Button size="lg" variant="outline">
-                Book Online
-              </Button>
+              <Link to="/contact">
+                <Button size="lg" variant="outline">
+                  Book Now
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
