@@ -114,47 +114,102 @@ const Blog = () => {
             
             {/* Filters and Search */}
             {posts.length > 0 && (
-              <div className="mb-12">
-                <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-                  <div className="flex flex-col sm:flex-row gap-4 flex-1">
-                    {/* Search */}
-                    <div className="relative flex-1 max-w-md">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                      <Input
-                        placeholder="Search posts..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10"
-                      />
+              <Card className="mb-8 shadow-lg border-primary/10">
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    {/* Search Section */}
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2 text-sm font-medium text-foreground">
+                        <Search className="w-4 h-4" />
+                        <span>Search Posts</span>
+                      </div>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                        <Input
+                          placeholder="Search for spiritual insights..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-10 h-12 text-base border-2 focus:border-primary/50"
+                        />
+                      </div>
                     </div>
-                    
-                    {/* Category Filter */}
-                    <div className="flex items-center space-x-2">
-                      <Filter className="w-4 h-4 text-muted-foreground" />
+
+                    {/* Category Filter Section */}
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2 text-sm font-medium text-foreground">
+                        <Filter className="w-4 h-4" />
+                        <span>Filter by Category</span>
+                      </div>
                       <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                        <SelectTrigger className="w-48">
-                          <SelectValue placeholder="Filter by category" />
+                        <SelectTrigger className="h-12 text-base border-2 focus:border-primary/50">
+                          <SelectValue placeholder="Choose a spiritual category" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">All Categories</SelectItem>
-                          {getCategories().map((category) => (
-                            <SelectItem key={category} value={category}>
-                              {category}
-                            </SelectItem>
-                          ))}
+                          <SelectItem value="all">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-lg">🌟</span>
+                              <span>All Categories</span>
+                            </div>
+                          </SelectItem>
+                          {getCategories().map((category) => {
+                            const style = getCategoryStyle(category);
+                            return (
+                              <SelectItem key={category} value={category}>
+                                <div className="flex items-center space-x-2">
+                                  <span>{style.icon}</span>
+                                  <span>{category}</span>
+                                </div>
+                              </SelectItem>
+                            );
+                          })}
                         </SelectContent>
                       </Select>
                     </div>
+
+                    {/* Results Summary & Clear Actions */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-border">
+                      <div className="text-sm text-muted-foreground">
+                        <span className="font-medium text-foreground">{filteredPosts.length}</span> {filteredPosts.length === 1 ? 'post' : 'posts'}
+                        {selectedCategory !== "all" && (
+                          <span>
+                            {' '}in <span className="font-medium text-primary">{selectedCategory}</span>
+                          </span>
+                        )}
+                        {searchTerm && (
+                          <span>
+                            {' '}matching "<span className="font-medium text-primary">{searchTerm}</span>"
+                          </span>
+                        )}
+                      </div>
+                      
+                      {(searchTerm || selectedCategory !== "all") && (
+                        <div className="flex gap-2">
+                          {searchTerm && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setSearchTerm("")}
+                              className="text-xs"
+                            >
+                              Clear Search
+                            </Button>
+                          )}
+                          {selectedCategory !== "all" && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setSelectedCategory("all")}
+                              className="text-xs"
+                            >
+                              All Categories
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  
-                  {/* Results count */}
-                  <div className="text-sm text-muted-foreground">
-                    {filteredPosts.length} {filteredPosts.length === 1 ? 'post' : 'posts'} 
-                    {selectedCategory !== "all" && ` in ${selectedCategory}`}
-                    {searchTerm && ` matching "${searchTerm}"`}
-                  </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             )}
 
             {posts.length === 0 ? (
