@@ -244,9 +244,8 @@ exports.handler = async (event, context) => {
             method: 'GET',
             headers: {
               'apikey': SUPABASE_ANON_KEY,
-              'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=representation'
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+              'Content-Type': 'application/json'
             }
           });
 
@@ -275,6 +274,8 @@ exports.handler = async (event, context) => {
             featured: review.featured,
             createdAt: review.created_at
           }));
+
+          console.log('Formatted approved reviews:', JSON.stringify(formattedApprovedReviews, null, 2));
 
           return {
             statusCode: 200,

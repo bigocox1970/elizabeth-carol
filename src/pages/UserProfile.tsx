@@ -363,7 +363,8 @@ const UserProfile = () => {
                               </AlertDialog>
                             </div>
 
-                            <p className="text-sm">{comment.content}</p>
+                            <div className="flex mb-2 pr-20">{renderStars(5)}</div>
+                            <p className="text-sm pr-20">{comment.content}</p>
                             <div className="flex justify-between items-center mt-4 text-xs text-muted-foreground">
                               <span>
                                 {new Date(comment.created_at).toLocaleDateString()}
