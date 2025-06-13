@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Plus, Trash2, Save, ChevronLeft, ChevronRight, Copy, X, List, Grid3X3 } from "lucide-react";
+import { Calendar, Clock, Plus, Trash2, Save, ChevronLeft, ChevronRight, Copy, X, List, Grid3X3, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 
 interface AvailabilitySlot {
@@ -26,6 +26,8 @@ const AvailabilityManager = () => {
   const [selectedSlots, setSelectedSlots] = useState<number[]>([]);
   const [selectedCopyDates, setSelectedCopyDates] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+  const [showBookingsOnly, setShowBookingsOnly] = useState(false);
+  const [bookedSlots, setBookedSlots] = useState<number[]>([]);
   const [newSlot, setNewSlot] = useState<AvailabilitySlot>({
     date: '',
     start_time: '',
@@ -44,6 +46,10 @@ const AvailabilityManager = () => {
       const stored = localStorage.getItem('elizabeth_availability');
       if (stored) {
         setSlots(JSON.parse(stored));
+      }
+      const bookedStored = localStorage.getItem('elizabeth_booked_slots');
+      if (bookedStored) {
+        setBookedSlots(JSON.parse(bookedStored));
       }
     } catch (error) {
       console.error('Error loading availability:', error);
@@ -113,8 +119,24 @@ const AvailabilityManager = () => {
   };
 
   const hasBookings = (date: Date) => {
-    // This will be connected to actual bookings later
-    return false;
+    const dateString = date.toISOString().split('T')[0];
+    const slotsForDate = slots.filter(slot => slot.date === dateString);
+    return slotsForDate.some(slot => bookedSlots.includes(slot.id!));
+  };
+
+  const isSlotBooked = (slotId: number) => {
+    return bookedSlots.includes(slotId);
+  };
+
+  const toggleSlotBooking = (slotId: number) => {
+    const newBookedSlots = isSlotBooked(slotId)
+      ? bookedSlots.filter(id => id !== slotId)
+      : [...bookedSlots, slotId];
+    
+    setBookedSlots(newBookedSlots);
+    localStorage.setItem('elizabeth_booked_slots', JSON.stringify(newBookedSlots));
+    
+    toast.success(isSlotBooked(slotId) ? 'Slot marked as available' : 'Slot marked as booked');
   };
 
   const navigateDate = (direction: 'prev' | 'next') => {
@@ -256,7 +278,10 @@ const AvailabilityManager = () => {
           <Button
             variant={viewMode === 'list' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setViewMode('list')}
+            onClick={() => {
+              setViewMode('list');
+              setShowBookingsOnly(true);
+            }}
             className="flex items-center gap-2"
           >
             <List className="w-4 h-4" />
@@ -357,6 +382,23 @@ const AvailabilityManager = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Bookings Filter Toggle */}
+            <div className="flex items-center justify-between mb-4 p-3 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Eye className="w-4 h-4" />
+                <span className="font-medium">Show Bookings Only</span>
+              </div>
+              <Button
+                variant={showBookingsOnly ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowBookingsOnly(!showBookingsOnly)}
+                className="flex items-center gap-2"
+              >
+                {showBookingsOnly ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showBookingsOnly ? 'Show All' : 'Bookings Only'}
+              </Button>
+            </div>
+
             {slots.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Clock className="w-16 h-16 mx-auto mb-4 opacity-50" />
@@ -376,7 +418,10 @@ const AvailabilityManager = () => {
               <div className="space-y-4">
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-sm text-muted-foreground">
-                    {slots.length} time slot{slots.length === 1 ? '' : 's'} available
+                    {showBookingsOnly 
+                      ? `${slots.filter(slot => isSlotBooked(slot.id!)).length} booking${slots.filter(slot => isSlotBooked(slot.id!)).length === 1 ? '' : 's'}`
+                      : `${slots.length} time slot${slots.length === 1 ? '' : 's'} available`
+                    }
                   </p>
                   <Button 
                     variant="outline" 
@@ -397,6 +442,7 @@ const AvailabilityManager = () => {
                 
                 <div className="space-y-3">
                   {slots
+                    .filter(slot => showBookingsOnly ? isSlotBooked(slot.id!) : true)
                     .sort((a, b) => new Date(a.date + ' ' + a.start_time).getTime() - new Date(b.date + ' ' + b.start_time).getTime())
                     .map((slot) => (
                       <Card key={slot.id} className="hover:shadow-md transition-shadow">
@@ -419,18 +465,34 @@ const AvailabilityManager = () => {
                                   </div>
                                 </div>
                                 <div className="flex flex-col sm:items-end gap-2">
-                                  <Badge variant="secondary">
-                                    {slot.service_type === 'both' ? 'In-person & Remote' :
-                                     slot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only'}
-                                  </Badge>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => selectDate(new Date(slot.date))}
-                                    className="text-xs"
-                                  >
-                                    Edit Day
-                                  </Button>
+                                  <div className="flex flex-col gap-1">
+                                    <Badge variant={isSlotBooked(slot.id!) ? "default" : "secondary"}>
+                                      {isSlotBooked(slot.id!) ? '🔵 Booked' : '🟢 Available'}
+                                    </Badge>
+                                    <Badge variant="outline" className="text-xs">
+                                      {slot.service_type === 'both' ? 'In-person & Remote' :
+                                       slot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only'}
+                                    </Badge>
+                                  </div>
+                                  <div className="flex gap-1">
+                                    <Button
+                                      variant={isSlotBooked(slot.id!) ? "default" : "outline"}
+                                      size="sm"
+                                      onClick={() => toggleSlotBooking(slot.id!)}
+                                      className="text-xs"
+                                    >
+                                      <CheckCircle className="w-3 h-3 mr-1" />
+                                      {isSlotBooked(slot.id!) ? 'Booked' : 'Mark Booked'}
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => selectDate(new Date(slot.date))}
+                                      className="text-xs"
+                                    >
+                                      Edit Day
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
                               {slot.notes && (
@@ -572,14 +634,28 @@ const AvailabilityManager = () => {
                           <div className="font-medium">
                             {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
                           </div>
-                          <Badge variant="secondary" className="mt-1">
-                            {slot.service_type === 'both' ? 'In-person & Remote' :
-                             slot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only'}
-                          </Badge>
+                          <div className="flex gap-2 mt-1">
+                            <Badge variant={isSlotBooked(slot.id!) ? "default" : "secondary"}>
+                              {isSlotBooked(slot.id!) ? '🔵 Booked' : '🟢 Available'}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {slot.service_type === 'both' ? 'In-person & Remote' :
+                               slot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only'}
+                            </Badge>
+                          </div>
                           {slot.notes && (
                             <p className="text-sm text-muted-foreground mt-1">{slot.notes}</p>
                           )}
                         </div>
+                        <Button
+                          variant={isSlotBooked(slot.id!) ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => toggleSlotBooking(slot.id!)}
+                          className="text-xs mr-2"
+                        >
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          {isSlotBooked(slot.id!) ? 'Booked' : 'Mark Booked'}
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
