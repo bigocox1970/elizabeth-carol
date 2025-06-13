@@ -47,19 +47,19 @@ export const createNewsletterTemplate = ({
         .white-bg { background-color: #ffffff; }
         .dark-bg { background-color: #1f2937; }
         
-        .purple-text { color: #6b21a8; }
+        .purple-text { color: #374151; }
         .white-text { color: #ffffff; }
         .gray-text { color: #374151; }
         .light-gray-text { color: #9ca3af; }
         
         /* Button styling */
         .btn {
-            background-color: #6b21a8;
+            background-color: #1f2937;
             color: #ffffff;
             text-decoration: none;
             padding: 12px 24px;
             font-weight: bold;
-            border: 2px solid #6b21a8;
+            border: 2px solid #1f2937;
             display: inline-block;
         }
     </style>
@@ -100,7 +100,7 @@ export const createNewsletterTemplate = ({
                             <td align="left" valign="top" style="background-color: #ffffff; padding: 40px 30px;">
                                 <table border="0" cellpadding="0" cellspacing="0" width="100%">
                                     <tr>
-                                        <td style="color: #6b21a8; font-size: 24px; font-weight: bold; padding-bottom: 20px;">
+                                        <td style="color: #374151; font-size: 24px; font-weight: bold; padding-bottom: 20px;">
                                             Hello ${subscriberName},
                                         </td>
                                     </tr>
@@ -111,7 +111,7 @@ export const createNewsletterTemplate = ({
                                     </tr>
                                     <tr>
                                         <td align="center" style="padding: 20px 0;">
-                                            <a href="${websiteUrl}/contact" class="btn" style="background-color: #6b21a8; color: #ffffff; text-decoration: none; padding: 15px 30px; font-weight: bold; border: 2px solid #6b21a8; display: inline-block;">
+                                            <a href="${websiteUrl}/contact" class="btn" style="background-color: #1f2937; color: #ffffff; text-decoration: none; padding: 15px 30px; font-weight: bold; border: 2px solid #1f2937; display: inline-block;">
                                                 📞 Book Your Reading
                                             </a>
                                         </td>
