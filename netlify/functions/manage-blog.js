@@ -1,9 +1,13 @@
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const { getUserFromToken, isAdmin } = require('./utils/auth');
 
 exports.handler = async (event, context) => {
   const { httpMethod } = event;
   const { action, postId, postData, commentId, commentData } = JSON.parse(event.body || '{}');
+
+  // Declare token variable at function scope
+  let token = null;
 
   // Only require auth for write operations
   if (['create', 'update', 'delete'].includes(action)) {
@@ -17,19 +21,11 @@ exports.handler = async (event, context) => {
     }
 
     // Extract the token from the Bearer header
-    const token = authHeader.replace('Bearer ', '');
+    token = authHeader.replace('Bearer ', '');
 
     try {
-      // First, get the user ID from the token
-      const userResponse = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!userResponse.ok) {
-        console.error('Failed to get user info:', await userResponse.text());
+      const userData = await getUserFromToken(token);
+      if (!userData) {
         return {
           statusCode: 401,
           headers: { "Access-Control-Allow-Origin": "*" },
@@ -37,30 +33,8 @@ exports.handler = async (event, context) => {
         };
       }
 
-      const userData = await userResponse.json();
-      console.log('User data:', userData);
-
-      // Verify the user is an admin
-      const isAdminResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ user_id: userData.id })
-      });
-
-      if (!isAdminResponse.ok) {
-        return {
-          statusCode: 401,
-          headers: { "Access-Control-Allow-Origin": "*" },
-          body: JSON.stringify({ message: 'Unauthorized' })
-        };
-      }
-
-      const isAdmin = await isAdminResponse.json();
-      if (!isAdmin) {
+      const adminStatus = await isAdmin(userData.id, token);
+      if (!adminStatus) {
         return {
           statusCode: 401,
           headers: { "Access-Control-Allow-Origin": "*" },
@@ -131,7 +105,7 @@ exports.handler = async (event, context) => {
           })
         };
       } catch (error) {
-        console.error('Error getting all posts:', error);
+        console.error('Error fetching all posts:', error);
         return {
           statusCode: 500,
           headers: { "Access-Control-Allow-Origin": "*" },
@@ -338,54 +312,79 @@ exports.handler = async (event, context) => {
       };
 
     case 'update':
-      // Update an existing post
-      const updateResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?id=eq.${postId}`, {
-        method: 'PATCH',
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify({
-          title: postData.title,
-          content: postData.content,
-          excerpt: postData.excerpt || postData.content.substring(0, 200) + '...',
-          category: postData.category,
-          published: postData.published,
-          image_url: postData.image_url
-        })
-      });
+      try {
+        console.log('Updating post:', postId);
+        console.log('Update data:', JSON.stringify(postData, null, 2));
+        
+        // Update an existing post
+        const updateResponse = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?id=eq.${postId}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify({
+            title: postData.title,
+            content: postData.content,
+            excerpt: postData.excerpt || postData.content.substring(0, 200) + '...',
+            category: postData.category,
+            published: postData.published,
+            image_url: postData.image_url
+          })
+        });
 
-      if (!updateResponse.ok) {
-        throw new Error(`Failed to update post: ${updateResponse.status}`);
+        console.log('Update response status:', updateResponse.status);
+        
+        if (!updateResponse.ok) {
+          const errorText = await updateResponse.text();
+          console.error('Update response error:', errorText);
+          throw new Error(`Failed to update post: ${updateResponse.status} - ${errorText}`);
+        }
+
+        const updatedPosts = await updateResponse.json();
+        console.log('Updated post response:', JSON.stringify(updatedPosts, null, 2));
+        
+        if (!updatedPosts || updatedPosts.length === 0) {
+          throw new Error('No post was returned after update');
+        }
+        
+        const updatedPost = updatedPosts[0];
+        
+        // Format post for frontend
+        const formattedUpdatedPost = {
+          id: updatedPost.id.toString(),
+          title: updatedPost.title,
+          content: updatedPost.content,
+          excerpt: updatedPost.excerpt,
+          category: updatedPost.category,
+          published: updatedPost.published,
+          createdAt: updatedPost.created_at,
+          updatedAt: updatedPost.updated_at,
+          author: updatedPost.author,
+          image_url: updatedPost.image_url
+        };
+
+        return {
+          statusCode: 200,
+          headers: { "Access-Control-Allow-Origin": "*" },
+          body: JSON.stringify({ 
+            message: 'Post updated successfully',
+            post: formattedUpdatedPost
+          })
+        };
+      } catch (error) {
+        console.error('Error updating post:', error);
+        return {
+          statusCode: 500,
+          headers: { "Access-Control-Allow-Origin": "*" },
+          body: JSON.stringify({ 
+            message: 'Failed to update post',
+            error: error.message
+          })
+        };
       }
-
-      const updatedPosts = await updateResponse.json();
-      const updatedPost = updatedPosts[0];
-      
-      // Format post for frontend
-      const formattedUpdatedPost = {
-        id: updatedPost.id.toString(),
-        title: updatedPost.title,
-        content: updatedPost.content,
-        excerpt: updatedPost.excerpt,
-        category: updatedPost.category,
-        published: updatedPost.published,
-        createdAt: updatedPost.created_at,
-        updatedAt: updatedPost.updated_at,
-        author: updatedPost.author,
-        image_url: updatedPost.image_url
-      };
-
-      return {
-        statusCode: 200,
-        headers: { "Access-Control-Allow-Origin": "*" },
-        body: JSON.stringify({ 
-          message: 'Post updated successfully',
-          post: formattedUpdatedPost
-        })
-      };
 
     case 'delete':
       // Delete a post
