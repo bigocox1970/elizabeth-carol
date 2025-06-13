@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Users, RefreshCw, Trash2, Mail, CheckSquare, Square, Edit } from "lucide-react";
+import { Users, RefreshCw, Trash2, Mail, Edit, UserX } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getApiUrl } from "@/utils/api";
 
@@ -63,37 +63,6 @@ const SubscribersList = () => {
     }
   };
 
-  const handleDeleteSubscriber = async (subscriberId: string) => {
-    if (!session) return;
-    if (!confirm('Are you sure you want to delete this subscriber?')) return;
-
-    try {
-      const response = await fetch(getApiUrl('manage-subscribers'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({
-          action: 'delete-subscriber',
-          subscriberId: subscriberId
-        }),
-      });
-
-      if (response.ok) {
-        loadSubscribers();
-        // Remove from selected if it was selected
-        const newSelected = new Set(selectedSubscribers);
-        newSelected.delete(subscriberId);
-        setSelectedSubscribers(newSelected);
-      } else {
-        alert('Failed to delete subscriber.');
-      }
-    } catch (error) {
-      alert('Failed to delete subscriber. Please try again.');
-    }
-  };
-
   const handleDeleteSelected = async () => {
     if (selectedSubscribers.size === 0) return;
     
@@ -114,6 +83,34 @@ const SubscribersList = () => {
         });
       } catch (error) {
         console.error(`Failed to delete subscriber ${subscriberId}:`, error);
+      }
+    }
+    
+    setSelectedSubscribers(new Set());
+    loadSubscribers();
+  };
+
+  const handleSuspendSelected = async () => {
+    if (selectedSubscribers.size === 0) return;
+    
+    if (!confirm(`Are you sure you want to suspend ${selectedSubscribers.size} selected subscribers?`)) return;
+
+    for (const subscriberId of selectedSubscribers) {
+      try {
+        await fetch(getApiUrl('manage-subscribers'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({
+            action: 'update-subscriber',
+            subscriberId: subscriberId,
+            active: false
+          }),
+        });
+      } catch (error) {
+        console.error(`Failed to suspend subscriber ${subscriberId}:`, error);
       }
     }
     
@@ -155,17 +152,27 @@ const SubscribersList = () => {
               onClick={() => setIsEditMode(!isEditMode)}
               variant={isEditMode ? "default" : "outline"}
               size="sm"
+              className="h-8 w-8 p-0"
+              title={isEditMode ? 'Done editing' : 'Edit subscribers'}
             >
-              <Edit className="w-4 h-4 mr-2" />
-              {isEditMode ? 'Done' : 'Edit'}
+              <Edit className="w-4 h-4" />
             </Button>
             
-            {/* Show selected count and delete button when in edit mode with selections */}
+            {/* Show action buttons when in edit mode with selections */}
             {isEditMode && selectedSubscribers.size > 0 && (
               <>
                 <Badge variant="secondary">
-                  {selectedSubscribers.size} selected
+                  {selectedSubscribers.size}
                 </Badge>
+                <Button
+                  onClick={handleSuspendSelected}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  title={`Suspend ${selectedSubscribers.size} selected subscribers`}
+                >
+                  <UserX className="w-4 h-4" />
+                </Button>
                 <Button
                   onClick={handleDeleteSelected}
                   variant="destructive"
@@ -191,23 +198,21 @@ const SubscribersList = () => {
             No subscribers yet
           </p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {/* Select All - Only show in edit mode */}
             {isEditMode && (
-              <div className="flex items-center space-x-2 p-3 bg-secondary/10 rounded-lg border">
+              <div className="flex items-center space-x-2 p-2 bg-secondary/10 rounded border">
                 <Checkbox
                   checked={selectedSubscribers.size === subscribers.length && subscribers.length > 0}
                   onCheckedChange={toggleAll}
                 />
-                <span className="text-sm font-medium">
-                  Select All ({subscribers.length})
-                </span>
+                <span className="text-sm">Select All</span>
               </div>
             )}
 
             {/* Subscribers List */}
             {subscribers.map((subscriber) => (
-              <div key={subscriber.id} className="flex items-center space-x-3 p-3 bg-secondary/20 rounded-lg">
+              <div key={subscriber.id} className="flex items-center space-x-3 p-3 bg-secondary/20 rounded">
                 {/* Checkbox - Only show in edit mode */}
                 {isEditMode && (
                   <Checkbox
@@ -217,38 +222,11 @@ const SubscribersList = () => {
                 )}
                 
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{subscriber.name || 'No name'}</p>
-                      <p className="text-xs text-muted-foreground truncate">{subscriber.email}</p>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2 ml-4">
-                      <Badge variant={subscriber.source === 'contact_form' ? 'default' : 'secondary'} className="text-xs">
-                        {subscriber.source === 'contact_form' ? 'Contact' : 'Newsletter'}
-                      </Badge>
-                      
-                      <Badge variant={subscriber.active ? 'default' : 'outline'} className="text-xs">
-                        {subscriber.active ? 'Active' : 'Inactive'}
-                      </Badge>
-                      
-                      <Button
-                        onClick={() => handleDeleteSubscriber(subscriber.id)}
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                        title="Delete subscriber"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {subscriber.dateAdded && (
-                    <p className="text-xs text-muted-foreground">
-                      Added: {new Date(subscriber.dateAdded).toLocaleDateString()}
-                    </p>
-                  )}
+                  <p className="font-medium text-sm truncate">
+                    {subscriber.name || 'No name'}
+                    {!subscriber.active && <span className="text-muted-foreground ml-2">(Suspended)</span>}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">{subscriber.email}</p>
                 </div>
               </div>
             ))}
