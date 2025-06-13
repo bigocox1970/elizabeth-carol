@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Trash2, RefreshCw, Check, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getApiUrl } from "@/utils/api";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Comment {
   id: string;
@@ -15,12 +16,15 @@ interface Comment {
   postTitle: string;
   approved: boolean;
   createdAt: string;
+  userId: string;
 }
 
 const CommentsList = () => {
   const { session } = useAuth();
+  const { toast } = useToast();
   const [comments, setComments] = useState<Comment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingActions, setLoadingActions] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (session) {
@@ -44,12 +48,20 @@ const CommentsList = () => {
         }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setComments(data.comments || []);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to load comments');
       }
+
+      const data = await response.json();
+      setComments(data.comments || []);
     } catch (error) {
       console.error('Failed to load comments:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'Failed to load comments',
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -58,6 +70,7 @@ const CommentsList = () => {
   const handleApproveComment = async (commentId: string, approve: boolean) => {
     if (!session) return;
 
+    setLoadingActions(prev => ({ ...prev, [commentId]: true }));
     try {
       const response = await fetch(getApiUrl('manage-comments'), {
         method: 'POST',
@@ -71,13 +84,25 @@ const CommentsList = () => {
         }),
       });
 
-      if (response.ok) {
-        loadComments();
-      } else {
-        alert('Failed to update comment.');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update comment');
       }
+
+      await loadComments();
+      toast({
+        title: "Success",
+        description: `Comment ${approve ? 'approved' : 'unapproved'} successfully`,
+      });
     } catch (error) {
-      alert('Failed to update comment. Please try again.');
+      console.error('Failed to update comment:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'Failed to update comment',
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingActions(prev => ({ ...prev, [commentId]: false }));
     }
   };
 
@@ -85,6 +110,7 @@ const CommentsList = () => {
     if (!session) return;
     if (!confirm('Are you sure you want to delete this comment?')) return;
 
+    setLoadingActions(prev => ({ ...prev, [commentId]: true }));
     try {
       const response = await fetch(getApiUrl('manage-comments'), {
         method: 'POST',
@@ -98,13 +124,25 @@ const CommentsList = () => {
         }),
       });
 
-      if (response.ok) {
-        loadComments();
-      } else {
-        alert('Failed to delete comment.');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete comment');
       }
+
+      await loadComments();
+      toast({
+        title: "Success",
+        description: "Comment deleted successfully",
+      });
     } catch (error) {
-      alert('Failed to delete comment. Please try again.');
+      console.error('Failed to delete comment:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'Failed to delete comment',
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingActions(prev => ({ ...prev, [commentId]: false }));
     }
   };
 
@@ -149,8 +187,13 @@ const CommentsList = () => {
                         size="sm" 
                         onClick={() => handleApproveComment(comment.id, true)}
                         className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
+                        disabled={loadingActions[comment.id]}
                       >
-                        <Check className="h-4 w-4" />
+                        {loadingActions[comment.id] ? (
+                          <RefreshCw className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Check className="h-4 w-4" />
+                        )}
                       </Button>
                     )}
                     {comment.approved && (
@@ -159,8 +202,13 @@ const CommentsList = () => {
                         size="sm" 
                         onClick={() => handleApproveComment(comment.id, false)}
                         className="h-8 w-8 p-0 text-amber-600 hover:text-amber-700"
+                        disabled={loadingActions[comment.id]}
                       >
-                        <X className="h-4 w-4" />
+                        {loadingActions[comment.id] ? (
+                          <RefreshCw className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <X className="h-4 w-4" />
+                        )}
                       </Button>
                     )}
                     <Button 
@@ -168,8 +216,13 @@ const CommentsList = () => {
                       size="sm" 
                       onClick={() => handleDeleteComment(comment.id)}
                       className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                      disabled={loadingActions[comment.id]}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      {loadingActions[comment.id] ? (
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -198,6 +251,7 @@ const CommentsList = () => {
           variant="outline"
           size="sm"
           className="w-full mt-4"
+          disabled={isLoading}
         >
           <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
           Refresh List
