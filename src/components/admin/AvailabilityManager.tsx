@@ -398,17 +398,24 @@ const AvailabilityManager = () => {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="font-medium">Your Times for This Day</h4>
-                    {selectedSlots.length > 0 && (
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => setShowCopyModal(true)}
-                        className="flex items-center gap-2"
-                      >
-                        <Copy className="w-4 h-4" />
-                        Copy Selected ({selectedSlots.length})
-                      </Button>
-                    )}
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        if (selectedSlots.length === 0) {
+                          toast.error('Please select time slots first by ticking the checkboxes');
+                          return;
+                        }
+                        setShowCopyModal(true);
+                      }}
+                      className="flex items-center gap-2"
+                    >
+                      <Copy className="w-4 h-4" />
+                      {selectedSlots.length > 0 ? `Copy Selected (${selectedSlots.length})` : 'Copy Times'}
+                    </Button>
+                  </div>
+                  <div className="text-sm text-muted-foreground bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                    💡 <strong>Tip:</strong> Tick the checkboxes next to time slots, then click "Copy Times" to duplicate them to other days
                   </div>
                   <div className="space-y-2">
                     {getSlotsForDate(new Date(selectedDate)).map((slot) => (
