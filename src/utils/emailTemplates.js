@@ -41,25 +41,25 @@ export const createNewsletterTemplate = ({
             mso-table-rspace: 0pt;
         }
         
-        /* Colors for easy reuse */
-        .purple-bg { background-color: #4c1d95; }
+        /* Colors for easy reuse - Elizabeth Carol brand colors */
+        .purple-bg { background-color: #6b21a8; }
         .light-purple-bg { background-color: #f3e8ff; }
         .white-bg { background-color: #ffffff; }
         .dark-bg { background-color: #1f2937; }
         
-        .purple-text { color: #4c1d95; }
+        .purple-text { color: #6b21a8; }
         .white-text { color: #ffffff; }
         .gray-text { color: #374151; }
         .light-gray-text { color: #9ca3af; }
         
         /* Button styling */
         .btn {
-            background-color: #7c3aed;
+            background-color: #6b21a8;
             color: #ffffff;
             text-decoration: none;
             padding: 12px 24px;
             font-weight: bold;
-            border: 2px solid #4c1d95;
+            border: 2px solid #6b21a8;
             display: inline-block;
         }
     </style>
@@ -100,7 +100,7 @@ export const createNewsletterTemplate = ({
                             <td align="left" valign="top" style="background-color: #ffffff; padding: 40px 30px;">
                                 <table border="0" cellpadding="0" cellspacing="0" width="100%">
                                     <tr>
-                                        <td style="color: #4c1d95; font-size: 24px; font-weight: bold; padding-bottom: 20px;">
+                                        <td style="color: #6b21a8; font-size: 24px; font-weight: bold; padding-bottom: 20px;">
                                             Hello ${subscriberName},
                                         </td>
                                     </tr>
@@ -111,7 +111,7 @@ export const createNewsletterTemplate = ({
                                     </tr>
                                     <tr>
                                         <td align="center" style="padding: 20px 0;">
-                                            <a href="${websiteUrl}/contact" class="btn" style="background-color: #7c3aed; color: #ffffff; text-decoration: none; padding: 15px 30px; font-weight: bold; border: 2px solid #4c1d95; display: inline-block;">
+                                            <a href="${websiteUrl}/contact" class="btn" style="background-color: #6b21a8; color: #ffffff; text-decoration: none; padding: 15px 30px; font-weight: bold; border: 2px solid #6b21a8; display: inline-block;">
                                                 📞 Book Your Reading
                                             </a>
                                         </td>
@@ -246,7 +246,7 @@ export const createContactEnquiryTemplate = ({
         }
         .enquiry-box { 
             background: #f8fafc; 
-            border-left: 4px solid #7c3aed; 
+            border-left: 4px solid #6b21a8; 
             padding: 20px; 
             margin: 20px 0; 
             border-radius: 8px;
@@ -259,7 +259,7 @@ export const createContactEnquiryTemplate = ({
         }
         .label { 
             font-weight: bold; 
-            color: #4c1d95; 
+            color: #6b21a8; 
             margin-bottom: 5px;
         }
         .value { 
@@ -290,7 +290,7 @@ export const createContactEnquiryTemplate = ({
             display: inline-block;
             margin: 0 10px;
             padding: 10px 20px;
-            background: #7c3aed;
+            background: #6b21a8;
             color: white;
             text-decoration: none;
             border-radius: 6px;
@@ -311,11 +311,11 @@ export const createContactEnquiryTemplate = ({
                 <div class="value">${customerName}</div>
                 
                 <div class="label">Email Address:</div>
-                <div class="value"><a href="mailto:${customerEmail}" style="color: #7c3aed;">${customerEmail}</a></div>
+                <div class="value"><a href="mailto:${customerEmail}" style="color: #6b21a8;">${customerEmail}</a></div>
                 
                 ${customerPhone ? `
                 <div class="label">Phone Number:</div>
-                <div class="value"><a href="tel:${customerPhone}" style="color: #7c3aed;">${customerPhone}</a></div>
+                <div class="value"><a href="tel:${customerPhone}" style="color: #6b21a8;">${customerPhone}</a></div>
                 ` : ''}
                 
                 ${service ? `
@@ -407,7 +407,7 @@ export const createCustomerConfirmationTemplate = ({
         }
         .message-summary { 
             background: #f8fafc; 
-            border-left: 4px solid #7c3aed; 
+            border-left: 4px solid #6b21a8; 
             padding: 20px; 
             margin: 25px 0; 
             border-radius: 8px;
@@ -418,7 +418,7 @@ export const createCustomerConfirmationTemplate = ({
         }
         .cta-button {
             display: inline-block;
-            background: linear-gradient(135deg, #7c3aed, #4c1d95);
+            background: #6b21a8;
             color: white;
             text-decoration: none;
             padding: 15px 30px;
@@ -447,7 +447,7 @@ export const createCustomerConfirmationTemplate = ({
             <p>Thank you for reaching out through my website. I've received your message and wanted to confirm that it came through successfully. I'm honored that you're considering me for your spiritual guidance.</p>
             
             <div class="message-summary">
-                <h3 style="color: #4c1d95; margin-top: 0;">Your Message Details:</h3>
+                <h3 style="color: #6b21a8; margin-top: 0;">Your Message Details:</h3>
                 <p><strong>Name:</strong> ${customerName}</p>
                 <p><strong>Email:</strong> ${customerEmail}</p>
                 ${customerPhone ? `<p><strong>Phone:</strong> ${customerPhone}</p>` : ''}
