@@ -5,11 +5,16 @@ import Footer from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, User, ArrowRight, MessageCircle, Star } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar, User, ArrowRight, MessageCircle, Star, Search, Filter } from "lucide-react";
+import { getCategoryStyle } from "@/utils/blogCategories";
 
 const Blog = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     loadPosts();
@@ -51,6 +56,23 @@ const Blog = () => {
     return `${readTime} min read`;
   };
 
+  // Get unique categories from posts
+  const getCategories = () => {
+    const categories = [...new Set(posts.map(post => post.category))];
+    return categories.sort();
+  };
+
+  // Filter posts based on category and search term
+  const filteredPosts = posts.filter(post => {
+    const matchesCategory = selectedCategory === "all" || post.category === selectedCategory;
+    const matchesSearch = searchTerm === "" || 
+      post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      post.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      post.category.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    return matchesCategory && matchesSearch;
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -89,6 +111,52 @@ const Blog = () => {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
+            
+            {/* Filters and Search */}
+            {posts.length > 0 && (
+              <div className="mb-12">
+                <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+                  <div className="flex flex-col sm:flex-row gap-4 flex-1">
+                    {/* Search */}
+                    <div className="relative flex-1 max-w-md">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                      <Input
+                        placeholder="Search posts..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    
+                    {/* Category Filter */}
+                    <div className="flex items-center space-x-2">
+                      <Filter className="w-4 h-4 text-muted-foreground" />
+                      <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                        <SelectTrigger className="w-48">
+                          <SelectValue placeholder="Filter by category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Categories</SelectItem>
+                          {getCategories().map((category) => (
+                            <SelectItem key={category} value={category}>
+                              {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  {/* Results count */}
+                  <div className="text-sm text-muted-foreground">
+                    {filteredPosts.length} {filteredPosts.length === 1 ? 'post' : 'posts'} 
+                    {selectedCategory !== "all" && ` in ${selectedCategory}`}
+                    {searchTerm && ` matching "${searchTerm}"`}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {posts.length === 0 ? (
               <div className="text-center py-16">
                 <h3 className="text-2xl font-semibold text-foreground mb-4">
@@ -101,12 +169,41 @@ const Blog = () => {
                 <Link to="/contact">
                   <Button className="bg-gradient-to-r from-purple-900 to-black hover:from-black hover:to-gray-900 text-white">
                     Subscribe for Updates
-              </Button>
+                  </Button>
                 </Link>
-          </div>
+              </div>
+            ) : filteredPosts.length === 0 ? (
+              <div className="text-center py-16">
+                <h3 className="text-2xl font-semibold text-foreground mb-4">
+                  No Posts Found
+                </h3>
+                <p className="text-muted-foreground mb-8">
+                  {searchTerm || selectedCategory !== "all" 
+                    ? "Try adjusting your search or filter criteria." 
+                    : "No posts match your current selection."}
+                </p>
+                <div className="flex gap-2 justify-center">
+                  {searchTerm && (
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setSearchTerm("")}
+                    >
+                      Clear Search
+                    </Button>
+                  )}
+                  {selectedCategory !== "all" && (
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setSelectedCategory("all")}
+                    >
+                      Show All Categories
+                    </Button>
+                  )}
+                </div>
+              </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {posts.map((post) => (
+                {filteredPosts.map((post) => (
                   <Link key={post.id} to={`/blog/${post.id}`} className="block">
                     <Card className="flex flex-col h-96 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 group cursor-pointer">
                       {post.image_url && (
@@ -126,7 +223,11 @@ const Blog = () => {
                       )}
                       <CardHeader className="flex-none">
                         <div className="flex items-center justify-between mb-2">
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge 
+                            variant="secondary" 
+                            className={`text-xs ${getCategoryStyle(post.category).bgColor} ${getCategoryStyle(post.category).color} border-0`}
+                          >
+                            <span className="mr-1">{getCategoryStyle(post.category).icon}</span>
                             {post.category}
                           </Badge>
                           <div className="flex items-center text-xs text-muted-foreground">
@@ -173,7 +274,7 @@ const Blog = () => {
                     </Card>
                   </Link>
                 ))}
-          </div>
+              </div>
             )}
           </div>
         </div>

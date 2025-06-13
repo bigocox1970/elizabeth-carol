@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, User, ArrowLeft, Star, MessageCircle, Send, LogIn } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import SocialShare from "@/components/SocialShare";
+import { getCategoryStyle } from "@/utils/blogCategories";
 
 const BlogPost = () => {
   const { postId } = useParams();
@@ -189,7 +191,13 @@ const BlogPost = () => {
             {/* Header */}
             <header className="mb-8">
               <div className="flex items-center space-x-4 mb-4">
-                <Badge variant="secondary">{post.category}</Badge>
+                <Badge 
+                  variant="secondary" 
+                  className={`${getCategoryStyle(post.category).bgColor} ${getCategoryStyle(post.category).color} border-0`}
+                >
+                  <span className="mr-1">{getCategoryStyle(post.category).icon}</span>
+                  {post.category}
+                </Badge>
                 <div className="flex items-center text-sm text-muted-foreground">
                   <Calendar className="w-4 h-4 mr-1" />
                   {formatDate(post.createdAt)}
@@ -233,10 +241,22 @@ const BlogPost = () => {
             )}
 
             {/* Content */}
-            <div className="prose prose-lg max-w-none mb-12">
+            <div className="prose prose-lg max-w-none mb-8">
               <div className="text-foreground leading-relaxed whitespace-pre-wrap">
                 {post.content}
               </div>
+            </div>
+
+            {/* Social Share */}
+            <div className="mb-12">
+                          <SocialShare 
+              url={window.location.href}
+              title={post.title}
+              excerpt={post.excerpt}
+              shareTitle="Share This Post"
+              variant="card"
+              size="lg"
+            />
             </div>
 
             {/* Reviews Section */}

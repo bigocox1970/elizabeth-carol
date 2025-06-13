@@ -9,6 +9,7 @@ import { Star, Quote, Phone, MapPin, Heart, Users, Award } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { getApiUrl } from "@/utils/api";
+import SocialShare from "@/components/SocialShare";
 
 interface Testimonial {
   id: number | string;
@@ -266,6 +267,29 @@ const Index = () => {
                 </Button>
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Social Share Section */}
+      <section className="py-16 bg-secondary/20">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-2xl md:text-3xl font-serif font-bold text-foreground mb-4">
+              Share Elizabeth's Spiritual Services
+            </h2>
+            <p className="text-muted-foreground mb-8">
+              Help others discover healing and guidance by sharing Elizabeth's services with friends and family.
+            </p>
+            
+            <SocialShare 
+              url={window.location.href}
+              title="Elizabeth Carol - Oxford's Trusted Psychic Medium & Clairvoyant"
+              excerpt="35+ years of spiritual guidance in Oxford. Psychic readings, mediumship, tarot, and healing services. Book your reading with Elizabeth Carol today."
+              variant="default"
+              size="lg"
+              className="justify-center"
+            />
           </div>
         </div>
       </section>

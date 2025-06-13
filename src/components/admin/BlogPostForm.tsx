@@ -5,10 +5,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { FileText, Save, Upload, X, Image, Camera, Sparkles, Loader2, Plus } from "lucide-react";
+import { FileText, Save, Upload, X, Image, Camera, Sparkles, Loader2, Plus, CheckSquare, AlertTriangle } from "lucide-react";
 import { getApiUrl } from "@/utils/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { BLOG_CATEGORIES } from "@/utils/blogCategories";
 
 interface BlogPostFormProps {
   editingPost: string | null;
@@ -31,6 +33,8 @@ const BlogPostForm = ({ editingPost, onPostSaved, onCancelEdit }: BlogPostFormPr
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [blogMessage, setBlogMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [spellCheckEnabled, setSpellCheckEnabled] = useState(true);
+  const [spellCheckWarnings, setSpellCheckWarnings] = useState<string[]>([]);
   
   // AI Generation states
   const [showAiDialog, setShowAiDialog] = useState(false);
@@ -42,6 +46,49 @@ const BlogPostForm = ({ editingPost, onPostSaved, onCancelEdit }: BlogPostFormPr
   // Image generation states
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [imageGenMessage, setImageGenMessage] = useState('');
+
+  // Simple spell check function (basic word validation)
+  const checkSpelling = (text: string): string[] => {
+    const warnings: string[] = [];
+    
+    // Common spelling mistakes for spiritual/psychic content
+    const commonMistakes = {
+      'spirital': 'spiritual',
+      'psycic': 'psychic',
+      'meduim': 'medium',
+      'tarot': 'tarot', // Often misspelled as 'tarrott'
+      'clairvoyance': 'clairvoyance', // Often misspelled as 'clairvoyence'
+      'recieve': 'receive',
+      'beleive': 'believe',
+      'seperate': 'separate',
+      'occured': 'occurred',
+      'alot': 'a lot',
+      'untill': 'until',
+      'thier': 'their',
+      'freind': 'friend'
+    };
+    
+    const words = text.toLowerCase().split(/\s+/);
+    
+    words.forEach(word => {
+      const cleanWord = word.replace(/[^\w]/g, '');
+      if (commonMistakes[cleanWord]) {
+        warnings.push(`Did you mean "${commonMistakes[cleanWord]}" instead of "${cleanWord}"?`);
+      }
+    });
+    
+    return warnings;
+  };
+
+  // Auto spell check on content change
+  useEffect(() => {
+    if (blogData.content && spellCheckEnabled) {
+      const warnings = checkSpelling(blogData.content + ' ' + blogData.title + ' ' + blogData.excerpt);
+      setSpellCheckWarnings(warnings);
+    } else {
+      setSpellCheckWarnings([]);
+    }
+  }, [blogData.content, blogData.title, blogData.excerpt, spellCheckEnabled]);
 
   // Load post data when editing
   useEffect(() => {
@@ -441,12 +488,25 @@ const BlogPostForm = ({ editingPost, onPostSaved, onCancelEdit }: BlogPostFormPr
         <form onSubmit={editingPost ? handleUpdatePost : handleCreatePost} className="space-y-6">
           <div className="space-y-4">
             <div>
-              <Label htmlFor="title">Title</Label>
+              <div className="flex justify-between items-center">
+                <Label htmlFor="title">Title</Label>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="spell-check"
+                    checked={spellCheckEnabled}
+                    onCheckedChange={setSpellCheckEnabled}
+                  />
+                  <Label htmlFor="spell-check" className="text-sm text-muted-foreground">
+                    Spell Check
+                  </Label>
+                </div>
+              </div>
               <Input
                 id="title"
                 value={blogData.title}
                 onChange={(e) => setBlogData(prev => ({ ...prev, title: e.target.value }))}
                 placeholder="Enter blog post title"
+                spellCheck={spellCheckEnabled}
                 required
               />
             </div>
@@ -517,6 +577,7 @@ const BlogPostForm = ({ editingPost, onPostSaved, onCancelEdit }: BlogPostFormPr
                 onChange={(e) => setBlogData(prev => ({ ...prev, excerpt: e.target.value }))}
                 placeholder="Enter a brief excerpt"
                 className="h-20"
+                spellCheck={spellCheckEnabled}
               />
             </div>
 
@@ -598,18 +659,45 @@ const BlogPostForm = ({ editingPost, onPostSaved, onCancelEdit }: BlogPostFormPr
                 onChange={(e) => setBlogData(prev => ({ ...prev, content: e.target.value }))}
                 placeholder="Write your blog post content here"
                 className="h-64"
+                spellCheck={spellCheckEnabled}
                 required
               />
+              
+              {spellCheckWarnings.length > 0 && (
+                <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                    <span className="text-sm font-medium text-yellow-800">Spelling Suggestions</span>
+                  </div>
+                  <ul className="text-sm text-yellow-700 space-y-1">
+                    {spellCheckWarnings.slice(0, 5).map((warning, index) => (
+                      <li key={index}>• {warning}</li>
+                    ))}
+                    {spellCheckWarnings.length > 5 && (
+                      <li className="text-yellow-600">... and {spellCheckWarnings.length - 5} more suggestions</li>
+                    )}
+                  </ul>
+                </div>
+              )}
             </div>
 
             <div>
               <Label htmlFor="category">Category</Label>
-              <Input
-                id="category"
+              <Select
                 value={blogData.category}
-                onChange={(e) => setBlogData(prev => ({ ...prev, category: e.target.value }))}
-                placeholder="Enter category"
-              />
+                onValueChange={(value) => setBlogData(prev => ({ ...prev, category: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {BLOG_CATEGORIES.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="flex items-center space-x-2">
