@@ -23,279 +23,148 @@ export const createNewsletterTemplate = ({
     <title>${subject}</title>
     <style>
         /* Reset styles */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        /* Email client specific styles */
         body, table, td, p, a, li, blockquote {
             -webkit-text-size-adjust: 100%;
             -ms-text-size-adjust: 100%;
+            margin: 0;
+            padding: 0;
         }
         
-        /* Main container */
-        .email-container {
+        body {
             font-family: 'Georgia', 'Times New Roman', serif;
-            max-width: 600px;
-            margin: 0 auto;
-            background: linear-gradient(135deg, #1e1b4b 0%, #4c1d95 50%, #7c3aed 100%);
-            border-radius: 0;
-            overflow: hidden;
+            background-color: #f8fafc;
         }
         
-        /* Header section */
-        .header {
-            background: linear-gradient(135deg, rgba(30, 27, 75, 0.95), rgba(76, 29, 149, 0.95)), 
-                        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="stars" patternUnits="userSpaceOnUse" width="20" height="20"><circle cx="2" cy="2" r="0.5" fill="rgba(255,255,255,0.3)"/><circle cx="12" cy="8" r="0.3" fill="rgba(255,255,255,0.2)"/><circle cx="18" cy="15" r="0.4" fill="rgba(255,255,255,0.25)"/></pattern></defs><rect width="100" height="100" fill="url(%23stars)"/></svg>');
-            padding: 40px 20px;
-            text-align: center;
-            position: relative;
+        table {
+            border-collapse: collapse;
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
         }
         
-        .logo-container {
-            margin-bottom: 20px;
-        }
+        /* Colors for easy reuse */
+        .purple-bg { background-color: #4c1d95; }
+        .light-purple-bg { background-color: #f3e8ff; }
+        .white-bg { background-color: #ffffff; }
+        .dark-bg { background-color: #1f2937; }
         
-        .logo {
-            max-width: 200px;
-            height: auto;
-        }
+        .purple-text { color: #4c1d95; }
+        .white-text { color: #ffffff; }
+        .gray-text { color: #374151; }
+        .light-gray-text { color: #9ca3af; }
         
-        .header-title {
+        /* Button styling */
+        .btn {
+            background-color: #7c3aed;
             color: #ffffff;
-            font-size: 28px;
+            text-decoration: none;
+            padding: 12px 24px;
             font-weight: bold;
-            margin-bottom: 10px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-        
-        .header-subtitle {
-            color: #e0e7ff;
-            font-size: 16px;
-            font-style: italic;
-        }
-        
-        /* Content section */
-        .content {
-            background: #ffffff;
-            padding: 40px 30px;
-            position: relative;
-        }
-        
-        .greeting {
-            color: #4c1d95;
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-        
-        .content-body {
-            color: #374151;
-            font-size: 16px;
-            line-height: 1.7;
-            margin-bottom: 30px;
-        }
-        
-        .content-body p {
-            margin-bottom: 16px;
-        }
-        
-        .content-body h2 {
-            color: #4c1d95;
-            font-size: 22px;
-            margin: 30px 0 15px 0;
-            border-bottom: 2px solid #e0e7ff;
-            padding-bottom: 10px;
-        }
-        
-        .content-body h3 {
-            color: #6d28d9;
-            font-size: 18px;
-            margin: 25px 0 10px 0;
-        }
-        
-        /* Special sections */
-        .highlight-box {
-            background: linear-gradient(135deg, #f3e8ff, #e0e7ff);
-            border-left: 4px solid #7c3aed;
-            padding: 20px;
-            margin: 25px 0;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .quote-section {
-            background: #faf8ff;
-            border: 1px solid #e0e7ff;
-            border-radius: 12px;
-            padding: 25px;
-            margin: 25px 0;
-            text-align: center;
-            position: relative;
-        }
-        
-        .quote-section::before {
-            content: '"';
-            font-size: 60px;
-            color: #c4b5fd;
-            position: absolute;
-            top: 10px;
-            left: 20px;
-            font-family: serif;
-        }
-        
-        .quote-text {
-            font-style: italic;
-            font-size: 18px;
-            color: #4c1d95;
-            margin: 10px 0;
-        }
-        
-        /* Call to action */
-        .cta-section {
-            text-align: center;
-            margin: 35px 0;
-        }
-        
-        .cta-button {
+            border: 2px solid #4c1d95;
             display: inline-block;
-            background: linear-gradient(135deg, #7c3aed, #4c1d95);
-            color: #ffffff !important;
-            text-decoration: none;
-            padding: 15px 30px;
-            border-radius: 25px;
-            font-weight: bold;
-            font-size: 16px;
-            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
-            transition: all 0.3s ease;
-        }
-        
-        .cta-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4);
-        }
-        
-        /* Footer */
-        .footer {
-            background: linear-gradient(135deg, #1f2937, #374151);
-            color: #d1d5db;
-            padding: 30px 20px;
-            text-align: center;
-        }
-        
-        .footer-logo {
-            max-width: 150px;
-            height: auto;
-            margin-bottom: 20px;
-            opacity: 0.8;
-        }
-        
-        .footer-content {
-            font-size: 14px;
-            line-height: 1.6;
-        }
-        
-        .footer-content strong {
-            color: #ffffff;
-        }
-        
-        .contact-info {
-            margin: 15px 0;
-        }
-        
-        .contact-info a {
-            color: #c4b5fd;
-            text-decoration: none;
-        }
-        
-        .unsubscribe {
-            font-size: 12px;
-            color: #9ca3af;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #4b5563;
-        }
-        
-        /* Mobile responsive */
-        @media screen and (max-width: 600px) {
-            .email-container {
-                width: 100% !important;
-                margin: 0 !important;
-            }
-            
-            .header {
-                padding: 30px 15px !important;
-            }
-            
-            .content {
-                padding: 30px 20px !important;
-            }
-            
-            .header-title {
-                font-size: 24px !important;
-            }
-            
-            .greeting {
-                font-size: 20px !important;
-            }
-            
-            .content-body {
-                font-size: 15px !important;
-            }
-            
-            .logo {
-                max-width: 150px !important;
-            }
         }
     </style>
 </head>
 <body>
-    <div class="email-container">
-        <!-- Header -->
-        <div class="header">
-            <div class="logo-container">
-                <img src="${websiteUrl}/images/elizabeth-carol-logo-full-dark.png" alt="Elizabeth Carol" class="logo">
-            </div>
-            <h1 class="header-title">Spiritual Insights & Guidance</h1>
-            <p class="header-subtitle">From Elizabeth Carol • ${currentDate}</p>
-        </div>
-        
-        <!-- Main Content -->
-        <div class="content">
-            <h2 class="greeting">Hello ${subscriberName},</h2>
-            
-            <div class="content-body">
-                ${content}
-            </div>
-            
-            <div class="cta-section">
-                <a href="${websiteUrl}/contact" class="cta-button">Book Your Reading</a>
-            </div>
-        </div>
-        
-        <!-- Footer -->
-        <div class="footer">
-            <img src="${websiteUrl}/images/elizabeth-carol-logo-icon-trans.png" alt="Elizabeth Carol" class="footer-logo">
-            
-            <div class="footer-content">
-                <strong>Elizabeth Carol</strong><br>
-                Psychic Medium & Spiritual Guide<br>
-                35+ Years of Spiritual Guidance
-                
-                <div class="contact-info">
-                    <strong>Phone:</strong> <a href="tel:01865361786">01865 361 786</a><br>
-                    <strong>Email:</strong> <a href="mailto:info@elizabethcarol.co.uk">info@elizabethcarol.co.uk</a><br>
-                    <strong>Website:</strong> <a href="${websiteUrl}">${websiteUrl}</a><br>
-                    <strong>Location:</strong> Oxford, Oxfordshire, UK
-                </div>
-                
-                <div class="unsubscribe">
-                    You're receiving this because you subscribed to spiritual insights from Elizabeth Carol.<br>
-                    To unsubscribe, simply reply to this email with "unsubscribe" in the subject line.<br>
-                    <br>
-                    <em>May your journey be filled with light and wisdom.</em> ✨
-                </div>
-            </div>
-        </div>
-    </div>
+    <center>
+        <!-- Main Email Container -->
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f8fafc;">
+            <tr>
+                <td align="center" valign="top">
+                    <table border="0" cellpadding="0" cellspacing="0" width="600" style="max-width: 600px;">
+                        
+                        <!-- Header Section -->
+                        <tr>
+                            <td align="center" valign="top" style="background-color: #4c1d95; padding: 40px 20px;">
+                                <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                    <tr>
+                                        <td align="center" style="padding-bottom: 20px;">
+                                            <img src="https://via.placeholder.com/200x60/4c1d95/ffffff?text=Elizabeth+Carol" alt="Elizabeth Carol" style="width: 200px; height: auto; display: block;">
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td align="center" style="color: #ffffff; font-size: 28px; font-weight: bold; padding-bottom: 10px;">
+                                            ✨ Spiritual Insights & Guidance ✨
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td align="center" style="color: #e0e7ff; font-size: 16px; font-style: italic;">
+                                            From Elizabeth Carol • ${currentDate}
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        
+                        <!-- Content Section -->
+                        <tr>
+                            <td align="left" valign="top" style="background-color: #ffffff; padding: 40px 30px;">
+                                <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                    <tr>
+                                        <td style="color: #4c1d95; font-size: 24px; font-weight: bold; padding-bottom: 20px;">
+                                            Hello ${subscriberName},
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="color: #374151; font-size: 16px; line-height: 1.7; padding-bottom: 30px;">
+                                            ${content}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td align="center" style="padding: 20px 0;">
+                                            <a href="${websiteUrl}/contact" class="btn" style="background-color: #7c3aed; color: #ffffff; text-decoration: none; padding: 15px 30px; font-weight: bold; border: 2px solid #4c1d95; display: inline-block;">
+                                                📞 Book Your Reading
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        
+                        <!-- Footer Section -->
+                        <tr>
+                            <td align="center" valign="top" style="background-color: #1f2937; padding: 30px 20px;">
+                                <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                    <tr>
+                                        <td align="center" style="padding-bottom: 20px;">
+                                            <img src="https://via.placeholder.com/100x100/1f2937/ffffff?text=EC" alt="Elizabeth Carol" style="width: 80px; height: auto; display: block;">
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td align="center" style="color: #ffffff; font-weight: bold; font-size: 18px; padding-bottom: 10px;">
+                                            Elizabeth Carol
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td align="center" style="color: #d1d5db; font-size: 14px; line-height: 1.6;">
+                                            Psychic Medium & Spiritual Guide<br>
+                                            35+ Years of Spiritual Guidance
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td align="center" style="color: #d1d5db; font-size: 14px; line-height: 1.6; padding: 15px 0;">
+                                            <strong style="color: #ffffff;">Phone:</strong> <a href="tel:01865361786" style="color: #c4b5fd; text-decoration: none;">01865 361 786</a><br>
+                                            <strong style="color: #ffffff;">Email:</strong> <a href="mailto:info@elizabethcarol.co.uk" style="color: #c4b5fd; text-decoration: none;">info@elizabethcarol.co.uk</a><br>
+                                            <strong style="color: #ffffff;">Website:</strong> <a href="${websiteUrl}" style="color: #c4b5fd; text-decoration: none;">${websiteUrl}</a><br>
+                                            <strong style="color: #ffffff;">Location:</strong> Oxford, Oxfordshire, UK
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td align="center" style="color: #9ca3af; font-size: 12px; padding-top: 20px; border-top: 1px solid #4b5563;">
+                                            You're receiving this because you subscribed to spiritual insights from Elizabeth Carol.<br>
+                                            To unsubscribe, simply reply to this email with "unsubscribe" in the subject line.<br>
+                                            <br>
+                                            <em style="color: #c4b5fd;">May your journey be filled with light and wisdom.</em> ✨
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </center>
 </body>
 </html>
     `,
