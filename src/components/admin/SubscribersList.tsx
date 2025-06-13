@@ -210,26 +210,57 @@ const SubscribersList = () => {
               </div>
             )}
 
-            {/* Subscribers List */}
-            {subscribers.map((subscriber) => (
-              <div key={subscriber.id} className="flex items-center space-x-3 p-3 bg-secondary/20 rounded">
-                {/* Checkbox - Only show in edit mode */}
-                {isEditMode && (
-                  <Checkbox
-                    checked={selectedSubscribers.has(subscriber.id)}
-                    onCheckedChange={() => toggleSubscriber(subscriber.id)}
-                  />
-                )}
-                
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">
-                    {subscriber.name || 'No name'}
-                    {!subscriber.active && <span className="text-muted-foreground ml-2">(Suspended)</span>}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">{subscriber.email}</p>
-                </div>
-              </div>
-            ))}
+            {/* Subscribers Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {subscribers.map((subscriber) => (
+                <Card key={subscriber.id} className="relative">
+                  <CardContent className="p-4">
+                    {/* Checkbox - Only show in edit mode */}
+                    {isEditMode && (
+                      <div className="absolute top-2 right-2">
+                        <Checkbox
+                          checked={selectedSubscribers.has(subscriber.id)}
+                          onCheckedChange={() => toggleSubscriber(subscriber.id)}
+                        />
+                      </div>
+                    )}
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0 pr-2">
+                          <p className="font-medium text-sm truncate">
+                            {subscriber.name || 'No name'}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {subscriber.email}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="flex gap-1">
+                          <Badge 
+                            variant={subscriber.active ? "default" : "secondary"}
+                            className="text-xs"
+                          >
+                            {subscriber.active ? "Active" : "Suspended"}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {subscriber.source || 'Unknown'}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      {subscriber.dateAdded && (
+                        <p className="text-xs text-muted-foreground">
+                          Added: {new Date(subscriber.dateAdded).toLocaleDateString('en-GB')}
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
         

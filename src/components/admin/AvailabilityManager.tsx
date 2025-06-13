@@ -52,6 +52,7 @@ const AvailabilityManager = () => {
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
   const [clientSearch, setClientSearch] = useState('');
+  const [isSearchingClients, setIsSearchingClients] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [newSlot, setNewSlot] = useState<AvailabilitySlot>({
     date: '',
@@ -65,6 +66,19 @@ const AvailabilityManager = () => {
     loadAvailability();
     loadClients();
   }, []);
+
+  // Debounced search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (clientSearch) {
+        searchClients(clientSearch);
+      } else {
+        loadClients();
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [clientSearch]);
 
   const loadAvailability = async () => {
     try {
@@ -129,6 +143,45 @@ const AvailabilityManager = () => {
     } catch (error) {
       console.error('Error loading clients:', error);
       setClients([]);
+    }
+  };
+
+  const searchClients = async (searchTerm: string) => {
+    if (!searchTerm.trim()) {
+      await loadClients();
+      return;
+    }
+
+    setIsSearchingClients(true);
+    try {
+      // Load all users and filter client-side since we're using auth.admin.listUsers
+      const { data: usersData, error: usersError } = await supabase.auth.admin.listUsers();
+      
+      if (usersError) {
+        console.error('Error searching users:', usersError);
+        setClients([]);
+        return;
+      }
+
+      const filteredClients = usersData.users
+        .map(user => ({
+          id: user.id,
+          email: user.email || '',
+          name: user.user_metadata?.name || user.email?.split('@')[0] || 'Unknown',
+          phone: user.user_metadata?.phone || ''
+        }))
+        .filter(client => 
+          client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          client.email.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        .slice(0, 20); // Limit to 20 results
+
+      setClients(filteredClients);
+    } catch (error) {
+      console.error('Error searching clients:', error);
+      setClients([]);
+    } finally {
+      setIsSearchingClients(false);
     }
   };
 
@@ -1058,43 +1111,87 @@ const AvailabilityManager = () => {
             <CardContent className="space-y-4">
               {/* Client Selection */}
               <div className="space-y-3">
-                <Label>Select Client</Label>
-                <div className="space-y-2">
-                  <Input
-                    placeholder="Search clients by name or email..."
-                    value={clientSearch}
-                    onChange={(e) => setClientSearch(e.target.value)}
-                  />
-                  <div className="max-h-32 overflow-y-auto border rounded-md">
-                    {clients
-                      .filter(client => 
-                        client.name?.toLowerCase().includes(clientSearch.toLowerCase()) ||
-                        client.email.toLowerCase().includes(clientSearch.toLowerCase())
-                      )
-                      .map(client => (
-                        <div
-                          key={client.id}
-                          className={`p-2 cursor-pointer hover:bg-muted ${
-                            selectedClient?.id === client.id ? 'bg-blue-100 dark:bg-blue-950' : ''
-                          }`}
-                          onClick={() => setSelectedClient(client)}
-                        >
-                          <div className="font-medium">{client.name || client.email}</div>
-                          <div className="text-sm text-muted-foreground">{client.email}</div>
-                        </div>
-                      ))
-                    }
-                    <div
-                      className={`p-2 cursor-pointer hover:bg-muted border-t ${
-                        selectedClient?.id === 'not-registered' ? 'bg-blue-100 dark:bg-blue-950' : ''
-                      }`}
-                      onClick={() => setSelectedClient({ id: 'not-registered', email: '', name: 'Not Registered' })}
+                <div className="flex items-center justify-between">
+                  <Label>Select Client</Label>
+                  {selectedClient && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedClient(null)}
+                      className="text-xs text-muted-foreground hover:text-foreground"
                     >
-                      <div className="font-medium">Not Registered</div>
-                      <div className="text-sm text-muted-foreground">Manual booking for non-registered client</div>
+                      <X className="w-3 h-3 mr-1" />
+                      Clear Selection
+                    </Button>
+                  )}
+                </div>
+                
+                {selectedClient ? (
+                  <div className="p-3 border rounded-lg bg-blue-50 dark:bg-blue-950/20">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium">
+                          {selectedClient.id === 'not-registered' ? 'Not Registered Client' : selectedClient.name || selectedClient.email}
+                        </div>
+                        {selectedClient.id !== 'not-registered' && (
+                          <div className="text-sm text-muted-foreground">{selectedClient.email}</div>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSelectedClient(null)}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Input
+                        placeholder="Search clients by name or email..."
+                        value={clientSearch}
+                        onChange={(e) => setClientSearch(e.target.value)}
+                      />
+                      {isSearchingClients && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="max-h-40 overflow-y-auto border rounded-md">
+                      {clients.length > 0 ? (
+                        clients.map(client => (
+                          <div
+                            key={client.id}
+                            className="p-3 cursor-pointer hover:bg-muted border-b last:border-b-0 transition-colors"
+                            onClick={() => setSelectedClient(client)}
+                          >
+                            <div className="font-medium">{client.name || client.email}</div>
+                            <div className="text-sm text-muted-foreground">{client.email}</div>
+                            {client.phone && (
+                              <div className="text-xs text-muted-foreground">📞 {client.phone}</div>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-3 text-center text-muted-foreground">
+                          {clientSearch ? 'No clients found' : 'Loading clients...'}
+                        </div>
+                      )}
+                      
+                      <div
+                        className="p-3 cursor-pointer hover:bg-muted border-t bg-muted/30 transition-colors"
+                        onClick={() => setSelectedClient({ id: 'not-registered', email: '', name: 'Not Registered' })}
+                      >
+                        <div className="font-medium">➕ Not Registered</div>
+                        <div className="text-sm text-muted-foreground">Manual booking for non-registered client</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Manual Client Details (if not registered selected) */}
@@ -1190,7 +1287,10 @@ const AvailabilityManager = () => {
       {slots.length > 0 && (
         <div className="text-center p-4 bg-muted/50 rounded-lg">
           <p className="text-sm text-muted-foreground">
-            💡 <strong>Tip:</strong> Click dates to manage times. Select time slots with checkboxes to copy them to multiple days.
+            💡 <strong>Tip:</strong> {viewMode === 'list' 
+              ? 'Click "Edit" to modify client details or "Edit Day" to manage availability times.'
+              : 'Click dates to manage times. Select time slots with checkboxes to copy them to multiple days.'
+            }
           </p>
         </div>
       )}
