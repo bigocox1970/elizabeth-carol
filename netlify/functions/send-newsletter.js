@@ -130,6 +130,9 @@ exports.handler = async (event, context) => {
     
     try {
       console.log('Fetching subscribers from Supabase...');
+      console.log('Send mode:', sendToMode);
+      console.log('Selected subscribers:', selectedSubscribers);
+      
       let url = `${SUPABASE_URL}/rest/v1/subscribers?select=*`;
       
       // If sending to selected subscribers only, filter by IDs
@@ -139,7 +142,15 @@ exports.handler = async (event, context) => {
         url += `&id=in.(${idFilter})`;
         console.log('Filtering for selected subscribers:', selectedSubscribers);
         console.log('Final URL:', url);
+      } else if (sendToMode === 'selected') {
+        console.log('ERROR: Selected mode but no subscribers provided!');
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ message: 'No subscribers selected for sending' })
+        };
       }
+      
+      console.log('Making request to:', url);
       
       const response = await fetch(url, {
         method: 'GET',
@@ -150,6 +161,9 @@ exports.handler = async (event, context) => {
         }
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Supabase fetch error:', errorText);
@@ -159,6 +173,14 @@ exports.handler = async (event, context) => {
       const supabaseSubscribers = await response.json();
       console.log('=== SUPABASE RESPONSE SUCCESS ===');
       console.log('Number of subscribers found:', supabaseSubscribers.length);
+      console.log('Raw response:', JSON.stringify(supabaseSubscribers, null, 2));
+      
+      if (supabaseSubscribers.length === 0) {
+        console.log('WARNING: No subscribers returned from database!');
+        if (sendToMode === 'selected') {
+          console.log('This might be because the selected IDs do not exist in the database');
+        }
+      }
       
       if (supabaseSubscribers.length > 0) {
         console.log('First subscriber raw data:', JSON.stringify(supabaseSubscribers[0], null, 2));
