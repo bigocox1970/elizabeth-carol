@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Users, RefreshCw, Trash2, Mail, CheckSquare, Square } from "lucide-react";
+import { Users, RefreshCw, Trash2, Mail, CheckSquare, Square, Edit } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getApiUrl } from "@/utils/api";
 
@@ -21,12 +21,20 @@ const SubscribersList = () => {
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedSubscribers, setSelectedSubscribers] = useState<Set<string>>(new Set());
+  const [isEditMode, setIsEditMode] = useState(false);
 
   useEffect(() => {
     if (session) {
       loadSubscribers();
     }
   }, [session]);
+
+  // Reset selections when exiting edit mode
+  useEffect(() => {
+    if (!isEditMode) {
+      setSelectedSubscribers(new Set());
+    }
+  }, [isEditMode]);
 
   const loadSubscribers = async () => {
     if (!session) return;
@@ -114,6 +122,7 @@ const SubscribersList = () => {
   };
 
   const toggleSubscriber = (subscriberId: string) => {
+    if (!isEditMode) return;
     const newSelected = new Set(selectedSubscribers);
     if (newSelected.has(subscriberId)) {
       newSelected.delete(subscriberId);
@@ -124,6 +133,7 @@ const SubscribersList = () => {
   };
 
   const toggleAll = () => {
+    if (!isEditMode) return;
     if (selectedSubscribers.size === subscribers.length) {
       setSelectedSubscribers(new Set());
     } else {
@@ -139,23 +149,38 @@ const SubscribersList = () => {
             <Users className="w-5 h-5" />
             <span>Subscribers ({subscribers.length})</span>
           </CardTitle>
-          {selectedSubscribers.size > 0 && (
-            <div className="flex items-center space-x-2">
-              <Badge variant="secondary">
-                {selectedSubscribers.size} selected
-              </Badge>
-              <Button
-                onClick={handleDeleteSelected}
-                variant="destructive"
-                size="sm"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete Selected
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center space-x-2">
+            {/* Edit Mode Toggle */}
+            <Button
+              onClick={() => setIsEditMode(!isEditMode)}
+              variant={isEditMode ? "default" : "outline"}
+              size="sm"
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              {isEditMode ? 'Done' : 'Edit'}
+            </Button>
+            
+            {/* Show selected count and delete button when in edit mode with selections */}
+            {isEditMode && selectedSubscribers.size > 0 && (
+              <>
+                <Badge variant="secondary">
+                  {selectedSubscribers.size} selected
+                </Badge>
+                <Button
+                  onClick={handleDeleteSelected}
+                  variant="destructive"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  title={`Delete ${selectedSubscribers.size} selected subscribers`}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </CardHeader>
+      
       <CardContent>
         {isLoading ? (
           <div className="flex justify-center py-8">
@@ -167,24 +192,29 @@ const SubscribersList = () => {
           </p>
         ) : (
           <div className="space-y-3">
-            {/* Select All */}
-            <div className="flex items-center space-x-2 p-3 bg-secondary/10 rounded-lg border">
-              <Checkbox
-                checked={selectedSubscribers.size === subscribers.length && subscribers.length > 0}
-                onCheckedChange={toggleAll}
-              />
-              <span className="text-sm font-medium">
-                Select All ({subscribers.length})
-              </span>
-            </div>
+            {/* Select All - Only show in edit mode */}
+            {isEditMode && (
+              <div className="flex items-center space-x-2 p-3 bg-secondary/10 rounded-lg border">
+                <Checkbox
+                  checked={selectedSubscribers.size === subscribers.length && subscribers.length > 0}
+                  onCheckedChange={toggleAll}
+                />
+                <span className="text-sm font-medium">
+                  Select All ({subscribers.length})
+                </span>
+              </div>
+            )}
 
             {/* Subscribers List */}
             {subscribers.map((subscriber) => (
               <div key={subscriber.id} className="flex items-center space-x-3 p-3 bg-secondary/20 rounded-lg">
-                <Checkbox
-                  checked={selectedSubscribers.has(subscriber.id)}
-                  onCheckedChange={() => toggleSubscriber(subscriber.id)}
-                />
+                {/* Checkbox - Only show in edit mode */}
+                {isEditMode && (
+                  <Checkbox
+                    checked={selectedSubscribers.has(subscriber.id)}
+                    onCheckedChange={() => toggleSubscriber(subscriber.id)}
+                  />
+                )}
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
@@ -214,11 +244,11 @@ const SubscribersList = () => {
                     </div>
                   </div>
                   
-                  <div className="mt-1">
+                  {subscriber.dateAdded && (
                     <p className="text-xs text-muted-foreground">
                       Added: {new Date(subscriber.dateAdded).toLocaleDateString()}
                     </p>
-                  </div>
+                  )}
                 </div>
               </div>
             ))}
