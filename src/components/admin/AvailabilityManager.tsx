@@ -173,7 +173,7 @@ const AvailabilityManager = () => {
         return;
       }
 
-      console.log('✅ Final profiles data:', profilesData);
+      console.log('✅ Final profiles data:', JSON.stringify(profilesData, null, 2));
 
       const clientsFromProfiles = (profilesData || []).map(profile => ({
         id: profile.id,
