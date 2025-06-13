@@ -21,23 +21,39 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    console.log('Starting manage-reviews function');
+    console.log('--- manage-reviews function invoked ---');
+    console.log('Event body:', event.body);
+    console.log('Event headers:', event.headers);
+
+    const { action, reviewData, reviewId, userToken } = JSON.parse(event.body || '{}');
+    console.log('Parsed request:', { action, reviewId, reviewData: reviewData ? '[REDACTED]' : null });
+
+    // Get the user's JWT token from the Authorization header or userToken
+    const authHeader = event.headers['authorization'] || event.headers['Authorization'];
+    let token = userToken || (authHeader && authHeader.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : null);
+    
+    console.log('Token extracted:', token ? '[REDACTED]' : 'None');
+    console.log('Auth header:', authHeader ? '[REDACTED]' : 'None');
+
+    // Environment variables check
     console.log('SUPABASE_URL:', SUPABASE_URL ? 'Exists' : 'Missing');
     console.log('SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? 'Exists' : 'Missing');
     console.log('SUPABASE_SERVICE_ROLE_KEY:', SUPABASE_SERVICE_ROLE_KEY ? 'Exists' : 'Missing');
-    console.log('Request body:', event.body);
 
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE_KEY) {
-      throw new Error('Missing required environment variables');
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      console.error('Missing required environment variables');
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ message: 'Server configuration error' })
+      };
     }
 
-    const { action, reviewData, reviewId, userToken } = JSON.parse(event.body || '{}');
-    console.log('Action:', action);
+    console.log('Processing action:', action);
 
     // Only require auth for write operations
     if (['approve-review', 'unapprove-review', 'delete-review'].includes(action)) {
-      const authHeader = event.headers.authorization || event.headers.Authorization;
-      if (!authHeader) {
+      if (!token) {
         return {
           statusCode: 401,
           headers,
@@ -45,15 +61,14 @@ exports.handler = async (event, context) => {
         };
       }
 
-      // Extract the token from the Bearer header
-      const token = authHeader.replace('Bearer ', '');
-
+      // Verify admin status
       try {
-        // First, get the user ID from the token
         const userResponse = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+          method: 'GET',
           headers: {
             'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
         });
 
@@ -67,10 +82,9 @@ exports.handler = async (event, context) => {
         }
 
         const userData = await userResponse.json();
-        console.log('User data:', userData);
-
-        // Verify the user is an admin
-        const isAdminResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
+        
+        // Check if user is admin
+        const adminCheckResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
           method: 'POST',
           headers: {
             'apikey': SUPABASE_ANON_KEY,
@@ -80,16 +94,16 @@ exports.handler = async (event, context) => {
           body: JSON.stringify({ user_id: userData.id })
         });
 
-        if (!isAdminResponse.ok) {
+        if (!adminCheckResponse.ok) {
           return {
-            statusCode: 401,
+            statusCode: 500,
             headers,
-            body: JSON.stringify({ message: 'Unauthorized' })
+            body: JSON.stringify({ message: 'Failed to verify admin status' })
           };
         }
 
-        const isAdmin = await isAdminResponse.json();
-        if (!isAdmin) {
+        const isAdminResult = await adminCheckResponse.json();
+        if (!isAdminResult) {
           return {
             statusCode: 401,
             headers,
