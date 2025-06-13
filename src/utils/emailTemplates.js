@@ -67,22 +67,22 @@ export const createNewsletterTemplate = ({
 <body>
     <center>
         <!-- Main Email Container -->
-        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f8fafc;">
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f1f5f9;">
             <tr>
-                <td align="center" valign="top">
-                    <table border="0" cellpadding="0" cellspacing="0" width="600" style="max-width: 600px;">
+                <td align="center" valign="top" style="padding: 20px 0;">
+                    <table border="0" cellpadding="0" cellspacing="0" width="600" style="max-width: 600px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
                         
                         <!-- Header Section -->
                         <tr>
-                            <td align="center" valign="top" style="background-color: #4c1d95; padding: 40px 20px;">
+                            <td align="center" valign="top" style="background-color: #1e1b4b; padding: 40px 20px;">
                                 <table border="0" cellpadding="0" cellspacing="0" width="100%">
                                     <tr>
                                         <td align="center" style="padding-bottom: 20px;">
-                                            <img src="https://via.placeholder.com/200x60/4c1d95/ffffff?text=Elizabeth+Carol" alt="Elizabeth Carol" style="width: 200px; height: auto; display: block;">
+                                            <img src="${websiteUrl}/images/elizabeth-carol-logo-full-dark.png" alt="Elizabeth Carol" style="width: 100%; max-width: 400px; height: auto; display: block;">
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td align="center" style="color: #ffffff; font-size: 28px; font-weight: bold; padding-bottom: 10px;">
+                                        <td align="center" style="color: #ffffff; font-size: 24px; font-weight: bold; padding-bottom: 10px;">
                                             ✨ Spiritual Insights & Guidance ✨
                                         </td>
                                     </tr>
@@ -126,7 +126,7 @@ export const createNewsletterTemplate = ({
                                 <table border="0" cellpadding="0" cellspacing="0" width="100%">
                                     <tr>
                                         <td align="center" style="padding-bottom: 20px;">
-                                            <img src="https://via.placeholder.com/100x100/1f2937/ffffff?text=EC" alt="Elizabeth Carol" style="width: 80px; height: auto; display: block;">
+                                            <img src="${websiteUrl}/images/elizabeth-carol-logo-icon-trans.png" alt="Elizabeth Carol" style="width: 80px; height: auto; display: block;">
                                         </td>
                                     </tr>
                                     <tr>
@@ -226,18 +226,17 @@ export const createContactEnquiryTemplate = ({
             font-family: 'Georgia', 'Times New Roman', serif; 
             margin: 0; 
             padding: 20px; 
-            background-color: #f8fafc; 
+            background-color: #f1f5f9; 
         }
         .container { 
             max-width: 600px; 
             margin: 0 auto; 
             background: white; 
-            border-radius: 12px; 
-            overflow: hidden;
+            border: 1px solid #e2e8f0;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         .header { 
-            background: linear-gradient(135deg, #4c1d95, #7c3aed); 
+            background-color: #1e1b4b; 
             color: white; 
             padding: 30px; 
             text-align: center; 
@@ -388,18 +387,17 @@ export const createCustomerConfirmationTemplate = ({
             font-family: 'Georgia', 'Times New Roman', serif; 
             margin: 0; 
             padding: 20px; 
-            background-color: #f8fafc; 
+            background-color: #f1f5f9; 
         }
         .container { 
             max-width: 600px; 
             margin: 0 auto; 
             background: white; 
-            border-radius: 12px; 
-            overflow: hidden;
+            border: 1px solid #e2e8f0;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         .header { 
-            background: linear-gradient(135deg, #4c1d95, #7c3aed); 
+            background-color: #1e1b4b; 
             color: white; 
             padding: 40px 30px; 
             text-align: center; 
@@ -429,7 +427,7 @@ export const createCustomerConfirmationTemplate = ({
             margin: 0 10px 10px 0;
         }
         .footer { 
-            background: linear-gradient(135deg, #1f2937, #374151); 
+            background-color: #1f2937; 
             color: #d1d5db; 
             padding: 30px; 
             text-align: center; 
