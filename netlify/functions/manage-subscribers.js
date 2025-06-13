@@ -71,7 +71,7 @@ exports.handler = async (event, context) => {
     switch (action) {
       case 'get-all-subscribers':
         // Return all subscribers, sorted by date (newest first)
-        const allResponse = await fetch(`${SUPABASE_URL}/rest/v1/subscribers?select=*&order=created_at.desc`, {
+        const allResponse = await fetch(`${SUPABASE_URL}/rest/v1/subscribers?select=*&order=date_added.desc`, {
           method: 'GET',
           headers: {
             'apikey': SUPABASE_ANON_KEY,
@@ -86,13 +86,14 @@ exports.handler = async (event, context) => {
 
         const allSubscribers = await allResponse.json();
         
-        // Format subscribers for frontend
+        // Format subscribers for frontend to match expected format
         const formattedSubscribers = allSubscribers.map(subscriber => ({
           id: subscriber.id.toString(),
           email: subscriber.email,
           name: subscriber.name,
-          active: subscriber.active,
-          createdAt: subscriber.created_at
+          source: subscriber.source,
+          dateAdded: subscriber.date_added,
+          active: subscriber.active
         }));
 
         return {
