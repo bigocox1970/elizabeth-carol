@@ -280,7 +280,7 @@ exports.handler = async (event, context) => {
       };
     }
     
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       host: 'smtpout.secureserver.net',
       port: 587,
       secure: false,
