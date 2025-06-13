@@ -165,6 +165,16 @@ To connect a domain, navigate to Project > Settings > Domains and click Connect 
 
 A beautiful, modern website for Elizabeth Carol, a psychic medium and spiritual guide based in Oxford, UK.
 
+## 🎨 Brand Colors
+
+**Elizabeth Carol Official Brand Palette** (extracted from logo):
+- **Dark**: `#16101d` - Primary dark purple for headers, main elements
+- **Light**: `#645870` - Secondary purple for supporting elements  
+- **Accent**: `#807097` - Accent purple for highlights and interactive elements
+- **Contrast**: `#848482` - Neutral grey for contrast and text
+
+*Note: These exact colors should be used across all branding materials, email templates, and design elements to maintain brand consistency.*
+
 ## Features
 
 ### 🌟 Core Features

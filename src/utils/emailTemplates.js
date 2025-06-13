@@ -41,26 +41,34 @@ export const createNewsletterTemplate = ({
             mso-table-rspace: 0pt;
         }
         
-        /* Colors for easy reuse - Elizabeth Carol brand colors */
-        .purple-bg { background-color: #1f2937; }
-        .light-purple-bg { background-color: #f3e8ff; }
+        /* Colors for easy reuse - Elizabeth Carol Official Brand Colors */
+        .dark-bg { background-color: #16101d; }
+        .light-bg { background-color: #645870; }
+        .accent-bg { background-color: #807097; }
+        .contrast-bg { background-color: #848482; }
         .white-bg { background-color: #ffffff; }
-        .dark-bg { background-color: #1f2937; }
         
-        .purple-text { color: #374151; }
+        .dark-text { color: #16101d; }
+        .light-text { color: #645870; }
+        .accent-text { color: #807097; }
+        .contrast-text { color: #848482; }
         .white-text { color: #ffffff; }
         .gray-text { color: #374151; }
-        .light-gray-text { color: #9ca3af; }
         
         /* Button styling */
         .btn {
-            background-color: #1f2937;
+            background-color: #807097;
             color: #ffffff;
             text-decoration: none;
             padding: 12px 24px;
             font-weight: bold;
-            border: 2px solid #1f2937;
+            border: 2px solid #807097;
             display: inline-block;
+        }
+        
+        .btn:hover {
+            background-color: #645870;
+            border-color: #645870;
         }
     </style>
 </head>
@@ -74,7 +82,7 @@ export const createNewsletterTemplate = ({
                         
                         <!-- Header Section -->
                         <tr>
-                            <td align="center" valign="top" style="background-color: #1f2937; padding: 40px 20px;">
+                            <td align="center" valign="top" style="background-color: #16101d; padding: 40px 20px;">
                                 <table border="0" cellpadding="0" cellspacing="0" width="100%">
                                     <tr>
                                         <td align="center" style="padding-bottom: 20px;">
@@ -100,7 +108,7 @@ export const createNewsletterTemplate = ({
                             <td align="left" valign="top" style="background-color: #ffffff; padding: 40px 30px;">
                                 <table border="0" cellpadding="0" cellspacing="0" width="100%">
                                     <tr>
-                                        <td style="color: #374151; font-size: 24px; font-weight: bold; padding-bottom: 20px;">
+                                        <td style="color: #16101d; font-size: 24px; font-weight: bold; padding-bottom: 20px;">
                                             Hello ${subscriberName},
                                         </td>
                                     </tr>
@@ -111,7 +119,7 @@ export const createNewsletterTemplate = ({
                                     </tr>
                                     <tr>
                                         <td align="center" style="padding: 20px 0;">
-                                            <a href="${websiteUrl}/contact" class="btn" style="background-color: #1f2937; color: #ffffff; text-decoration: none; padding: 15px 30px; font-weight: bold; border: 2px solid #1f2937; display: inline-block;">
+                                            <a href="${websiteUrl}/contact" class="btn" style="background-color: #807097; color: #ffffff; text-decoration: none; padding: 15px 30px; font-weight: bold; border: 2px solid #807097; display: inline-block;">
                                                 📞 Book Your Reading
                                             </a>
                                         </td>
@@ -122,7 +130,7 @@ export const createNewsletterTemplate = ({
                         
                         <!-- Footer Section -->
                         <tr>
-                            <td align="center" valign="top" style="background-color: #1f2937; padding: 30px 20px;">
+                            <td align="center" valign="top" style="background-color: #16101d; padding: 30px 20px;">
                                 <table border="0" cellpadding="0" cellspacing="0" width="100%">
                                     <tr>
                                         <td align="center" style="padding-bottom: 20px;">
@@ -142,18 +150,18 @@ export const createNewsletterTemplate = ({
                                     </tr>
                                     <tr>
                                         <td align="center" style="color: #d1d5db; font-size: 14px; line-height: 1.6; padding: 15px 0;">
-                                            <strong style="color: #ffffff;">Phone:</strong> <a href="tel:01865361786" style="color: #c4b5fd; text-decoration: none;">01865 361 786</a><br>
-                                            <strong style="color: #ffffff;">Email:</strong> <a href="mailto:info@elizabethcarol.co.uk" style="color: #c4b5fd; text-decoration: none;">info@elizabethcarol.co.uk</a><br>
-                                            <strong style="color: #ffffff;">Website:</strong> <a href="${websiteUrl}" style="color: #c4b5fd; text-decoration: none;">${websiteUrl}</a><br>
+                                            <strong style="color: #ffffff;">Phone:</strong> <a href="tel:01865361786" style="color: #807097; text-decoration: none;">01865 361 786</a><br>
+                                            <strong style="color: #ffffff;">Email:</strong> <a href="mailto:info@elizabethcarol.co.uk" style="color: #807097; text-decoration: none;">info@elizabethcarol.co.uk</a><br>
+                                            <strong style="color: #ffffff;">Website:</strong> <a href="${websiteUrl}" style="color: #807097; text-decoration: none;">${websiteUrl}</a><br>
                                             <strong style="color: #ffffff;">Location:</strong> Oxford, Oxfordshire, UK
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td align="center" style="color: #9ca3af; font-size: 12px; padding-top: 20px; border-top: 1px solid #4b5563;">
+                                        <td align="center" style="color: #9ca3af; font-size: 12px; padding-top: 20px; border-top: 1px solid #645870;">
                                             You're receiving this because you subscribed to spiritual insights from Elizabeth Carol.<br>
                                             To unsubscribe, simply reply to this email with "unsubscribe" in the subject line.<br>
                                             <br>
-                                            <em style="color: #c4b5fd;">May your journey be filled with light and wisdom.</em> ✨
+                                            <em style="color: #807097;">May your journey be filled with light and wisdom.</em> ✨
                                         </td>
                                     </tr>
                                 </table>
@@ -236,7 +244,7 @@ export const createContactEnquiryTemplate = ({
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         .header { 
-            background-color: #1f2937; 
+            background-color: #16101d; 
             color: white; 
             padding: 30px; 
             text-align: center; 
@@ -246,7 +254,7 @@ export const createContactEnquiryTemplate = ({
         }
         .enquiry-box { 
             background: #f8fafc; 
-            border-left: 4px solid #1f2937; 
+            border-left: 4px solid #807097; 
             padding: 20px; 
             margin: 20px 0; 
             border-radius: 8px;
@@ -259,7 +267,7 @@ export const createContactEnquiryTemplate = ({
         }
         .label { 
             font-weight: bold; 
-            color: #374151; 
+            color: #16101d; 
             margin-bottom: 5px;
         }
         .value { 
@@ -290,11 +298,15 @@ export const createContactEnquiryTemplate = ({
             display: inline-block;
             margin: 0 10px;
             padding: 10px 20px;
-            background: #1f2937;
+            background: #807097;
             color: white;
             text-decoration: none;
             border-radius: 6px;
             font-size: 14px;
+        }
+        
+        .quick-actions a:hover {
+            background: #645870;
         }
     </style>
 </head>
@@ -311,11 +323,11 @@ export const createContactEnquiryTemplate = ({
                 <div class="value">${customerName}</div>
                 
                 <div class="label">Email Address:</div>
-                <div class="value"><a href="mailto:${customerEmail}" style="color: #1f2937;">${customerEmail}</a></div>
+                <div class="value"><a href="mailto:${customerEmail}" style="color: #807097;">${customerEmail}</a></div>
                 
                 ${customerPhone ? `
                 <div class="label">Phone Number:</div>
-                <div class="value"><a href="tel:${customerPhone}" style="color: #1f2937;">${customerPhone}</a></div>
+                <div class="value"><a href="tel:${customerPhone}" style="color: #807097;">${customerPhone}</a></div>
                 ` : ''}
                 
                 ${service ? `
@@ -397,7 +409,7 @@ export const createCustomerConfirmationTemplate = ({
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         .header { 
-            background-color: #1f2937; 
+            background-color: #16101d; 
             color: white; 
             padding: 40px 30px; 
             text-align: center; 
@@ -407,7 +419,7 @@ export const createCustomerConfirmationTemplate = ({
         }
         .message-summary { 
             background: #f8fafc; 
-            border-left: 4px solid #1f2937; 
+            border-left: 4px solid #807097; 
             padding: 20px; 
             margin: 25px 0; 
             border-radius: 8px;
@@ -418,7 +430,7 @@ export const createCustomerConfirmationTemplate = ({
         }
         .cta-button {
             display: inline-block;
-            background: #1f2937;
+            background: #807097;
             color: white;
             text-decoration: none;
             padding: 15px 30px;
@@ -426,8 +438,12 @@ export const createCustomerConfirmationTemplate = ({
             font-weight: bold;
             margin: 0 10px 10px 0;
         }
+        
+        .cta-button:hover {
+            background: #645870;
+        }
         .footer { 
-            background-color: #1f2937; 
+            background-color: #16101d; 
             color: #d1d5db; 
             padding: 30px; 
             text-align: center; 
@@ -447,7 +463,7 @@ export const createCustomerConfirmationTemplate = ({
             <p>Thank you for reaching out through my website. I've received your message and wanted to confirm that it came through successfully. I'm honored that you're considering me for your spiritual guidance.</p>
             
             <div class="message-summary">
-                <h3 style="color: #374151; margin-top: 0;">Your Message Details:</h3>
+                <h3 style="color: #16101d; margin-top: 0;">Your Message Details:</h3>
                 <p><strong>Name:</strong> ${customerName}</p>
                 <p><strong>Email:</strong> ${customerEmail}</p>
                 ${customerPhone ? `<p><strong>Phone:</strong> ${customerPhone}</p>` : ''}
