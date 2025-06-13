@@ -98,6 +98,99 @@ exports.handler = async (event, context) => {
       // Don't fail the contact form if subscriber addition fails
     }
 
+    // Send confirmation email to user if email credentials are available
+    if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
+      try {
+        const transporter = nodemailer.createTransport({
+          host: 'smtpout.secureserver.net',
+          port: 587,
+          secure: false,
+          requireTLS: true,
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASSWORD
+          },
+          tls: {
+            ciphers: 'SSLv3'
+          }
+        });
+
+        const confirmationEmail = {
+          from: '"Elizabeth Carol" <info@elizabethcarol.co.uk>',
+          to: email,
+          subject: 'Thank you for contacting Elizabeth Carol',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h2 style="color: #4c1d95;">Hello ${firstName},</h2>
+              
+              <p>Thank you for reaching out to me through my website. I've received your message and wanted to confirm that it came through successfully.</p>
+              
+              <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="color: #4c1d95; margin-top: 0;">Your Message Details:</h3>
+                <p><strong>Name:</strong> ${firstName} ${lastName}</p>
+                ${service ? `<p><strong>Service Interest:</strong> ${service}</p>` : ''}
+                ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ''}
+                <p><strong>Message:</strong></p>
+                <div style="background-color: white; padding: 15px; border-radius: 4px; margin-top: 10px;">
+                  ${message.replace(/\n/g, '<br>')}
+                </div>
+              </div>
+              
+              <p>I typically respond to all enquiries within 24 hours. For urgent matters, please feel free to call me directly at <strong>01865 361 786</strong>.</p>
+              
+              <p>I look forward to connecting with you soon!</p>
+              
+              <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+              
+              <p style="font-size: 14px; color: #666; margin: 20px 0;">
+                <strong>Elizabeth Carol</strong><br>
+                Psychic Medium & Spiritual Guide<br>
+                Phone: 01865 361 786<br>
+                Email: info@elizabethcarol.co.uk<br>
+                Oxford, Oxfordshire, UK
+              </p>
+              
+              <p style="font-size: 12px; color: #999; margin-top: 30px;">
+                This is an automated confirmation. Please do not reply to this email - I will respond to your enquiry from my main email address.
+              </p>
+            </div>
+          `,
+          text: `
+Hello ${firstName},
+
+Thank you for reaching out to me through my website. I've received your message and wanted to confirm that it came through successfully.
+
+Your Message Details:
+Name: ${firstName} ${lastName}
+${service ? `Service Interest: ${service}` : ''}
+${phone ? `Phone: ${phone}` : ''}
+Message: ${message}
+
+I typically respond to all enquiries within 24 hours. For urgent matters, please feel free to call me directly at 01865 361 786.
+
+I look forward to connecting with you soon!
+
+---
+Elizabeth Carol
+Psychic Medium & Spiritual Guide
+Phone: 01865 361 786
+Email: info@elizabethcarol.co.uk
+Oxford, Oxfordshire, UK
+
+This is an automated confirmation. Please do not reply to this email - I will respond to your enquiry from my main email address.
+          `
+        };
+
+        await transporter.sendMail(confirmationEmail);
+        console.log('Confirmation email sent successfully to:', email);
+      } catch (emailError) {
+        console.error('Failed to send confirmation email:', emailError);
+        // Don't fail the contact form if email sending fails
+      }
+    } else {
+      console.log('Email credentials not configured - skipping confirmation email');
+    }
+
     return {
       statusCode: 200,
       headers: {
