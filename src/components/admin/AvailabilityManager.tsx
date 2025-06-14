@@ -24,6 +24,7 @@ interface Booking {
   client_email?: string;
   client_phone?: string;
   booking_type: 'manual' | 'online';
+  reading_type?: 'in_person' | 'video' | 'phone' | 'other';
   status: 'confirmed' | 'cancelled' | 'completed';
   notes?: string;
 }
@@ -819,90 +820,90 @@ const AvailabilityManager = () => {
                         </Badge>
                       </div>
                       
-                      <div className="space-y-2 ml-4">
+                      <div className="space-y-3">
                         {daySlots.map((slot) => {
                           const booking = bookings.find(b => b.availability_slot_id === slot.id && b.status === 'confirmed');
                           return (
-                            <Card key={slot.id} className="hover:shadow-md transition-shadow">
+                            <Card key={slot.id} className="hover:shadow-md transition-shadow max-w-none">
                               <CardContent className="p-4">
-                                <div className="flex items-start gap-3">
-                                  <div className="flex-1">
-                                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                                      <div className="space-y-2">
-                                        <div className="font-medium text-lg">
-                                          {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
-                                        </div>
-                                        
-                                        {/* Client Information - Prominent Display */}
-                                        {booking && (booking.client_name || booking.client_email) && (
-                                          <div className="bg-muted/50 p-3 rounded-lg">
-                                            <div className="font-medium text-foreground">
-                                              {booking.client_name || 'Client'}
-                                            </div>
-                                            {booking.client_email && (
-                                              <div className="text-sm text-muted-foreground">
-                                                📧 {booking.client_email}
-                                              </div>
-                                            )}
-                                            {booking.client_phone && (
-                                              <div className="text-sm text-muted-foreground">
-                                                📞 {booking.client_phone}
-                                              </div>
-                                            )}
-                                            {booking.notes && (
-                                              <div className="text-sm text-muted-foreground mt-1 italic">
-                                                "{booking.notes}"
-                                              </div>
-                                            )}
-                                          </div>
-                                        )}
-                                        
-                                        <div className="flex gap-2">
-                                          <Badge variant="default">
-                                            🔵 Booked
-                                          </Badge>
-                                          <Badge variant="outline" className="text-xs">
-                                            {slot.service_type === 'both' ? 'In-person & Remote' :
-                                             slot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only'}
-                                          </Badge>
-                                        </div>
-                                        
-                                        {slot.notes && (
-                                          <p className="text-sm text-muted-foreground italic">
-                                            Session notes: "{slot.notes}"
-                                          </p>
-                                        )}
-                                      </div>
-                                      
-                                      <div className="flex flex-col gap-2">
-                                        <Button
-                                          variant="default"
-                                          size="sm"
-                                          onClick={() => toggleSlotBooking(slot.id!)}
-                                          className="text-xs"
-                                        >
-                                          <CheckCircle className="w-3 h-3 mr-1" />
-                                          Edit
-                                        </Button>
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => selectDate(new Date(slot.date))}
-                                          className="text-xs"
-                                        >
-                                          Edit Day
-                                        </Button>
-                                      </div>
+                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+                                  {/* Time and Basic Info */}
+                                  <div className="lg:col-span-3">
+                                    <div className="font-medium text-lg">
+                                      {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
+                                    </div>
+                                    <div className="flex flex-wrap gap-1 mt-2">
+                                      <Badge variant="default" className="text-xs">
+                                        🔵 Booked
+                                      </Badge>
+                                      {booking?.reading_type && (
+                                        <Badge variant="secondary" className="text-xs">
+                                          {booking.reading_type === 'in_person' && '🏠 In-person'}
+                                          {booking.reading_type === 'video' && '📹 Video'}
+                                          {booking.reading_type === 'phone' && '📞 Phone'}
+                                          {booking.reading_type === 'other' && '✨ Other'}
+                                        </Badge>
+                                      )}
                                     </div>
                                   </div>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => slot.id && removeSlot(slot.id)}
-                                    className="text-destructive hover:text-destructive"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
+
+                                  {/* Client Information */}
+                                  <div className="lg:col-span-6">
+                                    {booking && (booking.client_name || booking.client_email) ? (
+                                      <div className="bg-muted/50 p-3 rounded-lg">
+                                        <div className="font-medium text-foreground">
+                                          {booking.client_name || 'Client'}
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 mt-1">
+                                          {booking.client_email && (
+                                            <div className="text-sm text-muted-foreground">
+                                              📧 {booking.client_email}
+                                            </div>
+                                          )}
+                                          {booking.client_phone && (
+                                            <div className="text-sm text-muted-foreground">
+                                              📞 {booking.client_phone}
+                                            </div>
+                                          )}
+                                        </div>
+                                        {booking.notes && (
+                                          <div className="text-sm text-muted-foreground mt-2 italic">
+                                            "{booking.notes}"
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <div className="text-muted-foreground italic">
+                                        No client details available
+                                      </div>
+                                    )}
+                                    
+                                    {slot.notes && (
+                                      <p className="text-sm text-muted-foreground italic mt-2">
+                                        Session notes: "{slot.notes}"
+                                      </p>
+                                    )}
+                                  </div>
+
+                                  {/* Action Buttons */}
+                                  <div className="lg:col-span-3 flex lg:justify-end gap-2">
+                                    <Button
+                                      variant="default"
+                                      size="sm"
+                                      onClick={() => toggleSlotBooking(slot.id!)}
+                                      className="text-xs flex-1 lg:flex-none"
+                                    >
+                                      Edit
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => selectDate(new Date(slot.date))}
+                                      className="text-xs flex-1 lg:flex-none"
+                                    >
+                                      Day
+                                    </Button>
+                                  </div>
                                 </div>
                               </CardContent>
                             </Card>
@@ -1060,7 +1061,9 @@ const AvailabilityManager = () => {
                         <X className="w-4 h-4" />
                       </Button>
                     </div>
-                    {showEditMode && (
+                  </div>
+                  {showEditMode && (
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2">
                       <div className="flex gap-2">
                         <Button 
                           variant="outline" 
@@ -1105,8 +1108,8 @@ const AvailabilityManager = () => {
                           </>
                         )}
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                   <div className="space-y-2">
                     {getSlotsForDate(new Date(selectedDate)).map((slot) => {
                       const booking = bookings.find(b => b.availability_slot_id === slot.id && b.status === 'confirmed');
@@ -1408,6 +1411,21 @@ const AvailabilityManager = () => {
                 </div>
               )}
 
+              {/* Reading Type */}
+              <div className="space-y-2">
+                <Label htmlFor="reading_type">Reading Type</Label>
+                <select
+                  id="reading_type"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  defaultValue={editingBooking?.reading_type || 'in_person'}
+                >
+                  <option value="in_person">🏠 In-person</option>
+                  <option value="video">📹 Video Call</option>
+                  <option value="phone">📞 Phone Call</option>
+                  <option value="other">✨ Other</option>
+                </select>
+              </div>
+
               {/* Booking Notes */}
               <div className="space-y-2">
                 <Label htmlFor="booking_notes">Notes (Optional)</Label>
@@ -1427,7 +1445,7 @@ const AvailabilityManager = () => {
                     className="flex-1"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
-                    Delete Booking
+                    Delete
                   </Button>
                 )}
                 <Button
@@ -1435,6 +1453,7 @@ const AvailabilityManager = () => {
                     const clientNameInput = document.getElementById('client_name') as HTMLInputElement;
                     const clientEmailInput = document.getElementById('client_email') as HTMLInputElement;
                     const clientPhoneInput = document.getElementById('client_phone') as HTMLInputElement;
+                    const readingTypeSelect = document.getElementById('reading_type') as HTMLSelectElement;
                     const notesInput = document.getElementById('booking_notes') as HTMLInputElement;
 
                     const bookingData: Partial<Booking> = {
@@ -1447,6 +1466,7 @@ const AvailabilityManager = () => {
                       client_phone: selectedClient?.id === 'not-registered'
                         ? clientPhoneInput?.value || ''
                         : selectedClient?.phone || '',
+                      reading_type: readingTypeSelect?.value as 'in_person' | 'video' | 'phone' | 'other' || 'in_person',
                       notes: notesInput?.value || ''
                     };
 
@@ -1456,7 +1476,7 @@ const AvailabilityManager = () => {
                   disabled={!selectedClient}
                 >
                   <Save className="w-4 h-4 mr-2" />
-                  {editingBooking ? 'Update Booking' : 'Create Booking'}
+                  {editingBooking ? 'Update' : 'Create'}
                 </Button>
               </div>
             </CardContent>
