@@ -48,7 +48,7 @@ const AvailabilityManager = () => {
   const [showCopyModal, setShowCopyModal] = useState(false);
   const [selectedSlots, setSelectedSlots] = useState<number[]>([]);
   const [selectedCopyDates, setSelectedCopyDates] = useState<string[]>([]);
-  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('list');
   const [showAddSlotForm, setShowAddSlotForm] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedSlotForBooking, setSelectedSlotForBooking] = useState<number | null>(null);
@@ -743,6 +743,8 @@ const AvailabilityManager = () => {
     });
   };
 
+
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -760,7 +762,7 @@ const AvailabilityManager = () => {
         <p className="text-muted-foreground mb-4">
           {viewMode === 'calendar' 
             ? 'Click dates to add times. Select time slots to copy them to other days.'
-            : 'View your upcoming booked sessions in chronological order.'
+            : 'View your upcoming sessions and pending requests. Approve or decline customer requests directly from here.'
           }
         </p>
         
@@ -878,7 +880,7 @@ const AvailabilityManager = () => {
               Your Bookings List
             </CardTitle>
             <CardDescription>
-              Your upcoming booked sessions grouped by day
+              Your upcoming sessions and pending requests grouped by day
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -902,24 +904,25 @@ const AvailabilityManager = () => {
               <div className="space-y-6">
                 <div className="mb-4">
                   <p className="text-sm text-muted-foreground">
-                    {slots.filter(slot => isSlotBooked(slot.id!)).length} booking{slots.filter(slot => isSlotBooked(slot.id!)).length === 1 ? '' : 's'}
+                    {slots.filter(slot => isSlotBooked(slot.id!) || bookings.some(b => b.availability_slot_id === slot.id && b.status === 'pending')).length} total session{slots.filter(slot => isSlotBooked(slot.id!) || bookings.some(b => b.availability_slot_id === slot.id && b.status === 'pending')).length === 1 ? '' : 's'} • 
+                    {slots.filter(slot => bookings.some(b => b.availability_slot_id === slot.id && b.status === 'pending')).length} pending request{slots.filter(slot => bookings.some(b => b.availability_slot_id === slot.id && b.status === 'pending')).length === 1 ? '' : 's'}
                   </p>
                 </div>
                 
-                {/* Group bookings by day */}
+                {/* Group all bookings (confirmed + pending) by day */}
                 {(() => {
-                  const bookedSlots = slots
-                    .filter(slot => isSlotBooked(slot.id!))
+                  const allBookedSlots = slots
+                    .filter(slot => isSlotBooked(slot.id!) || bookings.some(b => b.availability_slot_id === slot.id && b.status === 'pending'))
                     .sort((a, b) => new Date(a.date + ' ' + a.start_time).getTime() - new Date(b.date + ' ' + b.start_time).getTime());
                   
-                  const groupedByDay = bookedSlots.reduce((groups, slot) => {
+                  const groupedByDay = allBookedSlots.reduce((groups, slot) => {
                     const date = slot.date;
                     if (!groups[date]) {
                       groups[date] = [];
                     }
                     groups[date].push(slot);
                     return groups;
-                  }, {} as Record<string, typeof bookedSlots>);
+                  }, {} as Record<string, typeof allBookedSlots>);
 
                   return Object.entries(groupedByDay).map(([date, daySlots]) => (
                     <div key={date} className="space-y-3">
@@ -968,25 +971,48 @@ const AvailabilityManager = () => {
                                   {/* Client Information */}
                                   <div className="lg:col-span-6">
                                     {hasBooking && ((confirmedBooking?.client_name || confirmedBooking?.client_email) || (pendingBooking?.client_name || pendingBooking?.client_email)) && (
-                                      <div className="bg-muted/50 p-3 rounded-lg">
+                                      <div className={`p-3 rounded-lg ${pendingBooking ? 'bg-orange-50 dark:bg-orange-950/20 border border-orange-200' : 'bg-muted/50'}`}>
                                         <div className="font-medium text-foreground">
                                           {confirmedBooking?.client_name || confirmedBooking?.client_email || pendingBooking?.client_name || pendingBooking?.client_email}
                                         </div>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 mt-1">
-                                          {confirmedBooking?.client_email && (
+                                          {(confirmedBooking?.client_email || pendingBooking?.client_email) && (
                                             <div className="text-sm text-muted-foreground">
-                                              📧 {confirmedBooking.client_email}
+                                              📧 {confirmedBooking?.client_email || pendingBooking?.client_email}
                                             </div>
                                           )}
-                                          {confirmedBooking?.client_phone && (
+                                          {(confirmedBooking?.client_phone || pendingBooking?.client_phone) && (
                                             <div className="text-sm text-muted-foreground">
-                                              📞 {confirmedBooking.client_phone}
+                                              📞 {confirmedBooking?.client_phone || pendingBooking?.client_phone}
                                             </div>
                                           )}
                                         </div>
-                                        {confirmedBooking?.notes && (
+                                        {(confirmedBooking?.notes || pendingBooking?.notes) && (
                                           <div className="text-sm text-muted-foreground mt-2 italic">
-                                            "{confirmedBooking.notes}"
+                                            "{confirmedBooking?.notes || pendingBooking?.notes}"
+                                          </div>
+                                        )}
+                                        
+                                        {/* Pending Booking Actions */}
+                                        {pendingBooking && (
+                                          <div className="flex gap-2 mt-3 pt-3 border-t border-orange-200">
+                                            <Button
+                                              size="sm"
+                                              onClick={() => approveBooking(pendingBooking.id!)}
+                                              className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                                            >
+                                              <CheckCircle className="w-4 h-4 mr-1" />
+                                              Approve
+                                            </Button>
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={() => declineBooking(pendingBooking.id!)}
+                                              className="flex-1 text-red-600 border-red-300 hover:bg-red-50"
+                                            >
+                                              <X className="w-4 h-4 mr-1" />
+                                              Decline
+                                            </Button>
                                           </div>
                                         )}
                                       </div>

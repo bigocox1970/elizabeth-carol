@@ -47,11 +47,6 @@ const LoginForm = ({ onSuccess, onRegisterClick }: LoginFormProps) => {
         throw error;
       }
 
-      toast({
-        title: "Login successful!",
-        description: "Welcome back!",
-      });
-
       if (onSuccess) {
         onSuccess();
       }

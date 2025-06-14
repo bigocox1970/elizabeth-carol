@@ -23,7 +23,7 @@ const Admin = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [subscribers, setSubscribers] = useState([]);
-  const [activeTab, setActiveTab] = useState("subscribers");
+  const [activeTab, setActiveTab] = useState("availability");
   const [editingPost, setEditingPost] = useState<string | null>(null);
   
   // Clear editing post when switching to blog tab
