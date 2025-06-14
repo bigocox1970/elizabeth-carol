@@ -29,6 +29,8 @@ interface Booking {
   reading_type?: 'in_person' | 'video' | 'telephone' | 'other';
   status: 'confirmed' | 'cancelled' | 'completed' | 'pending';
   notes?: string;
+  profile_phone?: string;
+  profile_name?: string;
 }
 
 interface Client {
@@ -121,11 +123,32 @@ const AvailabilityManager = () => {
         return;
       }
 
-      console.log('📞 DEBUG: Loaded bookings data:', bookingsData);
-      console.log('📞 DEBUG: Bookings with phone numbers:', bookingsData?.filter(b => b.client_phone));
+      // Enhance bookings with profile data (phone numbers)
+      const enhancedBookings = await Promise.all(
+        (bookingsData || []).map(async (booking) => {
+          if (booking.client_email) {
+            // Look up phone number from profiles table
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('phone, name')
+              .eq('email', booking.client_email)
+              .single();
+            
+            return {
+              ...booking,
+              profile_phone: profile?.phone || null,
+              profile_name: profile?.name || null
+            };
+          }
+          return booking;
+        })
+      );
+
+      console.log('📞 DEBUG: Enhanced bookings data:', enhancedBookings);
+      console.log('📞 DEBUG: Bookings with phone numbers:', enhancedBookings?.filter(b => b.client_phone || b.profile_phone));
 
       setSlots(slotsData || []);
-      setBookings(bookingsData || []);
+      setBookings(enhancedBookings || []);
     } catch (error) {
       console.error('Error loading availability:', error);
       toast.error('Failed to load availability');
@@ -355,7 +378,7 @@ const AvailabilityManager = () => {
           id: 'from-booking', // Special ID to indicate this came from booking data
           email: existingBooking.client_email || '',
           name: existingBooking.client_name || existingBooking.client_email || 'Unknown',
-          phone: existingBooking.client_phone || ''
+          phone: existingBooking.client_phone || existingBooking.profile_phone || ''
         };
         setSelectedClient(clientFromBooking);
       } else {
@@ -1036,9 +1059,9 @@ const AvailabilityManager = () => {
                                               📧 {confirmedBooking?.client_email || pendingBooking?.client_email}
                                             </div>
                                           )}
-                                          {(confirmedBooking?.client_phone || pendingBooking?.client_phone) && (
+                                          {(confirmedBooking?.client_phone || confirmedBooking?.profile_phone || pendingBooking?.client_phone || pendingBooking?.profile_phone) && (
                                             <div className="text-sm text-muted-foreground">
-                                              📞 {confirmedBooking?.client_phone || pendingBooking?.client_phone}
+                                              📞 {confirmedBooking?.client_phone || confirmedBooking?.profile_phone || pendingBooking?.client_phone || pendingBooking?.profile_phone}
                                             </div>
                                           )}
                                         </div>
