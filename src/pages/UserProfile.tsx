@@ -186,7 +186,7 @@ const UserProfile = () => {
               notes
             )
           `)
-          .eq('client_email', user.email)
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
         if (bookingsError) {
