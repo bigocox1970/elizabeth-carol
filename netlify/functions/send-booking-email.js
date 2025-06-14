@@ -96,6 +96,15 @@ ${data.notes ? `Notes: ${data.notes}` : ''}
 Elizabeth Carol will review your request and confirm within 24 hours.
 You'll receive an email confirmation once your booking is approved.
 
+MANAGE YOUR BOOKING:
+Visit your profile page to:
+• View and manage your bookings
+• Cancel if needed (with refund options)
+• Add personal notes about your reading
+• Leave a review after your session
+
+Profile Page: https://www.elizabethcarol.co.uk/profile
+
 Best regards,
 Elizabeth Carol
 
@@ -120,6 +129,20 @@ Elizabeth Carol
               
               <p>Elizabeth Carol will review your request and confirm within 24 hours.</p>
               <p>You'll receive an email confirmation once your booking is approved.</p>
+              
+              <div style="background: #f0f9ff; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #0ea5e9;">
+                <h3 style="color: #0c4a6e; margin: 0 0 15px 0;">📋 Manage Your Booking</h3>
+                <p style="margin: 0 0 10px 0;">Visit your profile page to:</p>
+                <ul style="margin: 0; padding-left: 20px; color: #475569;">
+                  <li>View and manage your bookings</li>
+                  <li>Cancel if needed (with refund options)</li>
+                  <li>Add personal notes about your reading</li>
+                  <li>Leave a review after your session</li>
+                </ul>
+                <p style="text-align: center; margin: 15px 0 0 0;">
+                  <a href="https://www.elizabethcarol.co.uk/profile" style="background: #0ea5e9; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; display: inline-block;">Go to My Profile</a>
+                </p>
+              </div>
               
               <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; color: #64748b;">
                 <p>Best regards,<br>Elizabeth Carol</p>
@@ -228,6 +251,15 @@ Reading Type: ${data.serviceType}
 Please arrive 5 minutes early for your appointment.
 Looking forward to connecting with you!
 
+MANAGE YOUR BOOKING:
+Visit your profile page to:
+• View your confirmed booking details
+• Cancel if needed (with refund options)
+• Add personal notes about your reading
+• Leave a review after your session
+
+Profile Page: https://www.elizabethcarol.co.uk/profile
+
 Best regards,
 Elizabeth Carol
 
@@ -266,6 +298,20 @@ Elizabeth Carol
               
               <p>Please arrive 5 minutes early for your appointment.</p>
               <p>Looking forward to connecting with you!</p>
+              
+              <div style="background: #f0f9ff; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #0ea5e9;">
+                <h3 style="color: #0c4a6e; margin: 0 0 15px 0;">📋 Manage Your Booking</h3>
+                <p style="margin: 0 0 10px 0;">Visit your profile page to:</p>
+                <ul style="margin: 0; padding-left: 20px; color: #475569;">
+                  <li>View your confirmed booking details</li>
+                  <li>Cancel if needed (with refund options)</li>
+                  <li>Add personal notes about your reading</li>
+                  <li>Leave a review after your session</li>
+                </ul>
+                <p style="text-align: center; margin: 15px 0 0 0;">
+                  <a href="https://www.elizabethcarol.co.uk/profile" style="background: #0ea5e9; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; display: inline-block;">Go to My Profile</a>
+                </p>
+              </div>
               
               <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; color: #64748b;">
                 <p>Best regards,<br>Elizabeth Carol</p>
