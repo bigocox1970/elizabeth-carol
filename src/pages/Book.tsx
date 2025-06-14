@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +27,7 @@ interface Booking {
 }
 
 const Book = () => {
+  const navigate = useNavigate();
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -229,7 +231,14 @@ const Book = () => {
       setBookingStep('complete');
       setProgressStage(0);
       setBookingProgress('');
+      
+      // Show success confirmation for 3 seconds, then redirect to profile
       toast.success('Booking request sent successfully!');
+      
+      // Wait 3 seconds to show the confirmation, then redirect
+      setTimeout(() => {
+        navigate('/profile?tab=readings');
+      }, 3000);
 
     } catch (error) {
       console.error('Error:', error);

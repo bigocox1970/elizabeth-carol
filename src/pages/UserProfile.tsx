@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { getUserComments, getUserReviews, updateComment, updateReview, deleteComment, deleteReview, isUserAdmin, getUserBookings, updateBookingUserNotes, cancelBooking, createReviewForBooking } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -54,12 +54,13 @@ interface Booking {
 const UserProfile = () => {
   const { user, signOut, updatePassword } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const [comments, setComments] = useState<Comment[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("account");
+  const [activeTab, setActiveTab] = useState("readings");
   const [editingComment, setEditingComment] = useState<Comment | null>(null);
   const [editingReview, setEditingReview] = useState<Review | null>(null);
   const [commentDialogOpen, setCommentDialogOpen] = useState(false);
@@ -77,6 +78,14 @@ const UserProfile = () => {
   const [reviewDialogBooking, setReviewDialogBooking] = useState<Booking | null>(null);
   const [reviewContent, setReviewContent] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
+
+  useEffect(() => {
+    // Handle URL tab parameter
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['readings', 'comments', 'reviews', 'account'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!user) {
@@ -549,15 +558,27 @@ const UserProfile = () => {
 
                                 {/* Elizabeth's Notes */}
                                 {booking.notes && (
-                                  <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
-                                    <h5 className="font-medium text-purple-900 dark:text-purple-100 mb-1">Elizabeth's Notes:</h5>
-                                    <p className="text-sm text-purple-800 dark:text-purple-200">{booking.notes}</p>
+                                  <div className={`rounded-lg p-3 ${
+                                    booking.status === 'confirmed' || booking.status === 'completed'
+                                      ? 'bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800'
+                                      : 'bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800'
+                                  }`}>
+                                    <h5 className={`font-medium mb-1 ${
+                                      booking.status === 'confirmed' || booking.status === 'completed'
+                                        ? 'text-green-900 dark:text-green-100'
+                                        : 'text-red-900 dark:text-red-100'
+                                    }`}>Elizabeth's Notes:</h5>
+                                    <p className={`text-sm ${
+                                      booking.status === 'confirmed' || booking.status === 'completed'
+                                        ? 'text-green-800 dark:text-green-200'
+                                        : 'text-red-800 dark:text-red-200'
+                                    }`}>{booking.notes}</p>
                                   </div>
                                 )}
 
                                 {/* User Notes Section */}
-                                <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
-                                  <div className="flex items-center justify-between mb-2">
+                                <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-3 w-full">
+                                  <div className="flex items-center justify-between mb-3">
                                     <h5 className="font-medium flex items-center gap-2">
                                       <MessageSquare className="w-4 h-4" />
                                       Your Notes
@@ -582,10 +603,10 @@ const UserProfile = () => {
                                       value={bookingNotesContent}
                                       onChange={(e) => setBookingNotesContent(e.target.value)}
                                       placeholder="Add your notes about this reading..."
-                                      className="min-h-[80px]"
+                                      className="min-h-[120px] w-full resize-y"
                                     />
                                   ) : (
-                                    <p className="text-sm text-muted-foreground">
+                                    <p className="text-sm text-muted-foreground w-full">
                                       {booking.user_notes || "No notes added yet. Click edit to add your thoughts about this reading."}
                                     </p>
                                   )}
@@ -686,6 +707,23 @@ const UserProfile = () => {
                                     </Dialog>
                                   )}
                                 </div>
+
+                                {/* Address Link for In-Person Readings */}
+                                {booking.reading_type === 'in_person' && (
+                                  <div className="pt-2 border-t">
+                                    <div className="flex items-center gap-2 text-sm">
+                                      <span className="text-muted-foreground">Reading Location:</span>
+                                      <a 
+                                        href="https://www.google.com/maps/search/?api=1&query=OX44+9DJ"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 hover:text-blue-800 underline font-medium"
+                                      >
+                                        OX44 9DJ
+                                      </a>
+                                    </div>
+                                  </div>
+                                )}
 
                                 {/* Booking Date */}
                                 <div className="text-xs text-muted-foreground pt-2 border-t">
