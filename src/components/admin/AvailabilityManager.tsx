@@ -25,7 +25,7 @@ interface Booking {
   client_phone?: string;
   booking_type: 'manual' | 'online';
   reading_type?: 'in_person' | 'video' | 'telephone' | 'other';
-  status: 'confirmed' | 'cancelled' | 'completed';
+  status: 'confirmed' | 'cancelled' | 'completed' | 'pending';
   notes?: string;
 }
 
@@ -100,11 +100,10 @@ const AvailabilityManager = () => {
         return;
       }
 
-      // Load bookings from Supabase
+      // Load bookings from Supabase - include all statuses so we can see pending requests
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
-        .select('*')
-        .eq('status', 'confirmed');
+        .select('*');
 
       if (bookingsError) {
         console.error('Error loading bookings:', bookingsError);
@@ -305,6 +304,14 @@ const AvailabilityManager = () => {
     );
   };
 
+  const hasPendingBookings = (date: Date) => {
+    const dateString = date.toISOString().split('T')[0];
+    const slotsForDate = slots.filter(slot => slot.date === dateString);
+    return slotsForDate.some(slot => 
+      bookings.some(booking => booking.availability_slot_id === slot.id && booking.status === 'pending')
+    );
+  };
+
   const isSlotBooked = (slotId: number) => {
     return bookings.some(booking => 
       booking.availability_slot_id === slotId && booking.status === 'confirmed'
@@ -424,6 +431,52 @@ const AvailabilityManager = () => {
     } catch (error) {
       console.error('Error deleting booking:', error);
       toast.error('Failed to delete booking');
+    }
+  };
+
+  const approveBooking = async (bookingId: number) => {
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ status: 'confirmed' })
+        .eq('id', bookingId);
+
+      if (error) {
+        console.error('Error approving booking:', error);
+        toast.error('Failed to approve booking');
+        return;
+      }
+
+      setBookings(prev => prev.map(b => 
+        b.id === bookingId ? { ...b, status: 'confirmed' } : b
+      ));
+      toast.success('Booking approved successfully');
+    } catch (error) {
+      console.error('Error approving booking:', error);
+      toast.error('Failed to approve booking');
+    }
+  };
+
+  const declineBooking = async (bookingId: number) => {
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ status: 'cancelled' })
+        .eq('id', bookingId);
+
+      if (error) {
+        console.error('Error declining booking:', error);
+        toast.error('Failed to decline booking');
+        return;
+      }
+
+      setBookings(prev => prev.map(b => 
+        b.id === bookingId ? { ...b, status: 'cancelled' } : b
+      ));
+      toast.success('Booking declined');
+    } catch (error) {
+      console.error('Error declining booking:', error);
+      toast.error('Failed to decline booking');
     }
   };
 
@@ -712,7 +765,7 @@ const AvailabilityManager = () => {
             </div>
           </div>
           <CardDescription>
-            🟢 Available times • 🔵 Bookings • Click any date to manage times
+            🟢 Available times • 🔵 Confirmed bookings • 🟠 Pending requests • Click any date to manage times
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -738,9 +791,11 @@ const AvailabilityManager = () => {
                       className={`w-full h-full p-1 text-xs sm:text-sm min-w-0 ${
                         hasBookings(date)
                           ? 'bg-blue-100 hover:bg-blue-200 text-blue-800 border-2 border-blue-500 shadow-md'
-                          : hasAvailability(date) 
-                            ? 'bg-green-100 hover:bg-green-200 text-green-800 border border-green-300' 
-                            : 'hover:bg-muted'
+                          : hasPendingBookings(date)
+                            ? 'bg-orange-100 hover:bg-orange-200 text-orange-800 border-2 border-orange-500 shadow-md'
+                            : hasAvailability(date) 
+                              ? 'bg-green-100 hover:bg-green-200 text-green-800 border border-green-300' 
+                              : 'hover:bg-muted'
                       } ${
                         date < new Date(new Date().setHours(0,0,0,0)) 
                           ? 'opacity-50 cursor-not-allowed' 
@@ -837,7 +892,10 @@ const AvailabilityManager = () => {
                       
                       <div className="space-y-3">
                         {daySlots.map((slot) => {
-                          const booking = bookings.find(b => b.availability_slot_id === slot.id && b.status === 'confirmed');
+                          const confirmedBooking = bookings.find(b => b.availability_slot_id === slot.id && b.status === 'confirmed');
+                          const pendingBooking = bookings.find(b => b.availability_slot_id === slot.id && b.status === 'pending');
+                          const hasBooking = confirmedBooking || pendingBooking;
+                          
                           return (
                             <Card key={slot.id} className="hover:shadow-md transition-shadow max-w-none">
                               <CardContent className="p-4">
@@ -848,15 +906,20 @@ const AvailabilityManager = () => {
                                       {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
                                     </div>
                                     <div className="flex flex-wrap gap-1 mt-2">
-                                      <Badge variant="default" className="text-xs">
-                                        🔵 Booked
+                                      <Badge variant={confirmedBooking ? "default" : pendingBooking ? "secondary" : "outline"}>
+                                        {confirmedBooking ? '🔵 Confirmed' : pendingBooking ? '🟠 Pending' : '🟢 Available'}
                                       </Badge>
-                                      {booking?.reading_type && (
+                                      {(confirmedBooking?.reading_type || pendingBooking?.reading_type) ? (
                                         <Badge variant="secondary" className="text-xs">
-                                          {booking.reading_type === 'in_person' && '🏠 In-person'}
-                                          {booking.reading_type === 'video' && '📹 Video'}
-                                          {booking.reading_type === 'telephone' && '📞 Telephone'}
-                                          {booking.reading_type === 'other' && '✨ Other'}
+                                          {(confirmedBooking?.reading_type || pendingBooking?.reading_type) === 'in_person' && '🏠 In-person'}
+                                          {(confirmedBooking?.reading_type || pendingBooking?.reading_type) === 'video' && '📹 Video'}
+                                          {(confirmedBooking?.reading_type || pendingBooking?.reading_type) === 'telephone' && '📞 Telephone'}
+                                          {(confirmedBooking?.reading_type || pendingBooking?.reading_type) === 'other' && '✨ Other'}
+                                        </Badge>
+                                      ) : (
+                                        <Badge variant="outline" className="text-xs">
+                                          {slot.service_type === 'both' ? 'In-person & Remote' :
+                                           slot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only'}
                                         </Badge>
                                       )}
                                     </div>
@@ -864,32 +927,28 @@ const AvailabilityManager = () => {
 
                                   {/* Client Information */}
                                   <div className="lg:col-span-6">
-                                    {booking && (booking.client_name || booking.client_email) ? (
+                                    {hasBooking && ((confirmedBooking?.client_name || confirmedBooking?.client_email) || (pendingBooking?.client_name || pendingBooking?.client_email)) && (
                                       <div className="bg-muted/50 p-3 rounded-lg">
                                         <div className="font-medium text-foreground">
-                                          {booking.client_name || 'Client'}
+                                          {confirmedBooking?.client_name || confirmedBooking?.client_email || pendingBooking?.client_name || pendingBooking?.client_email}
                                         </div>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 mt-1">
-                                          {booking.client_email && (
+                                          {confirmedBooking?.client_email && (
                                             <div className="text-sm text-muted-foreground">
-                                              📧 {booking.client_email}
+                                              📧 {confirmedBooking.client_email}
                                             </div>
                                           )}
-                                          {booking.client_phone && (
+                                          {confirmedBooking?.client_phone && (
                                             <div className="text-sm text-muted-foreground">
-                                              📞 {booking.client_phone}
+                                              📞 {confirmedBooking.client_phone}
                                             </div>
                                           )}
                                         </div>
-                                        {booking.notes && (
+                                        {confirmedBooking?.notes && (
                                           <div className="text-sm text-muted-foreground mt-2 italic">
-                                            "{booking.notes}"
+                                            "{confirmedBooking.notes}"
                                           </div>
                                         )}
-                                      </div>
-                                    ) : (
-                                      <div className="text-muted-foreground italic">
-                                        No client details available
                                       </div>
                                     )}
                                     
@@ -1127,12 +1186,17 @@ const AvailabilityManager = () => {
                   )}
                   <div className="space-y-2">
                     {getSlotsForDate(new Date(selectedDate)).map((slot) => {
-                      const booking = bookings.find(b => b.availability_slot_id === slot.id && b.status === 'confirmed');
+                      const confirmedBooking = bookings.find(b => b.availability_slot_id === slot.id && b.status === 'confirmed');
+                      const pendingBooking = bookings.find(b => b.availability_slot_id === slot.id && b.status === 'pending');
+                      const hasBooking = confirmedBooking || pendingBooking;
+                      
                       return (
                         <div key={slot.id} className={`flex items-center gap-3 p-3 rounded-lg bg-muted/50 ${
-                          isSlotBooked(slot.id!) 
-                            ? 'border-2 border-blue-500 shadow-md bg-blue-50 dark:bg-blue-950/20' 
-                            : 'border'
+                          confirmedBooking
+                            ? 'border-2 border-blue-500 shadow-md bg-blue-50 dark:bg-blue-950/20'
+                            : pendingBooking
+                              ? 'border-2 border-orange-500 shadow-md bg-orange-50 dark:bg-orange-950/20'
+                              : 'border'
                         }`}>
                           {showEditMode && (
                             <input
@@ -1147,15 +1211,15 @@ const AvailabilityManager = () => {
                               {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
                             </div>
                             <div className="flex gap-2 mt-1">
-                              <Badge variant={isSlotBooked(slot.id!) ? "default" : "secondary"}>
-                                {isSlotBooked(slot.id!) ? '🔵 Booked' : '🟢 Available'}
+                              <Badge variant={confirmedBooking ? "default" : pendingBooking ? "secondary" : "outline"}>
+                                {confirmedBooking ? '🔵 Confirmed' : pendingBooking ? '🟠 Pending' : '🟢 Available'}
                               </Badge>
-                              {isSlotBooked(slot.id!) && booking?.reading_type ? (
+                              {(confirmedBooking?.reading_type || pendingBooking?.reading_type) ? (
                                 <Badge variant="secondary" className="text-xs">
-                                  {booking.reading_type === 'in_person' && '🏠 In-person'}
-                                  {booking.reading_type === 'video' && '📹 Video'}
-                                  {booking.reading_type === 'telephone' && '📞 Telephone'}
-                                  {booking.reading_type === 'other' && '✨ Other'}
+                                  {(confirmedBooking?.reading_type || pendingBooking?.reading_type) === 'in_person' && '🏠 In-person'}
+                                  {(confirmedBooking?.reading_type || pendingBooking?.reading_type) === 'video' && '📹 Video'}
+                                  {(confirmedBooking?.reading_type || pendingBooking?.reading_type) === 'telephone' && '📞 Telephone'}
+                                  {(confirmedBooking?.reading_type || pendingBooking?.reading_type) === 'other' && '✨ Other'}
                                 </Badge>
                               ) : (
                                 <Badge variant="outline" className="text-xs">
@@ -1164,9 +1228,9 @@ const AvailabilityManager = () => {
                                 </Badge>
                               )}
                             </div>
-                            {booking && (booking.client_name || booking.client_email) && (
+                            {hasBooking && ((confirmedBooking?.client_name || confirmedBooking?.client_email) || (pendingBooking?.client_name || pendingBooking?.client_email)) && (
                               <p className="text-sm text-muted-foreground mt-1">
-                                Client: {booking.client_name || booking.client_email}
+                                Client: {confirmedBooking?.client_name || confirmedBooking?.client_email || pendingBooking?.client_name || pendingBooking?.client_email}
                               </p>
                             )}
                             {slot.notes && (
@@ -1174,14 +1238,38 @@ const AvailabilityManager = () => {
                             )}
                           </div>
                           {!showEditMode && (
-                            <Button
-                              variant={isSlotBooked(slot.id!) ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => toggleSlotBooking(slot.id!)}
-                              className="text-xs"
-                            >
-                              {isSlotBooked(slot.id!) ? 'Edit' : 'Book'}
-                            </Button>
+                            <div className="flex flex-col gap-2">
+                              {pendingBooking && (
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="default"
+                                    size="sm"
+                                    onClick={() => approveBooking(pendingBooking.id!)}
+                                    className="text-xs bg-green-600 hover:bg-green-700"
+                                  >
+                                    ✓ Approve
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => declineBooking(pendingBooking.id!)}
+                                    className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    ✗ Decline
+                                  </Button>
+                                </div>
+                              )}
+                              {!pendingBooking && (
+                                <Button
+                                  variant={confirmedBooking ? "default" : "outline"}
+                                  size="sm"
+                                  onClick={() => toggleSlotBooking(slot.id!)}
+                                  className="text-xs"
+                                >
+                                  {confirmedBooking ? 'Edit' : 'Book'}
+                                </Button>
+                              )}
+                            </div>
                           )}
                         </div>
                       );
