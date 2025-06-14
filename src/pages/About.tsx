@@ -198,7 +198,7 @@ const About = () => {
                   Call 01865 361 786
                 </Button>
               </a>
-              <Link to="/contact">
+              <Link to="/book">
                 <Button size="lg" variant="outline">
                   Book Now
                 </Button>

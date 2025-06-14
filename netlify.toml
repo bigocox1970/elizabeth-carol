@@ -23,10 +23,12 @@
   force = true
 
 # SPA catch-all redirect - this handles all other routes
+# Must be last to avoid conflicts with specific routes
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+  force = false
 
 [functions]
   node_bundler = "esbuild"

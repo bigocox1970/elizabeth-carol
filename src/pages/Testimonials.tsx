@@ -279,7 +279,7 @@ const Testimonials = () => {
               through professional psychic and mediumship readings.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/contact">
+              <Link to="/book">
                 <Button size="lg" className="bg-gradient-mystical hover:opacity-90 text-primary-foreground">
                   Book Your Reading
                 </Button>
