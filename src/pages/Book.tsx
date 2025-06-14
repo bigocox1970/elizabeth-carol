@@ -132,7 +132,7 @@ const Book = () => {
   };
 
   const handleBookingRequest = async () => {
-    if (!selectedSlot || !selectedReadingType) return;
+    if (!selectedSlot || !selectedReadingType || loading) return;
 
     // Check if user is logged in
     if (!user) {
@@ -141,6 +141,7 @@ const Book = () => {
       return;
     }
 
+    setLoading(true);
     try {
       // Create a booking request in the bookings table with 'pending' status
       const { error } = await supabase
@@ -188,6 +189,8 @@ const Book = () => {
     } catch (error) {
       console.error('Error:', error);
       toast.error('Failed to send booking request');
+    } finally {
+      setLoading(false);
     }
   };
 

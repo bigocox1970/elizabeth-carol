@@ -97,8 +97,9 @@ exports.handler = async (event, context) => {
           `
         };
         
-        await transporter.sendMail(customerEmail);
-        console.log('Customer booking confirmation sent to:', data.customerEmail);
+        const customerResult = await transporter.sendMail(customerEmail);
+        console.log('✅ Customer booking confirmation sent to:', data.customerEmail);
+        console.log('📧 Email result:', customerResult);
         emailSent = true;
         break;
 
@@ -130,8 +131,9 @@ exports.handler = async (event, context) => {
           `
         };
         
-        await transporter.sendMail(adminEmail);
-        console.log('Admin booking notification sent to info@elizabethcarol.co.uk');
+        const adminResult = await transporter.sendMail(adminEmail);
+        console.log('✅ Admin booking notification sent to info@elizabethcarol.co.uk');
+        console.log('📧 Email result:', adminResult);
         emailSent = true;
         break;
 
@@ -197,8 +199,9 @@ exports.handler = async (event, context) => {
           `
         };
         
-        await transporter.sendMail(approvalEmail);
-        console.log(`Booking ${data.approved ? 'approval' : 'decline'} email sent to:`, data.customerEmail);
+        const approvalResult = await transporter.sendMail(approvalEmail);
+        console.log(`✅ Booking ${data.approved ? 'approval' : 'decline'} email sent to:`, data.customerEmail);
+        console.log('📧 Email result:', approvalResult);
         emailSent = true;
         break;
 
