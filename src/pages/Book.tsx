@@ -324,12 +324,12 @@ const Book = () => {
         {bookingStep === 'calendar' && (
           <Card className="hover:shadow-lg hover:shadow-primary/20 transition-all duration-300">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center">
+                <div className="flex items-center gap-4">
                   <Button variant="outline" size="sm" onClick={() => navigateDate('prev')}>
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
-                  <h3 className="font-serif font-semibold min-w-[200px] text-center text-foreground">
+                  <h3 className="font-serif font-semibold text-center text-foreground min-w-[200px]">
                     {currentDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
                   </h3>
                   <Button variant="outline" size="sm" onClick={() => navigateDate('next')}>
@@ -337,7 +337,7 @@ const Book = () => {
                   </Button>
                 </div>
               </div>
-              <CardDescription>
+              <CardDescription className="text-center">
                 🟢 Available dates • Click any date to see available times
               </CardDescription>
             </CardHeader>
