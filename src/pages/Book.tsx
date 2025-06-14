@@ -207,7 +207,7 @@ const Book = () => {
     
     try {
       // Stage 1: Validate and create booking request
-      await new Promise(resolve => setTimeout(resolve, 800)); // Show validation stage
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Increased for validation
       
       // Get user's phone number from profile
       let userPhone = '';
@@ -248,7 +248,7 @@ const Book = () => {
       // Stage 2: Drafting emails
       setProgressStage(2);
       setBookingProgress('Drafting email notifications...');
-      await new Promise(resolve => setTimeout(resolve, 600));
+      await new Promise(resolve => setTimeout(resolve, 1200)); // Increased
 
       const readingTypeDisplay = selectedReadingType === 'in_person' ? 'One to One (In-person)' :
                                 selectedReadingType === 'video' ? 'Video Call' : 'Telephone';
@@ -262,17 +262,11 @@ const Book = () => {
         notes: selectedSlot.notes
       };
 
-      // Stage 3: Send email to Elizabeth Carol
+      // Stage 3: Send both emails in parallel
       setProgressStage(3);
-      setBookingProgress('Sending notification to Elizabeth Carol...');
-      await new Promise(resolve => setTimeout(resolve, 800));
-
-      // Stage 4: Send confirmation email to customer
-      setProgressStage(4);
-      setBookingProgress('Sending confirmation email to you...');
-      await new Promise(resolve => setTimeout(resolve, 600));
-
-      // Send both emails in parallel
+      setBookingProgress('Sending email notifications...');
+      
+      // Send both emails in parallel (no artificial delay here - let the real email time show)
       const emailPromises = [
         sendCustomerBookingConfirmation(emailData),
         sendAdminBookingNotification(emailData)
@@ -280,19 +274,20 @@ const Book = () => {
 
       try {
         await Promise.all(emailPromises);
-        
-        // Stage 5: Complete
-        setProgressStage(5);
-        setBookingProgress('Completing booking process...');
-        await new Promise(resolve => setTimeout(resolve, 600));
-        setBookingProgress('Booking request sent successfully!');
       } catch (emailError) {
         console.warn('Email sending failed, but booking was created:', emailError);
-        setProgressStage(5);
-        setBookingProgress('Completing booking process...');
-        await new Promise(resolve => setTimeout(resolve, 600));
-        setBookingProgress('Booking created (email delivery may be delayed)');
       }
+      
+      // Stage 4: Processing
+      setProgressStage(4);
+      setBookingProgress('Processing your booking...');
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Show processing stage
+      
+      // Stage 5: Complete
+      setProgressStage(5);
+      setBookingProgress('Completing booking process...');
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setBookingProgress('Booking request sent successfully!');
 
       // Show completion stage briefly
       await new Promise(resolve => setTimeout(resolve, 1200));
@@ -761,7 +756,7 @@ const Book = () => {
                       <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div> : '1'}
                   </div>
                   <span className={`${progressStage >= 1 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                    Validating & sending request to Elizabeth Carol
+                    Validating booking details
                   </span>
                 </div>
 
@@ -787,7 +782,7 @@ const Book = () => {
                       <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div> : '3'}
                   </div>
                   <span className={`${progressStage >= 3 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                    Sending notification to Elizabeth Carol
+                    Sending email notifications
                   </span>
                 </div>
 
@@ -800,7 +795,7 @@ const Book = () => {
                       <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div> : '4'}
                   </div>
                   <span className={`${progressStage >= 4 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                    Sending confirmation email to you
+                    Processing your booking
                   </span>
                 </div>
 
@@ -811,7 +806,7 @@ const Book = () => {
                     {progressStage >= 5 ? '✓' : '5'}
                   </div>
                   <span className={`${progressStage >= 5 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                    Completing booking process
+                    Finalizing booking
                   </span>
                 </div>
               </div>
