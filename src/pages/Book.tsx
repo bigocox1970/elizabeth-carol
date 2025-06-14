@@ -134,6 +134,8 @@ const Book = () => {
     setBookingStep('reading-type');
   };
 
+  const [bookingProgress, setBookingProgress] = useState<string>('');
+
   const handleBookingRequest = async () => {
     if (!selectedSlot || !selectedReadingType || loading) return;
 
@@ -145,6 +147,8 @@ const Book = () => {
     }
 
     setLoading(true);
+    setBookingProgress('Creating your booking request...');
+    
     try {
       // Create a booking request in the bookings table with 'pending' status
       const { error } = await supabase
@@ -162,36 +166,51 @@ const Book = () => {
       if (error) {
         console.error('Error creating booking request:', error);
         toast.error('Failed to create booking request');
+        setBookingProgress('');
         return;
       }
 
-      // Send email notifications
+      setBookingProgress('Sending confirmation emails...');
+
+      // Send email notifications in parallel for better performance
       const readingTypeDisplay = selectedReadingType === 'in_person' ? 'One to One (In-person)' :
                                 selectedReadingType === 'video' ? 'Video Call' : 'Telephone';
 
-      await sendCustomerBookingConfirmation({
+      const emailData = {
         customerEmail: user.email!,
         customerName: user.user_metadata?.name || user.email?.split('@')[0] || 'Customer',
         date: formatDate(selectedSlot.date),
         time: `${formatTime(selectedSlot.start_time)} - ${formatTime(selectedSlot.end_time)}`,
         serviceType: readingTypeDisplay,
         notes: selectedSlot.notes
-      });
+      };
 
-      await sendAdminBookingNotification({
-        customerEmail: user.email!,
-        customerName: user.user_metadata?.name || user.email?.split('@')[0] || 'Customer',
-        date: formatDate(selectedSlot.date),
-        time: `${formatTime(selectedSlot.start_time)} - ${formatTime(selectedSlot.end_time)}`,
-        serviceType: readingTypeDisplay,
-        notes: selectedSlot.notes
-      });
+      // Send both emails in parallel
+      const emailPromises = [
+        sendCustomerBookingConfirmation(emailData),
+        sendAdminBookingNotification(emailData)
+      ];
 
-      setBookingStep('complete');
-      toast.success('Booking request sent successfully!');
+      try {
+        await Promise.all(emailPromises);
+        setBookingProgress('Emails sent successfully!');
+      } catch (emailError) {
+        console.warn('Email sending failed, but booking was created:', emailError);
+        // Don't fail the booking if emails fail
+        setBookingProgress('Booking created (email delivery may be delayed)');
+      }
+
+      // Small delay to show the success message
+      setTimeout(() => {
+        setBookingStep('complete');
+        setBookingProgress('');
+        toast.success('Booking request sent successfully!');
+      }, 1000);
+
     } catch (error) {
       console.error('Error:', error);
       toast.error('Failed to send booking request');
+      setBookingProgress('');
     } finally {
       setLoading(false);
     }
@@ -460,6 +479,19 @@ const Book = () => {
                 )}
               </div>
               
+              {/* Progress Indicator - Shows during booking process */}
+              {loading && bookingProgress && (
+                <div className="p-4 border rounded-lg bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center gap-3">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    <div>
+                      <p className="font-medium text-blue-900 dark:text-blue-100">{bookingProgress}</p>
+                      <p className="text-sm text-blue-700 dark:text-blue-300">Please wait while we process your request...</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Book Button - Appears when reading type is selected */}
               {selectedReadingType && (
                 <div className="pt-4 border-t">
@@ -472,7 +504,7 @@ const Book = () => {
                     {loading ? (
                       <div className="flex items-center gap-2">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        Sending Request...
+                        {bookingProgress || 'Processing...'}
                       </div>
                     ) : (
                       `Book Your ${selectedReadingType === 'in_person' ? 'One to One Reading' : 
