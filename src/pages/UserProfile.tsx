@@ -78,6 +78,8 @@ const UserProfile = () => {
   const [reviewDialogBooking, setReviewDialogBooking] = useState<Booking | null>(null);
   const [reviewContent, setReviewContent] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
+  const [fullScreenNotesOpen, setFullScreenNotesOpen] = useState(false);
+  const [fullScreenNotesBooking, setFullScreenNotesBooking] = useState<Booking | null>(null);
 
   useEffect(() => {
     // Handle URL tab parameter
@@ -313,6 +315,44 @@ const UserProfile = () => {
   const handleEditBookingNotes = (booking: Booking) => {
     setEditingBookingNotes(booking.id);
     setBookingNotesContent(booking.user_notes || "");
+  };
+
+  const handleFullScreenNotesEdit = (booking: Booking) => {
+    setFullScreenNotesBooking(booking);
+    setBookingNotesContent(booking.user_notes || "");
+    setFullScreenNotesOpen(true);
+  };
+
+  const handleSaveFullScreenNotes = async () => {
+    if (!fullScreenNotesBooking) return;
+    
+    try {
+      const { error } = await updateBookingUserNotes(fullScreenNotesBooking.id, bookingNotesContent);
+      if (error) throw error;
+
+      // Update local state
+      setBookings(bookings.map(booking => 
+        booking.id === fullScreenNotesBooking.id 
+          ? { ...booking, user_notes: bookingNotesContent } 
+          : booking
+      ));
+
+      toast({
+        title: "Success",
+        description: "Your notes have been saved.",
+      });
+
+      setFullScreenNotesOpen(false);
+      setFullScreenNotesBooking(null);
+      setBookingNotesContent("");
+    } catch (error) {
+      console.error("Error updating booking notes:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save your notes. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSaveBookingNotes = async (bookingId: number) => {
@@ -558,17 +598,17 @@ const UserProfile = () => {
 
                                 {/* Elizabeth's Notes */}
                                 {booking.notes && (
-                                  <div className={`rounded-lg p-3 ${
+                                  <div className={`w-full rounded-lg p-4 ${
                                     booking.status === 'confirmed' || booking.status === 'completed'
                                       ? 'bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800'
                                       : 'bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800'
                                   }`}>
-                                    <h5 className={`font-medium mb-1 ${
+                                    <h5 className={`font-medium mb-2 ${
                                       booking.status === 'confirmed' || booking.status === 'completed'
                                         ? 'text-green-900 dark:text-green-100'
                                         : 'text-red-900 dark:text-red-100'
                                     }`}>Elizabeth's Notes:</h5>
-                                    <p className={`text-sm ${
+                                    <p className={`text-sm leading-relaxed w-full ${
                                       booking.status === 'confirmed' || booking.status === 'completed'
                                         ? 'text-green-800 dark:text-green-200'
                                         : 'text-red-800 dark:text-red-200'
@@ -577,7 +617,7 @@ const UserProfile = () => {
                                 )}
 
                                 {/* User Notes Section */}
-                                <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-3 w-full">
+                                <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4 w-full">
                                   <div className="flex items-center justify-between mb-3">
                                     <h5 className="font-medium flex items-center gap-2">
                                       <MessageSquare className="w-4 h-4" />
@@ -593,22 +633,40 @@ const UserProfile = () => {
                                         </Button>
                                       </div>
                                     ) : (
-                                      <Button size="sm" variant="outline" onClick={() => handleEditBookingNotes(booking)}>
-                                        <Edit className="w-4 h-4" />
-                                      </Button>
+                                      <div className="flex gap-2">
+                                        <Button size="sm" variant="outline" onClick={() => handleEditBookingNotes(booking)}>
+                                          <Edit className="w-4 h-4" />
+                                        </Button>
+                                        <Button size="sm" variant="outline" onClick={() => handleFullScreenNotesEdit(booking)} className="md:hidden">
+                                          Full Screen
+                                        </Button>
+                                      </div>
                                     )}
                                   </div>
                                   {editingBookingNotes === booking.id ? (
-                                    <Textarea
-                                      value={bookingNotesContent}
-                                      onChange={(e) => setBookingNotesContent(e.target.value)}
-                                      placeholder="Add your notes about this reading..."
-                                      className="min-h-[120px] w-full resize-y"
-                                    />
+                                    <div className="space-y-3">
+                                      <Textarea
+                                        value={bookingNotesContent}
+                                        onChange={(e) => setBookingNotesContent(e.target.value)}
+                                        placeholder="Add your notes about this reading..."
+                                        className="min-h-[120px] w-full resize-y"
+                                      />
+                                      <Button 
+                                        size="sm" 
+                                        variant="outline" 
+                                        onClick={() => handleFullScreenNotesEdit(booking)}
+                                        className="w-full md:hidden"
+                                      >
+                                        Open Full Screen Editor
+                                      </Button>
+                                    </div>
                                   ) : (
-                                    <p className="text-sm text-muted-foreground w-full">
-                                      {booking.user_notes || "No notes added yet. Click edit to add your thoughts about this reading."}
-                                    </p>
+                                    <div 
+                                      className="text-sm text-muted-foreground w-full leading-relaxed cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded transition-colors"
+                                      onClick={() => handleFullScreenNotesEdit(booking)}
+                                    >
+                                      {booking.user_notes || "No notes added yet. Tap here to add your thoughts about this reading."}
+                                    </div>
                                   )}
                                 </div>
 
@@ -1024,6 +1082,53 @@ const UserProfile = () => {
         </div>
       </main>
       <Footer />
+
+      {/* Full Screen Notes Modal */}
+      <Dialog open={fullScreenNotesOpen} onOpenChange={setFullScreenNotesOpen}>
+        <DialogContent className="max-w-full h-full m-0 p-0 rounded-none">
+          <div className="flex flex-col h-full">
+            <DialogHeader className="p-6 border-b">
+              <DialogTitle className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5" />
+                Your Notes - {fullScreenNotesBooking?.reading_type === 'in_person' ? 'One to One (In-person)' :
+                             fullScreenNotesBooking?.reading_type === 'video' ? 'Video Call Reading' : 'Telephone Reading'}
+              </DialogTitle>
+              <DialogDescription>
+                {fullScreenNotesBooking && formatDate(fullScreenNotesBooking.availability_slots.date)} at{' '}
+                {fullScreenNotesBooking && formatTime(fullScreenNotesBooking.availability_slots.start_time)} -{' '}
+                {fullScreenNotesBooking && formatTime(fullScreenNotesBooking.availability_slots.end_time)}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="flex-1 p-6">
+              <Textarea
+                value={bookingNotesContent}
+                onChange={(e) => setBookingNotesContent(e.target.value)}
+                placeholder="Add your notes about this reading..."
+                className="w-full h-full min-h-[400px] resize-none text-base leading-relaxed"
+              />
+            </div>
+            
+            <div className="p-6 border-t bg-gray-50 dark:bg-gray-900">
+              <div className="flex gap-3 justify-end">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setFullScreenNotesOpen(false);
+                    setFullScreenNotesBooking(null);
+                    setBookingNotesContent("");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveFullScreenNotes}>
+                  Save Notes
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
