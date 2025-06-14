@@ -48,6 +48,11 @@ exports.handler = async (event, context) => {
     }
 
     console.log('🔧 Creating email transporter...');
+    console.log('Email credentials:', {
+      user: process.env.EMAIL_USER ? 'SET' : 'MISSING',
+      pass: process.env.EMAIL_PASSWORD ? 'SET' : 'MISSING'
+    });
+    
     const transporter = nodemailer.createTransport({
       host: 'smtp.office365.com',
       port: 587,
@@ -58,6 +63,15 @@ exports.handler = async (event, context) => {
         pass: process.env.EMAIL_PASSWORD
       }
     });
+
+    // Test the transporter connection
+    try {
+      await transporter.verify();
+      console.log('✅ SMTP connection verified successfully');
+    } catch (verifyError) {
+      console.error('❌ SMTP connection failed:', verifyError);
+      throw new Error(`SMTP connection failed: ${verifyError.message}`);
+    }
 
     let emailSent = false;
 
@@ -115,10 +129,23 @@ Elizabeth Carol
           `
         };
         
-        const customerResult = await transporter.sendMail(customerEmail);
-        console.log('✅ Customer booking confirmation sent to:', data.customerEmail);
-        console.log('📧 Email result:', customerResult);
-        emailSent = true;
+        try {
+          const customerResult = await transporter.sendMail(customerEmail);
+          console.log('✅ Customer booking confirmation sent to:', data.customerEmail);
+          console.log('📧 Email result:', customerResult);
+          console.log('📧 Message ID:', customerResult.messageId);
+          console.log('📧 Response:', customerResult.response);
+          emailSent = true;
+        } catch (emailError) {
+          console.error('❌ Failed to send customer email:', emailError);
+          console.error('❌ Error details:', {
+            code: emailError.code,
+            command: emailError.command,
+            response: emailError.response,
+            responseCode: emailError.responseCode
+          });
+          throw emailError;
+        }
         break;
 
       case 'admin-booking-notification':
@@ -162,10 +189,23 @@ Admin Dashboard: https://www.elizabethcarol.co.uk/admin`,
           `
         };
         
-        const adminResult = await transporter.sendMail(adminEmail);
-        console.log('✅ Admin booking notification sent to info@elizabethcarol.co.uk');
-        console.log('📧 Email result:', adminResult);
-        emailSent = true;
+        try {
+          const adminResult = await transporter.sendMail(adminEmail);
+          console.log('✅ Admin booking notification sent to info@elizabethcarol.co.uk');
+          console.log('📧 Email result:', adminResult);
+          console.log('📧 Message ID:', adminResult.messageId);
+          console.log('📧 Response:', adminResult.response);
+          emailSent = true;
+        } catch (emailError) {
+          console.error('❌ Failed to send admin email:', emailError);
+          console.error('❌ Error details:', {
+            code: emailError.code,
+            command: emailError.command,
+            response: emailError.response,
+            responseCode: emailError.responseCode
+          });
+          throw emailError;
+        }
         break;
 
       case 'booking-approval':
@@ -292,7 +332,12 @@ Elizabeth Carol
     };
 
   } catch (error) {
-    console.error('Booking email error:', error);
+    console.error('=== CRITICAL ERROR IN BOOKING EMAIL FUNCTION ===');
+    console.error('Error type:', error.constructor.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    
     return {
       statusCode: 500,
       headers: {
@@ -301,7 +346,9 @@ Elizabeth Carol
       },
       body: JSON.stringify({ 
         success: false,
-        message: 'Failed to send email' 
+        message: 'Failed to send email',
+        error: error.message,
+        errorType: error.constructor.name
       })
     };
   }
