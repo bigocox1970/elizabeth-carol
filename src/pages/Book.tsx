@@ -159,8 +159,6 @@ const Book = () => {
     try {
       // Stage 1: Validate and create booking request
       await new Promise(resolve => setTimeout(resolve, 800)); // Show validation stage
-      setBookingProgress('Sending booking request to Elizabeth Carol...');
-      await new Promise(resolve => setTimeout(resolve, 400));
       
       const { error } = await supabase
         .from('bookings')
@@ -171,7 +169,7 @@ const Book = () => {
           booking_type: 'online',
           reading_type: selectedReadingType,
           status: 'pending',
-          notes: 'Customer booking request - needs manual approval'
+          notes: 'Customer booking request'
         });
 
       if (error) {
@@ -183,9 +181,9 @@ const Book = () => {
         return;
       }
 
-      // Stage 2: Send emails
+      // Stage 2: Drafting emails
       setProgressStage(2);
-      setBookingProgress('Sending confirmation email to you...');
+      setBookingProgress('Drafting email notifications...');
       await new Promise(resolve => setTimeout(resolve, 600));
 
       const readingTypeDisplay = selectedReadingType === 'in_person' ? 'One to One (In-person)' :
@@ -200,8 +198,17 @@ const Book = () => {
         notes: selectedSlot.notes
       };
 
+      // Stage 3: Send email to Elizabeth Carol
+      setProgressStage(3);
+      setBookingProgress('Sending notification to Elizabeth Carol...');
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      // Stage 4: Send confirmation email to customer
+      setProgressStage(4);
+      setBookingProgress('Sending confirmation email to you...');
+      await new Promise(resolve => setTimeout(resolve, 600));
+
       // Send both emails in parallel
-      setBookingProgress('Notifying Elizabeth Carol of your request...');
       const emailPromises = [
         sendCustomerBookingConfirmation(emailData),
         sendAdminBookingNotification(emailData)
@@ -209,16 +216,15 @@ const Book = () => {
 
       try {
         await Promise.all(emailPromises);
-        await new Promise(resolve => setTimeout(resolve, 400));
         
-        // Stage 3: Complete
-        setProgressStage(3);
+        // Stage 5: Complete
+        setProgressStage(5);
         setBookingProgress('Completing booking process...');
         await new Promise(resolve => setTimeout(resolve, 600));
         setBookingProgress('Booking request sent successfully!');
       } catch (emailError) {
         console.warn('Email sending failed, but booking was created:', emailError);
-        setProgressStage(3);
+        setProgressStage(5);
         setBookingProgress('Completing booking process...');
         await new Promise(resolve => setTimeout(resolve, 600));
         setBookingProgress('Booking created (email delivery may be delayed)');
@@ -723,7 +729,7 @@ const Book = () => {
               <div className="w-full bg-muted rounded-full h-2 mb-6">
                 <div 
                   className="bg-green-600 h-2 rounded-full transition-all duration-500 ease-out"
-                  style={{ width: `${(progressStage / 3) * 100}%` }}
+                  style={{ width: `${(progressStage / 5) * 100}%` }}
                 ></div>
               </div>
 
@@ -751,17 +757,43 @@ const Book = () => {
                       <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div> : '2'}
                   </div>
                   <span className={`${progressStage >= 2 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                    Sending confirmation emails to you & Elizabeth Carol
+                    Drafting email notifications
                   </span>
                 </div>
 
                 <div className={`flex items-center gap-3 p-3 rounded-lg ${progressStage >= 3 ? 'bg-green-50 dark:bg-green-950/20' : 'bg-muted/50'}`}>
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                    progressStage >= 3 ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground'
+                    progressStage > 3 ? 'bg-green-600 text-white' : 
+                    progressStage === 3 ? 'bg-blue-600 text-white' : 'bg-muted text-muted-foreground'
                   }`}>
-                    {progressStage >= 3 ? '✓' : '3'}
+                    {progressStage > 3 ? '✓' : progressStage === 3 ? 
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div> : '3'}
                   </div>
                   <span className={`${progressStage >= 3 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                    Sending notification to Elizabeth Carol
+                  </span>
+                </div>
+
+                <div className={`flex items-center gap-3 p-3 rounded-lg ${progressStage >= 4 ? 'bg-green-50 dark:bg-green-950/20' : 'bg-muted/50'}`}>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                    progressStage > 4 ? 'bg-green-600 text-white' : 
+                    progressStage === 4 ? 'bg-blue-600 text-white' : 'bg-muted text-muted-foreground'
+                  }`}>
+                    {progressStage > 4 ? '✓' : progressStage === 4 ? 
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div> : '4'}
+                  </div>
+                  <span className={`${progressStage >= 4 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                    Sending confirmation email to you
+                  </span>
+                </div>
+
+                <div className={`flex items-center gap-3 p-3 rounded-lg ${progressStage >= 5 ? 'bg-green-50 dark:bg-green-950/20' : 'bg-muted/50'}`}>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                    progressStage >= 5 ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground'
+                  }`}>
+                    {progressStage >= 5 ? '✓' : '5'}
+                  </div>
+                  <span className={`${progressStage >= 5 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
                     Completing booking process
                   </span>
                 </div>

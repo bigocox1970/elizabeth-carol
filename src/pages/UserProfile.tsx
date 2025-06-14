@@ -53,7 +53,7 @@ interface Booking {
 }
 
 const UserProfile = () => {
-  const { user, signOut, updatePassword } = useAuth();
+  const { user, signOut, updatePassword, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
@@ -91,6 +91,9 @@ const UserProfile = () => {
   }, [searchParams]);
 
   useEffect(() => {
+    // Don't redirect if auth is still loading
+    if (authLoading) return;
+    
     if (!user) {
       navigate("/");
       return;
@@ -130,7 +133,7 @@ const UserProfile = () => {
     };
 
     fetchUserContent();
-  }, [user, navigate, toast]);
+  }, [user, navigate, toast, authLoading]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -731,11 +734,8 @@ const UserProfile = () => {
                                       </div>
                                     ) : (
                                       <div className="flex gap-2">
-                                        <Button size="sm" variant="outline" onClick={() => handleEditBookingNotes(booking)}>
+                                        <Button size="sm" variant="outline" onClick={() => handleFullScreenNotesEdit(booking)}>
                                           <Edit className="w-4 h-4" />
-                                        </Button>
-                                        <Button size="sm" variant="outline" onClick={() => handleFullScreenNotesEdit(booking)} className="md:hidden">
-                                          Full Screen
                                         </Button>
                                       </div>
                                     )}
