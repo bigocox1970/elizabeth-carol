@@ -29,6 +29,10 @@ interface Booking {
   reading_type?: 'in_person' | 'video' | 'telephone' | 'other';
   status: 'confirmed' | 'cancelled' | 'completed' | 'pending';
   notes?: string;
+  profiles?: {
+    phone?: string;
+    name?: string;
+  };
 }
 
 interface Client {
@@ -111,7 +115,8 @@ const AvailabilityManager = () => {
         .from('bookings')
         .select(`
           *,
-          availability_slots!inner(date)
+          availability_slots!inner(date),
+          profiles(phone, name)
         `)
         .gte('availability_slots.date', today);
 
@@ -122,7 +127,7 @@ const AvailabilityManager = () => {
       }
 
       console.log('📞 DEBUG: Loaded bookings data:', bookingsData);
-      console.log('📞 DEBUG: Bookings with phone numbers:', bookingsData?.filter(b => b.client_phone));
+      console.log('📞 DEBUG: Bookings with phone numbers:', bookingsData?.filter(b => b.client_phone || b.profiles?.phone));
 
       setSlots(slotsData || []);
       setBookings(bookingsData || []);
@@ -355,7 +360,7 @@ const AvailabilityManager = () => {
           id: 'from-booking', // Special ID to indicate this came from booking data
           email: existingBooking.client_email || '',
           name: existingBooking.client_name || existingBooking.client_email || 'Unknown',
-          phone: existingBooking.client_phone || ''
+          phone: existingBooking.client_phone || existingBooking.profiles?.phone || ''
         };
         setSelectedClient(clientFromBooking);
       } else {
@@ -1563,6 +1568,9 @@ const AvailabilityManager = () => {
                         </div>
                         {selectedClient.id !== 'not-registered' && (
                           <div className="text-sm text-muted-foreground">{selectedClient.email}</div>
+                        )}
+                        {selectedClient.id !== 'not-registered' && selectedClient.phone && (
+                          <div className="text-sm text-muted-foreground">📞 {selectedClient.phone}</div>
                         )}
                       </div>
                       <Button
