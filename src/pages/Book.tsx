@@ -399,7 +399,7 @@ const Book = () => {
                     variant={selectedReadingType === 'in_person' ? 'default' : 'outline'}
                     className={`w-full p-6 h-auto flex flex-col gap-2 transition-all duration-200 ${
                       selectedReadingType === 'in_person' 
-                        ? 'bg-green-600 hover:bg-green-700 text-white border-2 border-green-700 shadow-lg' 
+                        ? 'bg-green-50 border-2 border-green-500 text-green-800 shadow-md dark:bg-green-950/20 dark:text-green-200' 
                         : 'hover:bg-green-50 hover:border-green-300 hover:text-green-700 dark:hover:bg-green-950/20'
                     }`}
                     onClick={() => setSelectedReadingType('in_person')}
@@ -418,7 +418,7 @@ const Book = () => {
                       variant={selectedReadingType === 'video' ? 'default' : 'outline'}
                       className={`w-full p-6 h-auto flex flex-col gap-2 transition-all duration-200 ${
                         selectedReadingType === 'video' 
-                          ? 'bg-green-600 hover:bg-green-700 text-white border-2 border-green-700 shadow-lg' 
+                          ? 'bg-green-50 border-2 border-green-500 text-green-800 shadow-md dark:bg-green-950/20 dark:text-green-200' 
                           : 'hover:bg-green-50 hover:border-green-300 hover:text-green-700 dark:hover:bg-green-950/20'
                       }`}
                       onClick={() => setSelectedReadingType('video')}
@@ -434,7 +434,7 @@ const Book = () => {
                       variant={selectedReadingType === 'telephone' ? 'default' : 'outline'}
                       className={`w-full p-6 h-auto flex flex-col gap-2 transition-all duration-200 ${
                         selectedReadingType === 'telephone' 
-                          ? 'bg-green-600 hover:bg-green-700 text-white border-2 border-green-700 shadow-lg' 
+                          ? 'bg-green-50 border-2 border-green-500 text-green-800 shadow-md dark:bg-green-950/20 dark:text-green-200' 
                           : 'hover:bg-green-50 hover:border-green-300 hover:text-green-700 dark:hover:bg-green-950/20'
                       }`}
                       onClick={() => setSelectedReadingType('telephone')}
