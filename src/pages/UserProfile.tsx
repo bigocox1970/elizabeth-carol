@@ -574,32 +574,9 @@ const UserProfile = () => {
                         {bookings.map((booking) => (
                           <Card key={booking.id} className="relative">
                             <CardContent className="pt-6">
-                              {/* Status Badge */}
-                              <div className="absolute top-4 right-4">
-                                <Badge 
-                                  variant={
-                                    booking.status === 'confirmed' ? 'default' :
-                                    booking.status === 'pending' ? 'secondary' :
-                                    booking.status === 'completed' ? 'outline' :
-                                    'destructive'
-                                  }
-                                  className={
-                                    booking.status === 'confirmed' ? 'bg-green-100 text-green-800 border-green-300' :
-                                    booking.status === 'pending' ? 'bg-orange-100 text-orange-800 border-orange-300' :
-                                    booking.status === 'completed' ? 'bg-blue-100 text-blue-800 border-blue-300' :
-                                    ''
-                                  }
-                                >
-                                  {booking.status === 'pending' && '⏳ '}
-                                  {booking.status === 'confirmed' && '✅ '}
-                                  {booking.status === 'completed' && '🎉 '}
-                                  {booking.status === 'cancelled' && '❌ '}
-                                  {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                                </Badge>
-                              </div>
 
                               {/* Reading Details */}
-                              <div className="space-y-4 pr-24">
+                              <div className="space-y-4">
                                 <div>
                                   <h4 className="font-semibold text-lg flex items-center gap-2">
                                     <Calendar className="w-5 h-5" />
@@ -619,17 +596,39 @@ const UserProfile = () => {
                                 </div>
 
                                 {/* Elizabeth's Notes */}
-                                {booking.notes && (
+                                {booking.notes ? (
                                   <div className={`w-full rounded-lg p-4 ${
                                     booking.status === 'confirmed' || booking.status === 'completed'
                                       ? 'bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800'
                                       : 'bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800'
                                   }`}>
-                                    <h5 className={`font-medium mb-2 ${
-                                      booking.status === 'confirmed' || booking.status === 'completed'
-                                        ? 'text-green-900 dark:text-green-100'
-                                        : 'text-red-900 dark:text-red-100'
-                                    }`}>Elizabeth's Notes:</h5>
+                                    <div className="flex items-center justify-between mb-2">
+                                      <h5 className={`font-medium ${
+                                        booking.status === 'confirmed' || booking.status === 'completed'
+                                          ? 'text-green-900 dark:text-green-100'
+                                          : 'text-red-900 dark:text-red-100'
+                                      }`}>Elizabeth's Notes:</h5>
+                                      <Badge 
+                                        variant={
+                                          booking.status === 'confirmed' ? 'default' :
+                                          booking.status === 'pending' ? 'secondary' :
+                                          booking.status === 'completed' ? 'outline' :
+                                          'destructive'
+                                        }
+                                        className={
+                                          booking.status === 'confirmed' ? 'bg-green-100 text-green-800 border-green-300' :
+                                          booking.status === 'pending' ? 'bg-orange-100 text-orange-800 border-orange-300' :
+                                          booking.status === 'completed' ? 'bg-blue-100 text-blue-800 border-blue-300' :
+                                          ''
+                                        }
+                                      >
+                                        {booking.status === 'pending' && '⏳ '}
+                                        {booking.status === 'confirmed' && '✅ '}
+                                        {booking.status === 'completed' && '🎉 '}
+                                        {booking.status === 'cancelled' && '❌ '}
+                                        {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                                      </Badge>
+                                    </div>
                                     <div className={`text-sm leading-relaxed w-full ${
                                       booking.status === 'confirmed' || booking.status === 'completed'
                                         ? 'text-green-800 dark:text-green-200'
@@ -653,6 +652,29 @@ const UserProfile = () => {
                                         </div>
                                       )}
                                     </div>
+                                  </div>
+                                ) : (
+                                  <div className="flex justify-end">
+                                    <Badge 
+                                      variant={
+                                        booking.status === 'confirmed' ? 'default' :
+                                        booking.status === 'pending' ? 'secondary' :
+                                        booking.status === 'completed' ? 'outline' :
+                                        'destructive'
+                                      }
+                                      className={
+                                        booking.status === 'confirmed' ? 'bg-green-100 text-green-800 border-green-300' :
+                                        booking.status === 'pending' ? 'bg-orange-100 text-orange-800 border-orange-300' :
+                                        booking.status === 'completed' ? 'bg-blue-100 text-blue-800 border-blue-300' :
+                                        ''
+                                      }
+                                    >
+                                      {booking.status === 'pending' && '⏳ '}
+                                      {booking.status === 'confirmed' && '✅ '}
+                                      {booking.status === 'completed' && '🎉 '}
+                                      {booking.status === 'cancelled' && '❌ '}
+                                      {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                                    </Badge>
                                   </div>
                                 )}
 
