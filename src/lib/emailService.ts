@@ -55,6 +55,11 @@ export const sendBookingApprovalEmail = async (data: EmailData & { approved: boo
   return await sendEmailViaNetlify('booking-approval', data);
 };
 
+export const sendBookingCancellationEmail = async (data: EmailData & { refundAmount?: string }) => {
+  console.log('🎯 sendBookingCancellationEmail called');
+  return await sendEmailViaNetlify('booking-cancellation', data);
+};
+
 // Email templates (you can customize these)
 export const emailTemplates = {
   customerBookingRequest: (data: EmailData) => ({

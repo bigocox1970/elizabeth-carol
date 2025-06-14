@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { getUserComments, getUserReviews, updateComment, updateReview, deleteComment, deleteReview, isUserAdmin, getUserBookings, updateBookingUserNotes, cancelBooking, createReviewForBooking, deleteBooking } from "@/lib/supabase";
+import { sendBookingCancellationEmail } from "@/lib/emailService";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -384,18 +385,43 @@ const UserProfile = () => {
 
   const handleCancelBooking = async (bookingId: number) => {
     try {
+      const booking = bookings.find(b => b.id === bookingId);
+      if (!booking) return;
+
       const { error } = await cancelBooking(bookingId);
       if (error) throw error;
 
-      setBookings(bookings.map(booking => 
-        booking.id === bookingId 
-          ? { ...booking, status: 'cancelled' as const } 
-          : booking
+      setBookings(bookings.map(b => 
+        b.id === bookingId 
+          ? { ...b, status: 'cancelled' as const } 
+          : b
       ));
+
+      // Send cancellation emails
+      try {
+        const refundAmount = getCancellationRefund(booking);
+        const readingTypeDisplay = booking.reading_type === 'in_person' ? 'One to One (In-person)' :
+                                  booking.reading_type === 'video' ? 'Video Call Reading' : 'Telephone Reading';
+
+        const emailData = {
+          customerEmail: user?.email || '',
+          customerName: user?.user_metadata?.name || user?.email?.split('@')[0] || 'Customer',
+          date: formatDate(booking.availability_slots.date),
+          time: `${formatTime(booking.availability_slots.start_time)} - ${formatTime(booking.availability_slots.end_time)}`,
+          serviceType: readingTypeDisplay,
+          refundAmount: refundAmount.includes('50%') ? '50% refund' : undefined
+        };
+
+        await sendBookingCancellationEmail(emailData);
+        console.log('✅ Cancellation emails sent successfully');
+      } catch (emailError) {
+        console.warn('⚠️ Failed to send cancellation emails:', emailError);
+        // Don't fail the cancellation if emails fail
+      }
 
       toast({
         title: "Success",
-        description: "Your booking has been cancelled.",
+        description: "Your booking has been cancelled. Confirmation emails have been sent.",
       });
     } catch (error) {
       console.error("Error cancelling booking:", error);

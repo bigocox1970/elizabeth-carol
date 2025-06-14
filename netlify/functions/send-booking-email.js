@@ -308,6 +308,123 @@ Elizabeth Carol
         emailSent = true;
         break;
 
+      case 'booking-cancellation':
+        // Send cancellation confirmation to customer
+        const customerCancellationEmail = {
+          from: '"Elizabeth Carol - Spiritual Guidance" <info@elizabethcarol.co.uk>',
+          to: data.customerEmail,
+          subject: '❌ Booking Cancelled - Elizabeth Carol',
+          text: `Booking Cancelled
+
+Dear ${data.customerName},
+
+Your booking has been successfully cancelled:
+
+Date: ${data.date}
+Time: ${data.time}
+Reading Type: ${data.serviceType}
+
+Refund Information:
+${data.refundAmount ? `You will receive a ${data.refundAmount} refund which will be processed within 3-5 business days.` : 'No refund applicable for this cancellation.'}
+
+If you have any questions, please don't hesitate to contact us.
+
+Best regards,
+Elizabeth Carol
+
+📧 info@elizabethcarol.co.uk | 📞 01865 361 786`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <h1 style="color: #dc2626; margin: 0;">Elizabeth Carol</h1>
+                <p style="color: #64748b; margin: 5px 0;">Spiritual Guidance & Psychic Readings</p>
+              </div>
+              
+              <h2 style="color: #dc2626;">Booking Cancelled ❌</h2>
+              <p>Dear ${data.customerName},</p>
+              <p>Your booking has been successfully cancelled:</p>
+              
+              <div style="background: #fef2f2; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #dc2626;">
+                <p style="margin: 0; padding: 5px 0;"><strong>Date:</strong> ${data.date}</p>
+                <p style="margin: 0; padding: 5px 0;"><strong>Time:</strong> ${data.time}</p>
+                <p style="margin: 0; padding: 5px 0;"><strong>Reading Type:</strong> ${data.serviceType}</p>
+              </div>
+              
+              <div style="background: #f0f9ff; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #0ea5e9;">
+                <h3 style="margin: 0 0 10px 0; color: #0ea5e9;">Refund Information</h3>
+                <p style="margin: 0;">${data.refundAmount ? `You will receive a <strong>${data.refundAmount}</strong> refund which will be processed within 3-5 business days.` : 'No refund applicable for this cancellation.'}</p>
+              </div>
+              
+              <p>If you have any questions, please don't hesitate to contact us.</p>
+              
+              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; color: #64748b;">
+                <p>Best regards,<br>Elizabeth Carol</p>
+                <p style="font-size: 12px;">📧 info@elizabethcarol.co.uk | 📞 01865 361 786</p>
+              </div>
+            </div>
+          `
+        };
+
+        // Send refund notification to admin
+        const adminRefundEmail = {
+          from: '"Booking System" <info@elizabethcarol.co.uk>',
+          to: 'info@elizabethcarol.co.uk',
+          subject: `💰 Refund Required - ${data.customerName} Cancelled Booking`,
+          text: `Booking Cancellation - Refund Required
+
+A customer has cancelled their booking and requires a refund:
+
+Customer: ${data.customerName}
+Email: ${data.customerEmail}
+Date: ${data.date}
+Time: ${data.time}
+Reading Type: ${data.serviceType}
+
+Refund Amount: ${data.refundAmount || 'No refund applicable'}
+
+${data.refundAmount ? 'Please process the refund within 3-5 business days.' : 'No action required - cancellation was within no-refund period.'}
+
+Customer has been notified of the cancellation.`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h2 style="color: #dc2626;">Booking Cancellation - Refund Required 💰</h2>
+              <p>A customer has cancelled their booking and requires a refund:</p>
+              
+              <div style="background: #fef7ff; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #dc2626;">
+                <p style="margin: 0; padding: 5px 0;"><strong>Customer:</strong> ${data.customerName}</p>
+                <p style="margin: 0; padding: 5px 0;"><strong>Email:</strong> ${data.customerEmail}</p>
+                <p style="margin: 0; padding: 5px 0;"><strong>Date:</strong> ${data.date}</p>
+                <p style="margin: 0; padding: 5px 0;"><strong>Time:</strong> ${data.time}</p>
+                <p style="margin: 0; padding: 5px 0;"><strong>Reading Type:</strong> ${data.serviceType}</p>
+              </div>
+              
+              <div style="background: ${data.refundAmount ? '#f0f9ff' : '#fefce8'}; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid ${data.refundAmount ? '#0ea5e9' : '#eab308'};">
+                <h3 style="margin: 0 0 10px 0; color: ${data.refundAmount ? '#0ea5e9' : '#eab308'};">Refund Information</h3>
+                <p style="margin: 0; font-size: 18px;"><strong>Refund Amount: ${data.refundAmount || 'No refund applicable'}</strong></p>
+                <p style="margin: 10px 0 0 0; font-size: 14px;">${data.refundAmount ? 'Please process the refund within 3-5 business days.' : 'No action required - cancellation was within no-refund period.'}</p>
+              </div>
+              
+              <p style="font-size: 14px; color: #64748b;">Customer has been notified of the cancellation.</p>
+            </div>
+          `
+        };
+
+        try {
+          // Send both emails
+          const [customerResult, adminResult] = await Promise.all([
+            transporter.sendMail(customerCancellationEmail),
+            transporter.sendMail(adminRefundEmail)
+          ]);
+          
+          console.log('✅ Customer cancellation email sent to:', data.customerEmail);
+          console.log('✅ Admin refund notification sent to info@elizabethcarol.co.uk');
+          emailSent = true;
+        } catch (emailError) {
+          console.error('❌ Failed to send cancellation emails:', emailError);
+          throw emailError;
+        }
+        break;
+
       default:
         return {
           statusCode: 400,
