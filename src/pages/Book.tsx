@@ -190,12 +190,27 @@ const Book = () => {
       // Stage 1: Validate and create booking request
       await new Promise(resolve => setTimeout(resolve, 800)); // Show validation stage
       
+      // Get user's phone number from profile
+      let userPhone = '';
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('phone')
+          .eq('id', user.id)
+          .single();
+        userPhone = profile?.phone || '';
+      } catch (profileError) {
+        console.log('Could not fetch user profile for phone number:', profileError);
+        // Continue without phone number if profile fetch fails
+      }
+      
       const { error } = await supabase
         .from('bookings')
         .insert({
           availability_slot_id: selectedSlot.id,
           client_name: user.user_metadata?.name || user.email?.split('@')[0],
           client_email: user.email,
+          client_phone: userPhone,
           booking_type: 'online',
           reading_type: selectedReadingType,
           status: 'pending',

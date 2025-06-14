@@ -22,6 +22,7 @@ const RegisterForm = ({ onSuccess, onLoginClick }: RegisterFormProps) => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    phone: "",
     password: "",
     confirmPassword: "",
     subscribeToNewsletter: true, // Default to checked
@@ -46,7 +47,7 @@ const RegisterForm = ({ onSuccess, onLoginClick }: RegisterFormProps) => {
     setError(null);
 
     // Validate form
-    if (!formData.name || !formData.email || !formData.password) {
+    if (!formData.name || !formData.email || !formData.phone || !formData.password) {
       setError("All fields are required");
       return;
     }
@@ -65,6 +66,7 @@ const RegisterForm = ({ onSuccess, onLoginClick }: RegisterFormProps) => {
       setIsLoading(true);
       const { data, error } = await signUp(formData.email, formData.password, {
         name: formData.name,
+        phone: formData.phone,
       });
 
       if (error) {
@@ -153,6 +155,19 @@ const RegisterForm = ({ onSuccess, onLoginClick }: RegisterFormProps) => {
               type="email"
               placeholder="your.email@example.com"
               value={formData.email}
+              onChange={handleChange}
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone</Label>
+            <Input
+              id="phone"
+              name="phone"
+              type="tel"
+              placeholder="Your phone number"
+              value={formData.phone}
               onChange={handleChange}
               disabled={isLoading}
             />
