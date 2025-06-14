@@ -508,6 +508,12 @@ const UserProfile = () => {
     return "No refund";
   };
 
+  const hasReadingDatePassed = (booking: Booking) => {
+    const bookingDateTime = new Date(`${booking.availability_slots.date}T${booking.availability_slots.end_time}`);
+    const now = new Date();
+    return now > bookingDateTime;
+  };
+
   const formatTime = (timeString: string) => {
     return new Date(`2000-01-01 ${timeString}`).toLocaleTimeString('en-GB', {
       hour: '2-digit',
@@ -663,17 +669,20 @@ const UserProfile = () => {
                                       <p className="mb-2">{booking.notes}</p>
                                       {(booking.status === 'confirmed' || booking.status === 'completed') && booking.reading_type === 'in_person' && (
                                         <div className="mt-3 pt-2 border-t border-green-200 dark:border-green-700">
-                                          <p className="font-medium mb-1">✅ Your reading is confirmed!</p>
-                                          <div className="flex items-center gap-2">
-                                            <span>Location:</span>
-                                            <a 
-                                              href="https://www.google.com/maps/search/?api=1&query=OX44+9DJ"
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className="text-blue-600 hover:text-blue-800 underline font-medium"
-                                            >
-                                              OX44 9DJ
-                                            </a>
+                                          <p className="font-medium mb-2">✅ Your reading is confirmed!</p>
+                                          <div className="space-y-1">
+                                            <div className="flex items-center gap-2">
+                                              <span>📍 Address:</span>
+                                              <a 
+                                                href="https://www.google.com/maps/search/?api=1&query=45+Southend,+Garsington,+Oxford+OX44+9DJ"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-blue-600 hover:text-blue-800 underline font-medium"
+                                              >
+                                                45 Southend, Garsington, Oxford OX44 9DJ
+                                              </a>
+                                            </div>
+                                            <p className="text-xs opacity-75">Click the address above to open in Google Maps for directions</p>
                                           </div>
                                         </div>
                                       )}
@@ -788,8 +797,8 @@ const UserProfile = () => {
                                     </AlertDialog>
                                   )}
 
-                                  {/* Review Button */}
-                                  {booking.status === 'completed' && (
+                                  {/* Review Button - Show when reading date has passed and booking was confirmed */}
+                                  {(booking.status === 'completed' || (booking.status === 'confirmed' && hasReadingDatePassed(booking))) && (
                                     <Dialog open={reviewDialogBooking?.id === booking.id} onOpenChange={(open) => !open && setReviewDialogBooking(null)}>
                                       <DialogTrigger asChild>
                                         <Button 
