@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Plus, Trash2, Save, ChevronLeft, ChevronRight, Copy, X, List, Grid3X3, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-import { sendBookingApprovalEmail } from "@/lib/emailService";
+import { sendBookingApprovalEmail, sendBookingCancellationEmail } from "@/lib/emailService";
 import PendingBookingsNotification from "./PendingBookingsNotification";
 
 interface AvailabilitySlot {
@@ -88,10 +88,14 @@ const AvailabilityManager = () => {
     try {
       setLoading(true);
       
-      // Load availability slots from Supabase
+      // Get today's date for filtering
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Load availability slots from Supabase - only future dates
       const { data: slotsData, error: slotsError } = await supabase
         .from('availability_slots')
         .select('*')
+        .gte('date', today)
         .order('date', { ascending: true })
         .order('start_time', { ascending: true });
 
@@ -102,10 +106,14 @@ const AvailabilityManager = () => {
         return;
       }
 
-      // Load bookings from Supabase - include all statuses so we can see pending requests
+      // Load bookings from Supabase - only for future slots
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
-        .select('*');
+        .select(`
+          *,
+          availability_slots!inner(date)
+        `)
+        .gte('availability_slots.date', today);
 
       if (bookingsError) {
         console.error('Error loading bookings:', bookingsError);
@@ -414,25 +422,69 @@ const AvailabilityManager = () => {
     }
   };
 
-  const deleteBooking = async (bookingId: number) => {
+  const cancelBooking = async (bookingId: number) => {
     try {
-      const { error } = await supabase
-        .from('bookings')
-        .delete()
-        .eq('id', bookingId);
+      // Get booking details before cancelling for email
+      const booking = bookings.find(b => b.id === bookingId);
+      const slot = slots.find(s => s.id === booking?.availability_slot_id);
 
-      if (error) {
-        console.error('Error deleting booking:', error);
-        toast.error('Failed to delete booking');
+      if (!booking || !slot) {
+        toast.error('Booking details not found');
         return;
       }
 
-      setBookings(prev => prev.filter(b => b.id !== bookingId));
-      toast.success('Booking deleted successfully');
+      // Update booking status to cancelled
+      const { error } = await supabase
+        .from('bookings')
+        .update({ status: 'cancelled' })
+        .eq('id', bookingId);
+
+      if (error) {
+        console.error('Error cancelling booking:', error);
+        toast.error('Failed to cancel booking');
+        return;
+      }
+
+      // Update local state
+      setBookings(prev => prev.map(b => 
+        b.id === bookingId ? { ...b, status: 'cancelled' } : b
+      ));
+
+      // Calculate refund amount based on timing
+      const bookingDateTime = new Date(`${slot.date} ${slot.start_time}`);
+      const now = new Date();
+      const hoursUntilBooking = (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+      
+      let refundAmount = 'No refund';
+      if (hoursUntilBooking >= 48) {
+        refundAmount = '50% refund';
+      }
+
+      // Send cancellation email to customer
+      if (booking.client_email) {
+        try {
+          await sendBookingCancellationEmail({
+            customerEmail: booking.client_email,
+            customerName: booking.client_name || 'Customer',
+            date: formatDate(slot.date),
+            time: `${formatTime(slot.start_time)} - ${formatTime(slot.end_time)}`,
+            serviceType: booking.reading_type === 'in_person' ? 'One to One (In-person)' :
+                        booking.reading_type === 'video' ? 'Video Call' : 
+                        booking.reading_type === 'telephone' ? 'Telephone' : 'Reading',
+            notes: slot.notes,
+            refundAmount: refundAmount
+          });
+        } catch (emailError) {
+          console.warn('Failed to send cancellation email:', emailError);
+          // Don't fail the cancellation if email fails
+        }
+      }
+
+      toast.success('Booking cancelled successfully');
       setShowBookingModal(false);
     } catch (error) {
-      console.error('Error deleting booking:', error);
-      toast.error('Failed to delete booking');
+      console.error('Error cancelling booking:', error);
+      toast.error('Failed to cancel booking');
     }
   };
 
@@ -1005,12 +1057,12 @@ const AvailabilityManager = () => {
                                         {pendingBooking && (
                                           <div className="flex gap-2 mt-3 pt-3 border-t border-orange-200">
                                             <Button
+                                              variant="default"
                                               size="sm"
                                               onClick={() => approveBooking(pendingBooking.id!)}
-                                              className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                                              className="text-xs bg-green-600 hover:bg-green-700"
                                             >
-                                              <CheckCircle className="w-4 h-4 mr-1" />
-                                              Approve
+                                              ✓ Approve
                                             </Button>
                                             <Button
                                               size="sm"
@@ -1318,10 +1370,10 @@ const AvailabilityManager = () => {
                                   <Button
                                     variant="default"
                                     size="sm"
-                                    onClick={() => approveBooking(pendingBooking.id!)}
+                                    onClick={() => cancelBooking(pendingBooking.id!)}
                                     className="text-xs bg-green-600 hover:bg-green-700"
                                   >
-                                    ✓ Approve
+                                    ✓ Cancel
                                   </Button>
                                   <Button
                                     variant="outline"
@@ -1631,11 +1683,11 @@ const AvailabilityManager = () => {
                 {editingBooking && (
                   <Button
                     variant="destructive"
-                    onClick={() => editingBooking.id && deleteBooking(editingBooking.id)}
+                    onClick={() => editingBooking.id && cancelBooking(editingBooking.id)}
                     className="flex-1"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
-                    Delete
+                    Cancel Booking
                   </Button>
                 )}
                 <Button
