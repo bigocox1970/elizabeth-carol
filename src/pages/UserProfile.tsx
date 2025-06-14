@@ -61,7 +61,7 @@ const UserProfile = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("readings");
+  const [activeTab, setActiveTab] = useState("readings"); // Will be updated based on admin status
   const [editingComment, setEditingComment] = useState<Comment | null>(null);
   const [editingReview, setEditingReview] = useState<Review | null>(null);
   const [commentDialogOpen, setCommentDialogOpen] = useState(false);
@@ -105,6 +105,12 @@ const UserProfile = () => {
         // Check if user is admin
         const adminStatus = await isUserAdmin();
         setIsAdmin(adminStatus);
+
+        // Set default tab based on admin status (only if no URL tab parameter)
+        const tabParam = searchParams.get('tab');
+        if (!tabParam) {
+          setActiveTab(adminStatus ? "account" : "readings");
+        }
 
         // Fetch user's comments
         const { data: commentsData, error: commentsError } = await getUserComments();
