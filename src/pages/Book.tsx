@@ -126,27 +126,41 @@ const Book = () => {
     return getAvailableSlotsForDate(dateObj).length > 0;
   };
 
-  // Helper function to get previous day with available slots
+  // Helper function to get previous day with available slots (searches up to 30 days back)
   const getPreviousDayWithSlots = (currentDateString: string) => {
     const currentDateObj = new Date(currentDateString);
-    const prevDay = new Date(currentDateObj);
-    prevDay.setDate(prevDay.getDate() - 1);
-    const prevDateString = prevDay.toISOString().split('T')[0];
     const today = new Date().toISOString().split('T')[0];
     
-    if (prevDateString < today) return null;
-    if (hasAvailableSlotsForDateString(prevDateString)) return prevDateString;
+    // Search up to 30 days back for a day with available slots
+    for (let i = 1; i <= 30; i++) {
+      const checkDay = new Date(currentDateObj);
+      checkDay.setDate(checkDay.getDate() - i);
+      const checkDateString = checkDay.toISOString().split('T')[0];
+      
+      // Don't go before today
+      if (checkDateString < today) break;
+      
+      if (hasAvailableSlotsForDateString(checkDateString)) {
+        return checkDateString;
+      }
+    }
     return null;
   };
 
-  // Helper function to get next day with available slots
+  // Helper function to get next day with available slots (searches up to 90 days ahead)
   const getNextDayWithSlots = (currentDateString: string) => {
     const currentDateObj = new Date(currentDateString);
-    const nextDay = new Date(currentDateObj);
-    nextDay.setDate(nextDay.getDate() + 1);
-    const nextDateString = nextDay.toISOString().split('T')[0];
     
-    if (hasAvailableSlotsForDateString(nextDateString)) return nextDateString;
+    // Search up to 90 days ahead for a day with available slots
+    for (let i = 1; i <= 90; i++) {
+      const checkDay = new Date(currentDateObj);
+      checkDay.setDate(checkDay.getDate() + i);
+      const checkDateString = checkDay.toISOString().split('T')[0];
+      
+      if (hasAvailableSlotsForDateString(checkDateString)) {
+        return checkDateString;
+      }
+    }
     return null;
   };
 
@@ -157,7 +171,12 @@ const Book = () => {
   };
 
   const selectDate = (date: Date) => {
-    const dateString = date.toISOString().split('T')[0];
+    // Fix timezone issue by using local date formatting
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateString = `${year}-${month}-${day}`;
+    
     setSelectedDate(dateString);
     setBookingStep('confirm');
   };
