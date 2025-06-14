@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { getUserComments, getUserReviews, updateComment, updateReview, deleteComment, deleteReview, isUserAdmin } from "@/lib/supabase";
+import { getUserComments, getUserReviews, updateComment, updateReview, deleteComment, deleteReview, isUserAdmin, getUserBookings, updateBookingUserNotes, cancelBooking, createReviewForBooking } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Star, Edit, Trash2, LogOut, User } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Star, Edit, Trash2, LogOut, User, Calendar, Clock, MessageSquare, X, AlertTriangle, CheckCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -33,12 +34,30 @@ interface Review {
   location?: string;
 }
 
+interface Booking {
+  id: number;
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  reading_type: 'in_person' | 'video' | 'telephone';
+  notes?: string;
+  user_notes?: string;
+  created_at: string;
+  availability_slots: {
+    id: number;
+    date: string;
+    start_time: string;
+    end_time: string;
+    service_type: string;
+    notes?: string;
+  };
+}
+
 const UserProfile = () => {
   const { user, signOut, updatePassword } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [comments, setComments] = useState<Comment[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("account");
   const [editingComment, setEditingComment] = useState<Comment | null>(null);
@@ -51,6 +70,13 @@ const UserProfile = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  
+  // Booking-related state
+  const [editingBookingNotes, setEditingBookingNotes] = useState<number | null>(null);
+  const [bookingNotesContent, setBookingNotesContent] = useState("");
+  const [reviewDialogBooking, setReviewDialogBooking] = useState<Booking | null>(null);
+  const [reviewContent, setReviewContent] = useState("");
+  const [reviewRating, setReviewRating] = useState(5);
 
   useEffect(() => {
     if (!user) {
@@ -74,6 +100,11 @@ const UserProfile = () => {
         const { data: reviewsData, error: reviewsError } = await getUserReviews();
         if (reviewsError) throw reviewsError;
         setReviews(reviewsData || []);
+
+        // Fetch user's bookings
+        const { data: bookingsData, error: bookingsError } = await getUserBookings();
+        if (bookingsError) throw bookingsError;
+        setBookings(bookingsData || []);
       } catch (error) {
         console.error("Error fetching user content:", error);
         toast({
@@ -269,6 +300,133 @@ const UserProfile = () => {
     }
   };
 
+  // Booking-related handlers
+  const handleEditBookingNotes = (booking: Booking) => {
+    setEditingBookingNotes(booking.id);
+    setBookingNotesContent(booking.user_notes || "");
+  };
+
+  const handleSaveBookingNotes = async (bookingId: number) => {
+    try {
+      const { error } = await updateBookingUserNotes(bookingId, bookingNotesContent);
+      if (error) throw error;
+
+      setBookings(bookings.map(booking => 
+        booking.id === bookingId 
+          ? { ...booking, user_notes: bookingNotesContent } 
+          : booking
+      ));
+
+      toast({
+        title: "Success",
+        description: "Your notes have been saved.",
+      });
+
+      setEditingBookingNotes(null);
+    } catch (error) {
+      console.error("Error updating booking notes:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save notes. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCancelBooking = async (bookingId: number) => {
+    try {
+      const { error } = await cancelBooking(bookingId);
+      if (error) throw error;
+
+      setBookings(bookings.map(booking => 
+        booking.id === bookingId 
+          ? { ...booking, status: 'cancelled' as const } 
+          : booking
+      ));
+
+      toast({
+        title: "Success",
+        description: "Your booking has been cancelled.",
+      });
+    } catch (error) {
+      console.error("Error cancelling booking:", error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel booking. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCreateReview = async () => {
+    if (!reviewDialogBooking) return;
+
+    try {
+      const readingTypeDisplay = reviewDialogBooking.reading_type === 'in_person' ? 'One to One (In-person)' :
+                                reviewDialogBooking.reading_type === 'video' ? 'Video Call' : 'Telephone';
+      
+      const { error } = await createReviewForBooking(
+        reviewDialogBooking.id, 
+        reviewContent, 
+        reviewRating, 
+        readingTypeDisplay
+      );
+      
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Your review has been submitted and is pending approval.",
+      });
+
+      setReviewDialogBooking(null);
+      setReviewContent("");
+      setReviewRating(5);
+    } catch (error) {
+      console.error("Error creating review:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit review. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const canCancelBooking = (booking: Booking) => {
+    if (booking.status !== 'pending' && booking.status !== 'confirmed') return false;
+    
+    const bookingDateTime = new Date(`${booking.availability_slots.date}T${booking.availability_slots.start_time}`);
+    const now = new Date();
+    const hoursUntilBooking = (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+    
+    return hoursUntilBooking >= 48;
+  };
+
+  const getCancellationRefund = (booking: Booking) => {
+    const bookingDateTime = new Date(`${booking.availability_slots.date}T${booking.availability_slots.start_time}`);
+    const now = new Date();
+    const hoursUntilBooking = (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+    
+    if (hoursUntilBooking >= 48) return "50% refund";
+    return "No refund";
+  };
+
+  const formatTime = (timeString: string) => {
+    return new Date(`2000-01-01 ${timeString}`).toLocaleTimeString('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-GB', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   const renderStars = (rating: number) => {
     return Array(5)
       .fill(0)
@@ -300,11 +458,249 @@ const UserProfile = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid grid-cols-3 w-full">
+            <TabsList className="grid grid-cols-4 w-full">
+              <TabsTrigger value="readings">Readings</TabsTrigger>
               <TabsTrigger value="comments">Comments</TabsTrigger>
               <TabsTrigger value="reviews">Reviews</TabsTrigger>
               <TabsTrigger value="account">Account</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="readings" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Your Readings</CardTitle>
+                  <CardDescription>
+                    Manage your bookings, add notes, and leave reviews for completed readings
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {loading ? (
+                    <div className="text-center py-8">Loading your readings...</div>
+                  ) : bookings.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <p>You haven't booked any readings yet.</p>
+                      <Button className="mt-4" onClick={() => navigate("/book")}>
+                        Book Your First Reading
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {/* Cancellation Policy */}
+                      <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                        <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
+                          <AlertTriangle className="w-4 h-4" />
+                          Cancellation Policy
+                        </h4>
+                        <p className="text-sm text-blue-800 dark:text-blue-200">
+                          • <strong>50% refund</strong> if cancelled 48+ hours before your reading<br/>
+                          • <strong>No refund</strong> if cancelled less than 48 hours before your reading
+                        </p>
+                      </div>
+
+                      {/* Bookings List */}
+                      <div className="space-y-4">
+                        {bookings.map((booking) => (
+                          <Card key={booking.id} className="relative">
+                            <CardContent className="pt-6">
+                              {/* Status Badge */}
+                              <div className="absolute top-4 right-4">
+                                <Badge 
+                                  variant={
+                                    booking.status === 'confirmed' ? 'default' :
+                                    booking.status === 'pending' ? 'secondary' :
+                                    booking.status === 'completed' ? 'outline' :
+                                    'destructive'
+                                  }
+                                  className={
+                                    booking.status === 'confirmed' ? 'bg-green-100 text-green-800 border-green-300' :
+                                    booking.status === 'pending' ? 'bg-orange-100 text-orange-800 border-orange-300' :
+                                    booking.status === 'completed' ? 'bg-blue-100 text-blue-800 border-blue-300' :
+                                    ''
+                                  }
+                                >
+                                  {booking.status === 'pending' && '⏳ '}
+                                  {booking.status === 'confirmed' && '✅ '}
+                                  {booking.status === 'completed' && '🎉 '}
+                                  {booking.status === 'cancelled' && '❌ '}
+                                  {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                                </Badge>
+                              </div>
+
+                              {/* Reading Details */}
+                              <div className="space-y-4 pr-24">
+                                <div>
+                                  <h4 className="font-semibold text-lg flex items-center gap-2">
+                                    <Calendar className="w-5 h-5" />
+                                    {booking.reading_type === 'in_person' ? 'One to One (In-person)' :
+                                     booking.reading_type === 'video' ? 'Video Call Reading' : 'Telephone Reading'}
+                                  </h4>
+                                  <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
+                                    <span className="flex items-center gap-1">
+                                      <Calendar className="w-4 h-4" />
+                                      {formatDate(booking.availability_slots.date)}
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                      <Clock className="w-4 h-4" />
+                                      {formatTime(booking.availability_slots.start_time)} - {formatTime(booking.availability_slots.end_time)}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Elizabeth's Notes */}
+                                {booking.notes && (
+                                  <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
+                                    <h5 className="font-medium text-purple-900 dark:text-purple-100 mb-1">Elizabeth's Notes:</h5>
+                                    <p className="text-sm text-purple-800 dark:text-purple-200">{booking.notes}</p>
+                                  </div>
+                                )}
+
+                                {/* User Notes Section */}
+                                <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <h5 className="font-medium flex items-center gap-2">
+                                      <MessageSquare className="w-4 h-4" />
+                                      Your Notes
+                                    </h5>
+                                    {editingBookingNotes === booking.id ? (
+                                      <div className="flex gap-2">
+                                        <Button size="sm" onClick={() => handleSaveBookingNotes(booking.id)}>
+                                          Save
+                                        </Button>
+                                        <Button size="sm" variant="outline" onClick={() => setEditingBookingNotes(null)}>
+                                          <X className="w-4 h-4" />
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <Button size="sm" variant="outline" onClick={() => handleEditBookingNotes(booking)}>
+                                        <Edit className="w-4 h-4" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                  {editingBookingNotes === booking.id ? (
+                                    <Textarea
+                                      value={bookingNotesContent}
+                                      onChange={(e) => setBookingNotesContent(e.target.value)}
+                                      placeholder="Add your notes about this reading..."
+                                      className="min-h-[80px]"
+                                    />
+                                  ) : (
+                                    <p className="text-sm text-muted-foreground">
+                                      {booking.user_notes || "No notes added yet. Click edit to add your thoughts about this reading."}
+                                    </p>
+                                  )}
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="flex flex-wrap gap-2 pt-2">
+                                  {/* Cancel Button */}
+                                  {canCancelBooking(booking) && (
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button variant="outline" size="sm" className="text-orange-600 border-orange-300 hover:bg-orange-50">
+                                          Cancel Booking ({getCancellationRefund(booking)})
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Cancel Booking</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            Are you sure you want to cancel this booking? You will receive a {getCancellationRefund(booking).toLowerCase()}.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Keep Booking</AlertDialogCancel>
+                                          <AlertDialogAction
+                                            onClick={() => handleCancelBooking(booking.id)}
+                                            className="bg-orange-600 hover:bg-orange-700"
+                                          >
+                                            Cancel Booking
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  )}
+
+                                  {/* Review Button */}
+                                  {booking.status === 'completed' && (
+                                    <Dialog open={reviewDialogBooking?.id === booking.id} onOpenChange={(open) => !open && setReviewDialogBooking(null)}>
+                                      <DialogTrigger asChild>
+                                        <Button 
+                                          size="sm" 
+                                          className="bg-green-600 hover:bg-green-700"
+                                          onClick={() => setReviewDialogBooking(booking)}
+                                        >
+                                          <Star className="w-4 h-4 mr-1" />
+                                          Leave Review
+                                        </Button>
+                                      </DialogTrigger>
+                                      <DialogContent>
+                                        <DialogHeader>
+                                          <DialogTitle>Leave a Review</DialogTitle>
+                                          <DialogDescription>
+                                            Share your experience with this reading to help others
+                                          </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="space-y-4 py-4">
+                                          <div className="space-y-2">
+                                            <Label>Rating</Label>
+                                            <div className="flex space-x-1">
+                                              {[1, 2, 3, 4, 5].map((star) => (
+                                                <Button
+                                                  key={star}
+                                                  type="button"
+                                                  variant="ghost"
+                                                  size="icon"
+                                                  onClick={() => setReviewRating(star)}
+                                                >
+                                                  <Star
+                                                    className={`w-6 h-6 ${
+                                                      star <= reviewRating
+                                                        ? "text-yellow-500 fill-yellow-500"
+                                                        : "text-gray-300"
+                                                    }`}
+                                                  />
+                                                </Button>
+                                              ))}
+                                            </div>
+                                          </div>
+                                          <div className="space-y-2">
+                                            <Label>Your Review</Label>
+                                            <Textarea
+                                              value={reviewContent}
+                                              onChange={(e) => setReviewContent(e.target.value)}
+                                              placeholder="Tell others about your experience with Elizabeth Carol..."
+                                              className="min-h-[100px]"
+                                            />
+                                          </div>
+                                        </div>
+                                        <DialogFooter>
+                                          <Button variant="outline" onClick={() => setReviewDialogBooking(null)}>
+                                            Cancel
+                                          </Button>
+                                          <Button onClick={handleCreateReview} disabled={!reviewContent.trim()}>
+                                            Submit Review
+                                          </Button>
+                                        </DialogFooter>
+                                      </DialogContent>
+                                    </Dialog>
+                                  )}
+                                </div>
+
+                                {/* Booking Date */}
+                                <div className="text-xs text-muted-foreground pt-2 border-t">
+                                  Booked on {new Date(booking.created_at).toLocaleDateString('en-GB')}
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
 
             <TabsContent value="comments" className="space-y-4">
               <Card>

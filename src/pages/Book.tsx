@@ -400,15 +400,98 @@ const Book = () => {
         {bookingStep === 'confirm' && selectedDate && (
           <Card className="hover:shadow-lg hover:shadow-primary/20 transition-all duration-300">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 font-serif text-foreground">
-                  <Calendar className="w-5 h-5" />
-                  {formatDate(selectedDate)}
-                </CardTitle>
-                <Button variant="outline" size="sm" onClick={() => setBookingStep('calendar')}>
-                  ← Back to Calendar
-                </Button>
+              <div className="space-y-4">
+                {/* Date Navigation Row */}
+                <div className="flex items-center justify-between">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      const currentDateObj = new Date(selectedDate);
+                      const prevDay = new Date(currentDateObj);
+                      prevDay.setDate(prevDay.getDate() - 1);
+                      const prevDateString = prevDay.toISOString().split('T')[0];
+                      
+                      // Check if previous day has available slots
+                      const prevDaySlots = slots.filter(slot => slot.date === prevDateString);
+                      const availablePrevSlots = prevDaySlots.filter(slot => 
+                        !bookings.some(booking => booking.availability_slot_id === slot.id)
+                      );
+                      
+                      if (availablePrevSlots.length > 0) {
+                        setSelectedDate(prevDateString);
+                      }
+                    }}
+                    disabled={(() => {
+                      const currentDateObj = new Date(selectedDate);
+                      const prevDay = new Date(currentDateObj);
+                      prevDay.setDate(prevDay.getDate() - 1);
+                      const prevDateString = prevDay.toISOString().split('T')[0];
+                      const today = new Date().toISOString().split('T')[0];
+                      
+                      if (prevDateString < today) return true;
+                      
+                      const prevDaySlots = slots.filter(slot => slot.date === prevDateString);
+                      const availablePrevSlots = prevDaySlots.filter(slot => 
+                        !bookings.some(booking => booking.availability_slot_id === slot.id)
+                      );
+                      
+                      return availablePrevSlots.length === 0;
+                    })()}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  
+                  <CardTitle className="flex items-center gap-2 font-serif text-foreground">
+                    <Calendar className="w-5 h-5" />
+                    {formatDate(selectedDate)}
+                  </CardTitle>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      const currentDateObj = new Date(selectedDate);
+                      const nextDay = new Date(currentDateObj);
+                      nextDay.setDate(nextDay.getDate() + 1);
+                      const nextDateString = nextDay.toISOString().split('T')[0];
+                      
+                      // Check if next day has available slots
+                      const nextDaySlots = slots.filter(slot => slot.date === nextDateString);
+                      const availableNextSlots = nextDaySlots.filter(slot => 
+                        !bookings.some(booking => booking.availability_slot_id === slot.id)
+                      );
+                      
+                      if (availableNextSlots.length > 0) {
+                        setSelectedDate(nextDateString);
+                      }
+                    }}
+                    disabled={(() => {
+                      const currentDateObj = new Date(selectedDate);
+                      const nextDay = new Date(currentDateObj);
+                      nextDay.setDate(nextDay.getDate() + 1);
+                      const nextDateString = nextDay.toISOString().split('T')[0];
+                      
+                      const nextDaySlots = slots.filter(slot => slot.date === nextDateString);
+                      const availableNextSlots = nextDaySlots.filter(slot => 
+                        !bookings.some(booking => booking.availability_slot_id === slot.id)
+                      );
+                      
+                      return availableNextSlots.length === 0;
+                    })()}
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+                
+                {/* Back to Calendar Button Row */}
+                <div className="flex justify-center">
+                  <Button variant="outline" size="sm" onClick={() => setBookingStep('calendar')}>
+                    ← Back to Calendar
+                  </Button>
+                </div>
               </div>
+              
               <CardDescription>
                 Choose your preferred time slot
               </CardDescription>

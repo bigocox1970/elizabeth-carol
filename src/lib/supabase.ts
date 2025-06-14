@@ -261,3 +261,81 @@ export const isUserAdmin = async (): Promise<boolean> => {
     return false;
   }
 };
+
+// Booking functions
+export const getUserBookings = async () => {
+  const { data: user } = await supabase.auth.getUser();
+  if (!user.user) return { data: null, error: new Error('Not authenticated') };
+
+  const { data, error } = await supabase
+    .from('bookings')
+    .select(`
+      id,
+      status,
+      reading_type,
+      notes,
+      user_notes,
+      created_at,
+      availability_slots (
+        id,
+        date,
+        start_time,
+        end_time,
+        service_type,
+        notes
+      )
+    `)
+    .eq('client_email', user.user.email)
+    .order('created_at', { ascending: false });
+
+  return { data, error };
+};
+
+export const updateBookingUserNotes = async (bookingId: number, userNotes: string) => {
+  const { data: user } = await supabase.auth.getUser();
+  if (!user.user) return { data: null, error: new Error('Not authenticated') };
+
+  const { data, error } = await supabase
+    .from('bookings')
+    .update({ user_notes: userNotes })
+    .eq('id', bookingId)
+    .eq('client_email', user.user.email)
+    .select();
+
+  return { data, error };
+};
+
+export const cancelBooking = async (bookingId: number) => {
+  const { data: user } = await supabase.auth.getUser();
+  if (!user.user) return { data: null, error: new Error('Not authenticated') };
+
+  const { data, error } = await supabase
+    .from('bookings')
+    .update({ status: 'cancelled' })
+    .eq('id', bookingId)
+    .eq('client_email', user.user.email)
+    .select();
+
+  return { data, error };
+};
+
+export const createReviewForBooking = async (bookingId: number, content: string, rating: number, service: string) => {
+  const { data: user } = await supabase.auth.getUser();
+  if (!user.user) return { data: null, error: new Error('Not authenticated') };
+
+  const { data, error } = await supabase
+    .from('reviews')
+    .insert({
+      user_id: user.user.id,
+      name: user.user.user_metadata?.name || user.user.email?.split('@')[0] || 'Anonymous',
+      email: user.user.email,
+      content,
+      rating,
+      service,
+      booking_id: bookingId,
+      approved: false
+    })
+    .select();
+
+  return { data, error };
+};
