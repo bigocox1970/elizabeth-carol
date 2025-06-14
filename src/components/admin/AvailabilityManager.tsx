@@ -72,6 +72,7 @@ const AvailabilityManager = () => {
     notes: ''
   });
   const [showEditMode, setShowEditMode] = useState(false);
+  const [bookingPhones, setBookingPhones] = useState<{[key: number]: string}>({});
 
   useEffect(() => {
     loadAvailability();
@@ -132,12 +133,39 @@ const AvailabilityManager = () => {
 
       setSlots(slotsData || []);
       setBookings(bookingsData || []);
+      
+      // Fetch phone numbers for bookings that have user_id
+      await fetchBookingPhones(bookingsData || []);
     } catch (error) {
       console.error('Error loading availability:', error);
       toast.error('Failed to load availability');
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchBookingPhones = async (bookings: Booking[]) => {
+    const phoneMap: {[key: number]: string} = {};
+    
+    for (const booking of bookings) {
+      if (booking.id && booking.user_id && !booking.client_phone) {
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('phone')
+            .eq('id', booking.user_id)
+            .single();
+          
+          if (profile?.phone) {
+            phoneMap[booking.id] = profile.phone;
+          }
+        } catch (error) {
+          console.log(`Could not fetch phone for booking ${booking.id}:`, error);
+        }
+      }
+    }
+    
+    setBookingPhones(phoneMap);
   };
 
   const loadClients = async () => {
@@ -357,11 +385,27 @@ const AvailabilityManager = () => {
       
       // Pre-populate the selected client from booking data
       if (existingBooking.client_name || existingBooking.client_email) {
+        let clientPhone = existingBooking.client_phone || '';
+        
+        // If we have a user_id, try to get phone from profiles
+        if (existingBooking.user_id && !clientPhone) {
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('phone')
+              .eq('id', existingBooking.user_id)
+              .single();
+            clientPhone = profile?.phone || '';
+          } catch (error) {
+            console.log('Could not fetch profile phone:', error);
+          }
+        }
+        
         const clientFromBooking: Client = {
           id: 'from-booking', // Special ID to indicate this came from booking data
           email: existingBooking.client_email || '',
           name: existingBooking.client_name || existingBooking.client_email || 'Unknown',
-          phone: existingBooking.client_phone || existingBooking.profiles?.phone || ''
+          phone: clientPhone
         };
         setSelectedClient(clientFromBooking);
       } else {
@@ -1042,9 +1086,9 @@ const AvailabilityManager = () => {
                                               📧 {confirmedBooking?.client_email || pendingBooking?.client_email}
                                             </div>
                                           )}
-                                          {(confirmedBooking?.client_phone || confirmedBooking?.profiles?.phone || pendingBooking?.client_phone || pendingBooking?.profiles?.phone) && (
+                                          {(confirmedBooking?.client_phone || bookingPhones[confirmedBooking?.id || 0] || pendingBooking?.client_phone || bookingPhones[pendingBooking?.id || 0]) && (
                                             <div className="text-sm text-muted-foreground">
-                                              📞 {confirmedBooking?.client_phone || confirmedBooking?.profiles?.phone || pendingBooking?.client_phone || pendingBooking?.profiles?.phone}
+                                              📞 {confirmedBooking?.client_phone || bookingPhones[confirmedBooking?.id || 0] || pendingBooking?.client_phone || bookingPhones[pendingBooking?.id || 0]}
                                             </div>
                                           )}
                                         </div>
