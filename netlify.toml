@@ -22,6 +22,12 @@
   status = 200
   force = true
 
+# SPA catch-all redirect - this handles all other routes
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
 [functions]
   node_bundler = "esbuild"
 
