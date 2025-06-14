@@ -930,26 +930,102 @@ const AvailabilityManager = () => {
         <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-2 overflow-y-auto" onClick={(e) => e.target === e.currentTarget && setShowDayView(false)}>
           <Card className="w-[94vw] max-w-4xl min-h-0 shadow-2xl my-2">
             <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={() => navigateDayView('prev')}>
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span className="truncate">{formatDate(selectedDate)}</span>
-                  </CardTitle>
-                  <Button variant="outline" size="sm" onClick={() => navigateDayView('next')}>
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => setShowDayView(false)}>
-                  <X className="w-4 h-4" />
+              <div className="flex items-center justify-center">
+                <Button variant="outline" size="sm" onClick={() => navigateDayView('prev')}>
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <CardTitle className="flex items-center gap-2 text-lg mx-4">
+                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="truncate">{formatDate(selectedDate)}</span>
+                </CardTitle>
+                <Button variant="outline" size="sm" onClick={() => navigateDayView('next')}>
+                  <ChevronRight className="w-4 h-4" />
                 </Button>
               </div>
             </CardHeader>
             <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
-              {/* Existing Time Slots - Now First */}
+              {/* Add New Time Slot - Now First */}
+              {(showAddSlotForm || getSlotsForDate(new Date(selectedDate)).length === 0) && (
+                <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium flex items-center gap-2">
+                      <Plus className="w-4 h-4" />
+                      Add New Time Slot
+                    </h4>
+                    <div className="flex gap-2">
+                      {getSlotsForDate(new Date(selectedDate)).length > 0 && (
+                        <Button variant="ghost" size="sm" onClick={() => setShowAddSlotForm(false)}>
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
+                      {getSlotsForDate(new Date(selectedDate)).length === 0 && (
+                        <Button variant="outline" size="sm" onClick={() => setShowDayView(false)}>
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="start_time">Start Time</Label>
+                      <select
+                        id="start_time"
+                        value={newSlot.start_time}
+                        onChange={(e) => setNewSlot({ ...newSlot, start_time: e.target.value })}
+                        className="w-full px-3 py-3 sm:py-2 border border-input bg-background rounded-md text-sm min-h-[44px]"
+                      >
+                        <option value="">Select start time</option>
+                        {timeOptions.map(time => (
+                          <option key={time.value} value={time.value}>{time.display}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="end_time">End Time</Label>
+                      <select
+                        id="end_time"
+                        value={newSlot.end_time}
+                        onChange={(e) => setNewSlot({ ...newSlot, end_time: e.target.value })}
+                        className="w-full px-3 py-3 sm:py-2 border border-input bg-background rounded-md text-sm min-h-[44px]"
+                      >
+                        <option value="">Select end time</option>
+                        {timeOptions.map(time => (
+                          <option key={time.value} value={time.value}>{time.display}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="service_type">Service Type</Label>
+                    <select
+                      id="service_type"
+                      value={newSlot.service_type}
+                      onChange={(e) => setNewSlot({ ...newSlot, service_type: e.target.value })}
+                      className="w-full px-3 py-3 sm:py-2 border border-input bg-background rounded-md text-sm min-h-[44px]"
+                    >
+                      <option value="both">Both (In-person & Remote)</option>
+                      <option value="in_person">In-person Only</option>
+                      <option value="remote">Remote Only</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">Notes (Optional)</Label>
+                    <Input
+                      id="notes"
+                      placeholder="Any special notes about this time slot..."
+                      value={newSlot.notes}
+                      onChange={(e) => setNewSlot({ ...newSlot, notes: e.target.value })}
+                      className="min-h-[44px]"
+                    />
+                  </div>
+                  <Button onClick={addTimeSlot} className="w-full">
+                    <Save className="w-4 h-4 mr-2" />
+                    Add Time Slot
+                  </Button>
+                </div>
+              )}
+
+              {/* Existing Time Slots - Now Second */}
               {getSlotsForDate(new Date(selectedDate)).length > 0 && (
                 <div className="space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -977,6 +1053,11 @@ const AvailabilityManager = () => {
                         <Eye className={`w-4 h-4 ${showEditMode ? 'hidden' : ''}`} />
                         <EyeOff className={`w-4 h-4 ${!showEditMode ? 'hidden' : ''}`} />
                         {showEditMode ? 'Done' : 'Edit'}
+                      </Button>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => setShowDayView(false)}>
+                        <X className="w-4 h-4" />
                       </Button>
                     </div>
                     {showEditMode && (
@@ -1083,78 +1164,7 @@ const AvailabilityManager = () => {
                 </div>
               )}
 
-              {/* Add New Time Slot - Now Collapsible */}
-              {(showAddSlotForm || getSlotsForDate(new Date(selectedDate)).length === 0) && (
-                <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium flex items-center gap-2">
-                      <Plus className="w-4 h-4" />
-                      Add New Time Slot
-                    </h4>
-                    {getSlotsForDate(new Date(selectedDate)).length > 0 && (
-                      <Button variant="ghost" size="sm" onClick={() => setShowAddSlotForm(false)}>
-                        <X className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="start_time">Start Time</Label>
-                    <select
-                      id="start_time"
-                      value={newSlot.start_time}
-                      onChange={(e) => setNewSlot({ ...newSlot, start_time: e.target.value })}
-                      className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
-                    >
-                      <option value="">Select start time</option>
-                      {timeOptions.map(time => (
-                        <option key={time.value} value={time.value}>{time.display}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="end_time">End Time</Label>
-                    <select
-                      id="end_time"
-                      value={newSlot.end_time}
-                      onChange={(e) => setNewSlot({ ...newSlot, end_time: e.target.value })}
-                      className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
-                    >
-                      <option value="">Select end time</option>
-                      {timeOptions.map(time => (
-                        <option key={time.value} value={time.value}>{time.display}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="service_type">Service Type</Label>
-                  <select
-                    id="service_type"
-                    value={newSlot.service_type}
-                    onChange={(e) => setNewSlot({ ...newSlot, service_type: e.target.value })}
-                    className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
-                  >
-                    <option value="both">Both (In-person & Remote)</option>
-                    <option value="in_person">In-person Only</option>
-                    <option value="remote">Remote Only</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Notes (Optional)</Label>
-                  <Input
-                    id="notes"
-                    placeholder="Any special notes about this time slot..."
-                    value={newSlot.notes}
-                    onChange={(e) => setNewSlot({ ...newSlot, notes: e.target.value })}
-                  />
-                </div>
-                <Button onClick={addTimeSlot} className="w-full">
-                  <Save className="w-4 h-4 mr-2" />
-                  Add Time Slot
-                </Button>
-                              </div>
-                )}
+
             </CardContent>
           </Card>
         </div>
