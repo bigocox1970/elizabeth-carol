@@ -24,7 +24,7 @@ interface Booking {
   client_email?: string;
   client_phone?: string;
   booking_type: 'manual' | 'online';
-  reading_type?: 'in_person' | 'video' | 'phone' | 'other';
+  reading_type?: 'in_person' | 'video' | 'telephone' | 'other';
   status: 'confirmed' | 'cancelled' | 'completed';
   notes?: string;
 }
@@ -328,6 +328,21 @@ const AvailabilityManager = () => {
       // Edit existing booking
       setEditingBooking(existingBooking);
       setSelectedSlotForBooking(slotId);
+      
+      // Pre-populate the selected client from booking data
+      if (existingBooking.client_name || existingBooking.client_email) {
+        const clientFromBooking: Client = {
+          id: 'from-booking', // Special ID to indicate this came from booking data
+          email: existingBooking.client_email || '',
+          name: existingBooking.client_name || existingBooking.client_email || 'Unknown',
+          phone: existingBooking.client_phone || ''
+        };
+        setSelectedClient(clientFromBooking);
+      } else {
+        setSelectedClient(null);
+      }
+      
+      setClientSearch('');
       setShowBookingModal(true);
     } else {
       // Create new booking - show client selection modal
@@ -840,7 +855,7 @@ const AvailabilityManager = () => {
                                         <Badge variant="secondary" className="text-xs">
                                           {booking.reading_type === 'in_person' && '🏠 In-person'}
                                           {booking.reading_type === 'video' && '📹 Video'}
-                                          {booking.reading_type === 'phone' && '📞 Phone'}
+                                          {booking.reading_type === 'telephone' && '📞 Telephone'}
                                           {booking.reading_type === 'other' && '✨ Other'}
                                         </Badge>
                                       )}
@@ -1135,7 +1150,7 @@ const AvailabilityManager = () => {
                                 <Badge variant="secondary" className="text-xs">
                                   {booking.reading_type === 'in_person' && '🏠 In-person'}
                                   {booking.reading_type === 'video' && '📹 Video'}
-                                  {booking.reading_type === 'phone' && '📞 Phone'}
+                                                                     {booking.reading_type === 'telephone' && '📞 Telephone'}
                                   {booking.reading_type === 'other' && '✨ Other'}
                                 </Badge>
                               ) : (
@@ -1430,7 +1445,7 @@ const AvailabilityManager = () => {
                 >
                   <option value="in_person">🏠 In-person</option>
                   <option value="video">📹 Video Call</option>
-                  <option value="phone">📞 Phone Call</option>
+                  <option value="telephone">📞 Telephone</option>
                   <option value="other">✨ Other</option>
                 </select>
               </div>
@@ -1475,7 +1490,7 @@ const AvailabilityManager = () => {
                       client_phone: selectedClient?.id === 'not-registered'
                         ? clientPhoneInput?.value || ''
                         : selectedClient?.phone || '',
-                      reading_type: readingTypeSelect?.value as 'in_person' | 'video' | 'phone' | 'other' || 'in_person',
+                      reading_type: readingTypeSelect?.value as 'in_person' | 'video' | 'telephone' | 'other' || 'in_person',
                       notes: notesInput?.value || ''
                     };
 
