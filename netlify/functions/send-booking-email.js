@@ -68,6 +68,24 @@ exports.handler = async (event, context) => {
           from: '"Elizabeth Carol - Spiritual Guidance" <info@elizabethcarol.co.uk>',
           to: data.customerEmail,
           subject: '✨ Booking Request Received - Elizabeth Carol',
+          text: `Booking Request Received
+
+Dear ${data.customerName},
+
+Thank you for your booking request! Here are the details:
+
+Date: ${data.date}
+Time: ${data.time}
+Reading Type: ${data.serviceType}
+${data.notes ? `Notes: ${data.notes}` : ''}
+
+Elizabeth Carol will review your request and confirm within 24 hours.
+You'll receive an email confirmation once your booking is approved.
+
+Best regards,
+Elizabeth Carol
+
+📧 info@elizabethcarol.co.uk | 📞 01865 361 786`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
               <div style="text-align: center; margin-bottom: 30px;">
@@ -108,6 +126,19 @@ exports.handler = async (event, context) => {
           from: '"Booking System" <info@elizabethcarol.co.uk>',
           to: 'info@elizabethcarol.co.uk',
           subject: `🔔 New Booking Request from ${data.customerName}`,
+          text: `New Booking Request
+
+You have a new booking request that needs your approval:
+
+Customer: ${data.customerName}
+Email: ${data.customerEmail}
+Date: ${data.date}
+Time: ${data.time}
+Reading Type: ${data.serviceType}
+${data.notes ? `Notes: ${data.notes}` : ''}
+
+Log in to your admin dashboard to approve or decline this request.
+Admin Dashboard: https://www.elizabethcarol.co.uk/admin`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
               <h2 style="color: #dc2626;">New Booking Request 🔔</h2>
@@ -144,6 +175,38 @@ exports.handler = async (event, context) => {
           subject: data.approved 
             ? '✅ Booking Confirmed - Elizabeth Carol'
             : '📅 Booking Request Update - Elizabeth Carol',
+          text: data.approved ? `Booking Confirmed!
+
+Dear ${data.customerName},
+
+Great news! Your booking has been confirmed:
+
+Date: ${data.date}
+Time: ${data.time}
+Reading Type: ${data.serviceType}
+
+Please arrive 5 minutes early for your appointment.
+Looking forward to connecting with you!
+
+Best regards,
+Elizabeth Carol
+
+📧 info@elizabethcarol.co.uk | 📞 01865 361 786` : `Booking Request Update
+
+Dear ${data.customerName},
+
+Thank you for your interest. Unfortunately, the requested time slot is no longer available:
+
+Date: ${data.date}
+Time: ${data.time}
+
+Please visit our booking page to select an alternative time slot.
+Booking Page: https://www.elizabethcarol.co.uk/book
+
+Best regards,
+Elizabeth Carol
+
+📧 info@elizabethcarol.co.uk | 📞 01865 361 786`,
           html: data.approved ? `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
               <div style="text-align: center; margin-bottom: 30px;">
