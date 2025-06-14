@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, Mail, BookOpen, Star, MessageCircle, Plus, Calendar } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { isUserAdmin } from "@/lib/supabase";
+import ThemeToggle from "@/components/ThemeToggle";
 
 // Import admin components
 import SubscribersList from "@/components/admin/SubscribersList";
@@ -120,12 +121,15 @@ const Admin = () => {
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-3xl font-bold text-foreground">Elizabeth Carol Admin</h1>
-            <Button 
-              onClick={() => signOut()}
-              variant="outline"
-            >
-              Logout
-            </Button>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <Button 
+                onClick={() => signOut()}
+                variant="outline"
+              >
+                Logout
+              </Button>
+            </div>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

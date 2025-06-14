@@ -332,12 +332,7 @@ const Book = () => {
                         <Clock className="w-4 h-4" />
                         {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
                       </div>
-                      <div className="flex gap-2 mt-1">
-                        <Badge variant="outline" className="text-xs">
-                          {slot.service_type === 'both' ? 'In-person & Remote' :
-                           slot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only'}
-                        </Badge>
-                      </div>
+
                       {slot.notes && (
                         <p className="text-sm text-muted-foreground mt-2">{slot.notes}</p>
                       )}
@@ -385,10 +380,6 @@ const Book = () => {
                     {formatDate(selectedSlot.date)} at {formatTime(selectedSlot.start_time)} - {formatTime(selectedSlot.end_time)}
                   </span>
                 </div>
-                <Badge variant="outline" className="text-xs mt-2 border-green-300 text-green-700">
-                  {selectedSlot.service_type === 'both' ? 'In-person & Remote Available' :
-                   selectedSlot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only'}
-                </Badge>
               </div>
               
               <div className="space-y-3">
