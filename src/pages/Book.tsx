@@ -359,93 +359,118 @@ const Book = () => {
           </Card>
         )}
 
-                 {bookingStep === 'reading-type' && selectedSlot && (
-           <Card>
-             <CardHeader>
-               <div className="flex items-center justify-between">
-                 <CardTitle className="flex items-center gap-2">
-                   <UserCheck className="w-5 h-5" />
-                   Choose Your Reading Type
-                 </CardTitle>
-                 <Button variant="outline" size="sm" onClick={() => setBookingStep('confirm')}>
-                   ← Back to Times
-                 </Button>
-               </div>
-               <CardDescription>
-                 Select how you'd like to receive your reading
-               </CardDescription>
-             </CardHeader>
-             <CardContent className="space-y-4">
-               <div className="p-4 border rounded-lg bg-blue-50 dark:bg-blue-950/20">
-                 <h4 className="font-medium mb-2">Selected Time Slot:</h4>
-                 <p className="text-sm">
-                   {formatDate(selectedSlot.date)} at {formatTime(selectedSlot.start_time)} - {formatTime(selectedSlot.end_time)}
-                 </p>
-                 <Badge variant="outline" className="text-xs mt-2">
-                   {selectedSlot.service_type === 'both' ? 'In-person & Remote Available' :
-                    selectedSlot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only'}
-                 </Badge>
-               </div>
-               
-               <div className="space-y-3">
-                 {selectedSlot.service_type !== 'remote' && (
-                   <Button 
-                     variant="outline"
-                     className="w-full p-6 h-auto flex flex-col gap-2 hover:bg-primary hover:text-primary-foreground"
-                     onClick={() => {
-                       setSelectedReadingType('in_person');
-                       handleBookingRequest();
-                     }}
-                   >
-                     <UserCheck className="w-6 h-6" />
-                     <div className="text-center">
-                       <div className="font-medium">One to One (In-person)</div>
-                       <div className="text-xs text-muted-foreground">Face-to-face reading session</div>
-                     </div>
-                   </Button>
-                 )}
-                 
-                 {selectedSlot.service_type !== 'in_person' && (
-                   <>
-                     <Button 
-                       variant="outline"
-                       className="w-full p-6 h-auto flex flex-col gap-2 hover:bg-primary hover:text-primary-foreground"
-                       onClick={() => {
-                         setSelectedReadingType('video');
-                         handleBookingRequest();
-                       }}
-                     >
-                       <Video className="w-6 h-6" />
-                       <div className="text-center">
-                         <div className="font-medium">Video Call</div>
-                         <div className="text-xs text-muted-foreground">Online video reading session</div>
-                       </div>
-                     </Button>
-                     
-                     <Button 
-                       variant="outline"
-                       className="w-full p-6 h-auto flex flex-col gap-2 hover:bg-primary hover:text-primary-foreground"
-                       onClick={() => {
-                         setSelectedReadingType('telephone');
-                         handleBookingRequest();
-                       }}
-                     >
-                       <Phone className="w-6 h-6" />
-                       <div className="text-center">
-                         <div className="font-medium">Telephone</div>
-                         <div className="text-xs text-muted-foreground">Phone call reading session</div>
-                       </div>
-                     </Button>
-                   </>
-                 )}
-               </div>
-               
-               <div className="text-xs text-muted-foreground text-center pt-2">
-                 Click on your preferred reading type to proceed
-               </div>
-             </CardContent>
-           </Card>
-         )}
+        {bookingStep === 'reading-type' && selectedSlot && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <UserCheck className="w-5 h-5" />
+                  Choose Your Reading Type
+                </CardTitle>
+                <Button variant="outline" size="sm" onClick={() => setBookingStep('confirm')}>
+                  ← Back to Times
+                </Button>
+              </div>
+              <CardDescription>
+                Select how you'd like to receive your reading
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Selected Time Slot - Highlighted in Green */}
+              <div className="p-4 border-2 border-green-500 rounded-lg bg-green-50 dark:bg-green-950/20 shadow-md">
+                <h4 className="font-medium mb-2 text-green-800 dark:text-green-200">✓ Selected Time Slot:</h4>
+                <div className="flex items-center gap-2 text-green-900 dark:text-green-100">
+                  <Clock className="w-4 h-4" />
+                  <span className="font-medium">
+                    {formatDate(selectedSlot.date)} at {formatTime(selectedSlot.start_time)} - {formatTime(selectedSlot.end_time)}
+                  </span>
+                </div>
+                <Badge variant="outline" className="text-xs mt-2 border-green-300 text-green-700">
+                  {selectedSlot.service_type === 'both' ? 'In-person & Remote Available' :
+                   selectedSlot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only'}
+                </Badge>
+              </div>
+              
+              <div className="space-y-3">
+                <h4 className="font-medium text-center">Choose your preferred reading type:</h4>
+                
+                {selectedSlot.service_type !== 'remote' && (
+                  <Button 
+                    variant={selectedReadingType === 'in_person' ? 'default' : 'outline'}
+                    className={`w-full p-6 h-auto flex flex-col gap-2 transition-all duration-200 ${
+                      selectedReadingType === 'in_person' 
+                        ? 'bg-green-600 hover:bg-green-700 text-white border-2 border-green-700 shadow-lg' 
+                        : 'hover:bg-green-50 hover:border-green-300 hover:text-green-700 dark:hover:bg-green-950/20'
+                    }`}
+                    onClick={() => setSelectedReadingType('in_person')}
+                  >
+                    <UserCheck className="w-6 h-6" />
+                    <div className="text-center">
+                      <div className="font-medium">One to One (In-person)</div>
+                      <div className="text-xs opacity-80">Face-to-face reading session</div>
+                    </div>
+                  </Button>
+                )}
+                
+                {selectedSlot.service_type !== 'in_person' && (
+                  <>
+                    <Button 
+                      variant={selectedReadingType === 'video' ? 'default' : 'outline'}
+                      className={`w-full p-6 h-auto flex flex-col gap-2 transition-all duration-200 ${
+                        selectedReadingType === 'video' 
+                          ? 'bg-green-600 hover:bg-green-700 text-white border-2 border-green-700 shadow-lg' 
+                          : 'hover:bg-green-50 hover:border-green-300 hover:text-green-700 dark:hover:bg-green-950/20'
+                      }`}
+                      onClick={() => setSelectedReadingType('video')}
+                    >
+                      <Video className="w-6 h-6" />
+                      <div className="text-center">
+                        <div className="font-medium">Video Call</div>
+                        <div className="text-xs opacity-80">Online video reading session</div>
+                      </div>
+                    </Button>
+                    
+                    <Button 
+                      variant={selectedReadingType === 'telephone' ? 'default' : 'outline'}
+                      className={`w-full p-6 h-auto flex flex-col gap-2 transition-all duration-200 ${
+                        selectedReadingType === 'telephone' 
+                          ? 'bg-green-600 hover:bg-green-700 text-white border-2 border-green-700 shadow-lg' 
+                          : 'hover:bg-green-50 hover:border-green-300 hover:text-green-700 dark:hover:bg-green-950/20'
+                      }`}
+                      onClick={() => setSelectedReadingType('telephone')}
+                    >
+                      <Phone className="w-6 h-6" />
+                      <div className="text-center">
+                        <div className="font-medium">Telephone</div>
+                        <div className="text-xs opacity-80">Phone call reading session</div>
+                      </div>
+                    </Button>
+                  </>
+                )}
+              </div>
+              
+              {/* Book Button - Appears when reading type is selected */}
+              {selectedReadingType && (
+                <div className="pt-4 border-t">
+                  <Button 
+                    onClick={handleBookingRequest}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 shadow-lg"
+                    size="lg"
+                  >
+                    Book Your {selectedReadingType === 'in_person' ? 'One to One Reading' : 
+                               selectedReadingType === 'video' ? 'Video Call Reading' : 'Telephone Reading'}
+                  </Button>
+                </div>
+              )}
+              
+              {!selectedReadingType && (
+                <div className="text-xs text-muted-foreground text-center pt-2">
+                  Select your preferred reading type above to continue
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {bookingStep === 'complete' && selectedSlot && (
           <Card>
