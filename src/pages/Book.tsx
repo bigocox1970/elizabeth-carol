@@ -135,6 +135,8 @@ const Book = () => {
   };
 
   const [bookingProgress, setBookingProgress] = useState<string>('');
+  const [progressStage, setProgressStage] = useState<number>(0);
+  const [showProgressModal, setShowProgressModal] = useState<boolean>(false);
 
   const handleBookingRequest = async () => {
     if (!selectedSlot || !selectedReadingType || loading) return;
@@ -147,10 +149,14 @@ const Book = () => {
     }
 
     setLoading(true);
+    setShowProgressModal(true);
+    setProgressStage(1);
     setBookingProgress('Creating your booking request...');
     
     try {
-      // Create a booking request in the bookings table with 'pending' status
+      // Stage 1: Create booking request
+      await new Promise(resolve => setTimeout(resolve, 500)); // Small delay to show stage
+      
       const { error } = await supabase
         .from('bookings')
         .insert({
@@ -166,13 +172,17 @@ const Book = () => {
       if (error) {
         console.error('Error creating booking request:', error);
         toast.error('Failed to create booking request');
+        setShowProgressModal(false);
+        setProgressStage(0);
         setBookingProgress('');
         return;
       }
 
+      // Stage 2: Send emails
+      setProgressStage(2);
       setBookingProgress('Sending confirmation emails...');
+      await new Promise(resolve => setTimeout(resolve, 500)); // Small delay to show stage
 
-      // Send email notifications in parallel for better performance
       const readingTypeDisplay = selectedReadingType === 'in_person' ? 'One to One (In-person)' :
                                 selectedReadingType === 'video' ? 'Video Call' : 'Telephone';
 
@@ -193,23 +203,30 @@ const Book = () => {
 
       try {
         await Promise.all(emailPromises);
-        setBookingProgress('Emails sent successfully!');
+        
+        // Stage 3: Complete
+        setProgressStage(3);
+        setBookingProgress('Booking confirmed successfully!');
       } catch (emailError) {
         console.warn('Email sending failed, but booking was created:', emailError);
-        // Don't fail the booking if emails fail
+        setProgressStage(3);
         setBookingProgress('Booking created (email delivery may be delayed)');
       }
 
-      // Small delay to show the success message
-      setTimeout(() => {
-        setBookingStep('complete');
-        setBookingProgress('');
-        toast.success('Booking request sent successfully!');
-      }, 1000);
+      // Show completion stage briefly
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      setShowProgressModal(false);
+      setBookingStep('complete');
+      setProgressStage(0);
+      setBookingProgress('');
+      toast.success('Booking request sent successfully!');
 
     } catch (error) {
       console.error('Error:', error);
       toast.error('Failed to send booking request');
+      setShowProgressModal(false);
+      setProgressStage(0);
       setBookingProgress('');
     } finally {
       setLoading(false);
@@ -234,13 +251,13 @@ const Book = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <SEO 
           title="Book Your Reading - Elizabeth Carol"
           description="Book your personal psychic reading with Elizabeth Carol. Choose from in-person, video call, or telephone readings."
         />
         <Navigation />
-        <div className="min-h-screen bg-background py-12">
+        <div className="bg-background py-12">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-center p-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -253,13 +270,13 @@ const Book = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO 
         title="Book Your Reading - Elizabeth Carol"
         description="Book your personal psychic reading with Elizabeth Carol. Choose from in-person, video call, or telephone readings."
       />
       <Navigation />
-      <div className="min-h-screen bg-background py-12">
+      <div className="bg-background py-12">
       <div className="container mx-auto px-4 max-w-4xl">
                   <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-foreground mb-4">
@@ -568,6 +585,71 @@ const Book = () => {
       </div>
       </div>
       <Footer />
+
+      {/* Progress Modal Overlay */}
+      {showProgressModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-background border rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Processing Your Booking</h3>
+              
+              {/* Progress Bar */}
+              <div className="w-full bg-muted rounded-full h-2 mb-6">
+                <div 
+                  className="bg-green-600 h-2 rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${(progressStage / 3) * 100}%` }}
+                ></div>
+              </div>
+
+              {/* Progress Stages */}
+              <div className="space-y-4 mb-6">
+                <div className={`flex items-center gap-3 p-3 rounded-lg ${progressStage >= 1 ? 'bg-green-50 dark:bg-green-950/20' : 'bg-muted/50'}`}>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                    progressStage > 1 ? 'bg-green-600 text-white' : 
+                    progressStage === 1 ? 'bg-blue-600 text-white' : 'bg-muted text-muted-foreground'
+                  }`}>
+                    {progressStage > 1 ? '✓' : progressStage === 1 ? 
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div> : '1'}
+                  </div>
+                  <span className={`${progressStage >= 1 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                    Creating booking request
+                  </span>
+                </div>
+
+                <div className={`flex items-center gap-3 p-3 rounded-lg ${progressStage >= 2 ? 'bg-green-50 dark:bg-green-950/20' : 'bg-muted/50'}`}>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                    progressStage > 2 ? 'bg-green-600 text-white' : 
+                    progressStage === 2 ? 'bg-blue-600 text-white' : 'bg-muted text-muted-foreground'
+                  }`}>
+                    {progressStage > 2 ? '✓' : progressStage === 2 ? 
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div> : '2'}
+                  </div>
+                  <span className={`${progressStage >= 2 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                    Sending confirmation emails
+                  </span>
+                </div>
+
+                <div className={`flex items-center gap-3 p-3 rounded-lg ${progressStage >= 3 ? 'bg-green-50 dark:bg-green-950/20' : 'bg-muted/50'}`}>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                    progressStage >= 3 ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground'
+                  }`}>
+                    {progressStage >= 3 ? '✓' : '3'}
+                  </div>
+                  <span className={`${progressStage >= 3 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                    Finalizing booking
+                  </span>
+                </div>
+              </div>
+
+              {/* Current Status */}
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-2">Current Status:</p>
+                <p className="font-medium text-foreground">{bookingProgress}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
