@@ -61,6 +61,7 @@ const AvailabilityManager = () => {
     service_type: 'both',
     notes: ''
   });
+  const [showEditMode, setShowEditMode] = useState(false);
 
   useEffect(() => {
     loadAvailability();
@@ -125,10 +126,13 @@ const AvailabilityManager = () => {
       console.log('🔍 Loading clients from profiles table...');
       
       // First try to load from profiles table
-      let { data: profilesData, error: profilesError } = await supabase
+      let profilesData;
+      const { data: initialProfilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('id, name, email, phone')
-        .order('name', { ascending: true });
+                  .order('name', { ascending: true });
+      
+      profilesData = initialProfilesData;
       
       // If profiles table is empty or has issues, try to populate it from reviews
       if (!profilesData || profilesData.length === 0) {
@@ -306,6 +310,14 @@ const AvailabilityManager = () => {
     );
   };
 
+  const getBookingCount = (date: Date) => {
+    const dateString = date.toISOString().split('T')[0];
+    const slotsForDate = slots.filter(slot => slot.date === dateString);
+    return slotsForDate.filter(slot => 
+      bookings.some(booking => booking.availability_slot_id === slot.id && booking.status === 'confirmed')
+    ).length;
+  };
+
   const toggleSlotBooking = async (slotId: number) => {
     const existingBooking = bookings.find(booking => 
       booking.availability_slot_id === slotId && booking.status === 'confirmed'
@@ -410,6 +422,8 @@ const AvailabilityManager = () => {
     setSelectedDate(dateString);
     setNewSlot({ ...newSlot, date: dateString });
     setShowDayView(true);
+    setShowEditMode(false);
+    setSelectedSlots([]);
   };
 
   const addTimeSlot = async () => {
@@ -489,6 +503,64 @@ const AvailabilityManager = () => {
         ? prev.filter(id => id !== slotId)
         : [...prev, slotId]
     );
+  };
+
+  const selectAllSlots = () => {
+    const slotsForDate = getSlotsForDate(new Date(selectedDate!));
+    const allSlotIds = slotsForDate.map(slot => slot.id!);
+    setSelectedSlots(allSlotIds);
+  };
+
+  const deselectAllSlots = () => {
+    setSelectedSlots([]);
+  };
+
+  const deleteSelectedSlots = async () => {
+    if (selectedSlots.length === 0) {
+      toast.error('Please select time slots to delete first');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('availability_slots')
+        .delete()
+        .in('id', selectedSlots);
+
+      if (error) {
+        console.error('Error deleting slots:', error);
+        toast.error('Failed to delete time slots');
+        return;
+      }
+
+      const updatedSlots = slots.filter(slot => !selectedSlots.includes(slot.id!));
+      setSlots(updatedSlots);
+      
+      // Also remove any bookings for these slots
+      setBookings(prev => prev.filter(booking => !selectedSlots.includes(booking.availability_slot_id)));
+      
+      setSelectedSlots([]);
+      setShowEditMode(false);
+      
+      toast.success(`${selectedSlots.length} time slot${selectedSlots.length === 1 ? '' : 's'} deleted successfully`);
+    } catch (error) {
+      console.error('Error deleting time slots:', error);
+      toast.error('Failed to delete time slots');
+    }
+  };
+
+  const navigateDayView = (direction: 'prev' | 'next') => {
+    if (!selectedDate) return;
+    
+    const currentDate = new Date(selectedDate);
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
+    
+    const newDateString = newDate.toISOString().split('T')[0];
+    setSelectedDate(newDateString);
+    setNewSlot({ ...newSlot, date: newDateString });
+    setSelectedSlots([]);
+    setShowEditMode(false);
   };
 
   const copySelectedSlots = async () => {
@@ -611,10 +683,6 @@ const AvailabilityManager = () => {
         <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
-              Your Availability Calendar
-            </CardTitle>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => navigateDate('prev')}>
                 <ChevronLeft className="w-4 h-4" />
@@ -667,10 +735,15 @@ const AvailabilityManager = () => {
                     >
                       <div className="flex flex-col items-center min-w-0">
                         <span className="truncate">{date.getDate()}</span>
-                        {(hasAvailability(date) || hasBookings(date)) && (
-                          <div className={`w-1 h-1 rounded-full mt-1 ${
-                            hasBookings(date) ? 'bg-blue-600' : 'bg-green-600'
-                          }`}></div>
+                        {hasBookings(date) && (
+                          <div className="flex gap-0.5 mt-1 flex-wrap justify-center">
+                            {Array.from({ length: Math.min(getBookingCount(date), 6) }, (_, i) => (
+                              <div key={i} className="w-1 h-1 rounded-full bg-blue-600"></div>
+                            ))}
+                            {getBookingCount(date) > 6 && (
+                              <span className="text-xs text-blue-600 ml-0.5">+</span>
+                            )}
+                          </div>
                         )}
                       </div>
                     </Button>
@@ -858,10 +931,18 @@ const AvailabilityManager = () => {
           <Card className="w-[94vw] max-w-4xl min-h-0 shadow-2xl my-2">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span className="truncate">{formatDate(selectedDate)}</span>
-                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => navigateDayView('prev')}>
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="truncate">{formatDate(selectedDate)}</span>
+                  </CardTitle>
+                  <Button variant="outline" size="sm" onClick={() => navigateDayView('next')}>
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
                 <Button variant="outline" size="sm" onClick={() => setShowDayView(false)}>
                   <X className="w-4 h-4" />
                 </Button>
@@ -872,7 +953,6 @@ const AvailabilityManager = () => {
               {getSlotsForDate(new Date(selectedDate)).length > 0 && (
                 <div className="space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                    <h4 className="font-medium">Your Times for This Day</h4>
                     <div className="flex gap-2">
                       <Button 
                         variant="outline" 
@@ -884,33 +964,81 @@ const AvailabilityManager = () => {
                         Add Time
                       </Button>
                       <Button 
-                        variant="outline" 
+                        variant={showEditMode ? "default" : "outline"}
                         size="sm" 
                         onClick={() => {
-                          if (selectedSlots.length === 0) {
-                            toast.error('Please select time slots first by ticking the checkboxes');
-                            return;
+                          setShowEditMode(!showEditMode);
+                          if (!showEditMode) {
+                            setSelectedSlots([]);
                           }
-                          setShowCopyModal(true);
                         }}
                         className="flex items-center gap-2"
                       >
-                        <Copy className="w-4 h-4" />
-                        {selectedSlots.length > 0 ? `Copy (${selectedSlots.length})` : 'Copy'}
+                        <Eye className={`w-4 h-4 ${showEditMode ? 'hidden' : ''}`} />
+                        <EyeOff className={`w-4 h-4 ${!showEditMode ? 'hidden' : ''}`} />
+                        {showEditMode ? 'Done' : 'Edit'}
                       </Button>
                     </div>
+                    {showEditMode && (
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => {
+                            const slotsForDate = getSlotsForDate(new Date(selectedDate));
+                            const allSelected = slotsForDate.every(slot => selectedSlots.includes(slot.id!));
+                            if (allSelected) {
+                              deselectAllSlots();
+                            } else {
+                              selectAllSlots();
+                            }
+                          }}
+                          className="flex items-center gap-2"
+                        >
+                          {(() => {
+                            const slotsForDate = getSlotsForDate(new Date(selectedDate));
+                            const allSelected = slotsForDate.every(slot => selectedSlots.includes(slot.id!));
+                            return allSelected ? 'Deselect All' : 'Select All';
+                          })()}
+                        </Button>
+                        {selectedSlots.length > 0 && (
+                          <>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => setShowCopyModal(true)}
+                              className="flex items-center gap-2"
+                            >
+                              <Copy className="w-4 h-4" />
+                              Copy ({selectedSlots.length})
+                            </Button>
+                            <Button 
+                              variant="destructive" 
+                              size="sm" 
+                              onClick={deleteSelectedSlots}
+                              className="flex items-center gap-2"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Delete ({selectedSlots.length})
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     {getSlotsForDate(new Date(selectedDate)).map((slot) => {
                       const booking = bookings.find(b => b.availability_slot_id === slot.id && b.status === 'confirmed');
                       return (
                         <div key={slot.id} className="flex items-center gap-3 p-3 border rounded-lg bg-muted/50">
-                          <input
-                            type="checkbox"
-                            checked={selectedSlots.includes(slot.id!)}
-                            onChange={() => toggleSlotSelection(slot.id!)}
-                            className="rounded"
-                          />
+                          {showEditMode && (
+                            <input
+                              type="checkbox"
+                              checked={selectedSlots.includes(slot.id!)}
+                              onChange={() => toggleSlotSelection(slot.id!)}
+                              className="rounded"
+                            />
+                          )}
                           <div className="flex-1">
                             <div className="font-medium">
                               {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
@@ -933,22 +1061,16 @@ const AvailabilityManager = () => {
                               <p className="text-sm text-muted-foreground mt-1">{slot.notes}</p>
                             )}
                           </div>
-                          <Button
-                            variant={isSlotBooked(slot.id!) ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => toggleSlotBooking(slot.id!)}
-                            className="text-xs mr-2"
-                          >
-                            {isSlotBooked(slot.id!) ? 'Edit' : 'Book'}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => slot.id && removeSlot(slot.id)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          {!showEditMode && (
+                            <Button
+                              variant={isSlotBooked(slot.id!) ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => toggleSlotBooking(slot.id!)}
+                              className="text-xs"
+                            >
+                              {isSlotBooked(slot.id!) ? 'Edit' : 'Book'}
+                            </Button>
+                          )}
                         </div>
                       );
                     })}
@@ -1076,14 +1198,14 @@ const AvailabilityManager = () => {
                 
                 <div className="border rounded-lg p-4">
                   <div className="flex items-center justify-between mb-4">
-                    <Button variant="outline" size="sm" onClick={() => navigateDate('prev')}>
-                      <ChevronLeft className="w-4 h-4" />
-                    </Button>
-                    <h5 className="font-medium">
-                      {currentDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
-                    </h5>
-                    <Button variant="outline" size="sm" onClick={() => navigateDate('next')}>
-                      <ChevronRight className="w-4 h-4" />
+                                         <Button variant="outline" size="sm" onClick={() => navigateDate('prev')}>
+                        <ChevronLeft className="w-4 h-4" />
+                      </Button>
+                      <h5 className="font-medium">
+                        {currentDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
+                      </h5>
+                     <Button variant="outline" size="sm" onClick={() => navigateDate('next')}>
+                        <ChevronRight className="w-4 h-4" />
                     </Button>
                   </div>
                   
