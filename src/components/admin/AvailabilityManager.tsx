@@ -121,6 +121,9 @@ const AvailabilityManager = () => {
         return;
       }
 
+      console.log('📞 DEBUG: Loaded bookings data:', bookingsData);
+      console.log('📞 DEBUG: Bookings with phone numbers:', bookingsData?.filter(b => b.client_phone));
+
       setSlots(slotsData || []);
       setBookings(bookingsData || []);
     } catch (error) {
