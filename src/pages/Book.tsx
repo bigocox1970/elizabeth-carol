@@ -120,6 +120,36 @@ const Book = () => {
     return getAvailableSlotsForDate(date).length > 0;
   };
 
+  // Helper function to check if a date string has available slots
+  const hasAvailableSlotsForDateString = (dateString: string) => {
+    const dateObj = new Date(dateString);
+    return getAvailableSlotsForDate(dateObj).length > 0;
+  };
+
+  // Helper function to get previous day with available slots
+  const getPreviousDayWithSlots = (currentDateString: string) => {
+    const currentDateObj = new Date(currentDateString);
+    const prevDay = new Date(currentDateObj);
+    prevDay.setDate(prevDay.getDate() - 1);
+    const prevDateString = prevDay.toISOString().split('T')[0];
+    const today = new Date().toISOString().split('T')[0];
+    
+    if (prevDateString < today) return null;
+    if (hasAvailableSlotsForDateString(prevDateString)) return prevDateString;
+    return null;
+  };
+
+  // Helper function to get next day with available slots
+  const getNextDayWithSlots = (currentDateString: string) => {
+    const currentDateObj = new Date(currentDateString);
+    const nextDay = new Date(currentDateObj);
+    nextDay.setDate(nextDay.getDate() + 1);
+    const nextDateString = nextDay.toISOString().split('T')[0];
+    
+    if (hasAvailableSlotsForDateString(nextDateString)) return nextDateString;
+    return null;
+  };
+
   const navigateDate = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentDate);
     newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
@@ -422,37 +452,12 @@ const Book = () => {
                     variant="outline" 
                     size="sm" 
                     onClick={() => {
-                      const currentDateObj = new Date(selectedDate);
-                      const prevDay = new Date(currentDateObj);
-                      prevDay.setDate(prevDay.getDate() - 1);
-                      const prevDateString = prevDay.toISOString().split('T')[0];
-                      
-                      // Check if previous day has available slots
-                      const prevDaySlots = slots.filter(slot => slot.date === prevDateString);
-                      const availablePrevSlots = prevDaySlots.filter(slot => 
-                        !bookings.some(booking => booking.availability_slot_id === slot.id)
-                      );
-                      
-                      if (availablePrevSlots.length > 0) {
-                        setSelectedDate(prevDateString);
+                      const prevDate = getPreviousDayWithSlots(selectedDate);
+                      if (prevDate) {
+                        setSelectedDate(prevDate);
                       }
                     }}
-                    disabled={(() => {
-                      const currentDateObj = new Date(selectedDate);
-                      const prevDay = new Date(currentDateObj);
-                      prevDay.setDate(prevDay.getDate() - 1);
-                      const prevDateString = prevDay.toISOString().split('T')[0];
-                      const today = new Date().toISOString().split('T')[0];
-                      
-                      if (prevDateString < today) return true;
-                      
-                      const prevDaySlots = slots.filter(slot => slot.date === prevDateString);
-                      const availablePrevSlots = prevDaySlots.filter(slot => 
-                        !bookings.some(booking => booking.availability_slot_id === slot.id)
-                      );
-                      
-                      return availablePrevSlots.length === 0;
-                    })()}
+                    disabled={!getPreviousDayWithSlots(selectedDate)}
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
@@ -466,34 +471,12 @@ const Book = () => {
                     variant="outline" 
                     size="sm" 
                     onClick={() => {
-                      const currentDateObj = new Date(selectedDate);
-                      const nextDay = new Date(currentDateObj);
-                      nextDay.setDate(nextDay.getDate() + 1);
-                      const nextDateString = nextDay.toISOString().split('T')[0];
-                      
-                      // Check if next day has available slots
-                      const nextDaySlots = slots.filter(slot => slot.date === nextDateString);
-                      const availableNextSlots = nextDaySlots.filter(slot => 
-                        !bookings.some(booking => booking.availability_slot_id === slot.id)
-                      );
-                      
-                      if (availableNextSlots.length > 0) {
-                        setSelectedDate(nextDateString);
+                      const nextDate = getNextDayWithSlots(selectedDate);
+                      if (nextDate) {
+                        setSelectedDate(nextDate);
                       }
                     }}
-                    disabled={(() => {
-                      const currentDateObj = new Date(selectedDate);
-                      const nextDay = new Date(currentDateObj);
-                      nextDay.setDate(nextDay.getDate() + 1);
-                      const nextDateString = nextDay.toISOString().split('T')[0];
-                      
-                      const nextDaySlots = slots.filter(slot => slot.date === nextDateString);
-                      const availableNextSlots = nextDaySlots.filter(slot => 
-                        !bookings.some(booking => booking.availability_slot_id === slot.id)
-                      );
-                      
-                      return availableNextSlots.length === 0;
-                    })()}
+                    disabled={!getNextDayWithSlots(selectedDate)}
                   >
                     <ChevronRight className="w-4 h-4" />
                   </Button>
