@@ -61,7 +61,7 @@ const UserProfile = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("readings");
+  const [activeTab, setActiveTab] = useState<string>(""); // Start with empty string to avoid race condition
   const [editingComment, setEditingComment] = useState<Comment | null>(null);
   const [editingReview, setEditingReview] = useState<Review | null>(null);
   const [commentDialogOpen, setCommentDialogOpen] = useState(false);
@@ -83,14 +83,6 @@ const UserProfile = () => {
   const [fullScreenNotesBooking, setFullScreenNotesBooking] = useState<Booking | null>(null);
 
   useEffect(() => {
-    // Handle URL tab parameter
-    const tabParam = searchParams.get('tab');
-    if (tabParam && ['readings', 'comments', 'reviews', 'account'].includes(tabParam)) {
-      setActiveTab(tabParam);
-    }
-  }, [searchParams]);
-
-  useEffect(() => {
     // Don't redirect if auth is still loading
     if (authLoading) return;
     
@@ -102,9 +94,23 @@ const UserProfile = () => {
     const fetchUserContent = async () => {
       setLoading(true);
       try {
-        // Check if user is admin
+        // Check if user is admin first
         const adminStatus = await isUserAdmin();
+        console.log('Admin status for user:', user.email, 'is:', adminStatus);
         setIsAdmin(adminStatus);
+
+        // Set default tab based on admin status and URL parameters
+        const tabParam = searchParams.get('tab');
+        console.log('URL tab parameter:', tabParam);
+        if (tabParam && ['readings', 'comments', 'reviews', 'account'].includes(tabParam)) {
+          console.log('Setting tab from URL parameter:', tabParam);
+          setActiveTab(tabParam);
+        } else {
+          // Set default tab based on admin status
+          const defaultTab = adminStatus ? "account" : "readings";
+          console.log('Setting default tab based on admin status:', defaultTab);
+          setActiveTab(defaultTab);
+        }
 
         // Fetch user's comments
         const { data: commentsData, error: commentsError } = await getUserComments();
@@ -133,7 +139,7 @@ const UserProfile = () => {
     };
 
     fetchUserContent();
-  }, [user, navigate, toast, authLoading]);
+  }, [user, navigate, toast, authLoading, searchParams]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -563,7 +569,7 @@ const UserProfile = () => {
             </div>
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <Tabs value={activeTab || "readings"} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="grid grid-cols-4 w-full">
               <TabsTrigger value="readings">Readings</TabsTrigger>
               <TabsTrigger value="comments">Comments</TabsTrigger>
