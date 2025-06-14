@@ -608,11 +608,29 @@ const UserProfile = () => {
                                         ? 'text-green-900 dark:text-green-100'
                                         : 'text-red-900 dark:text-red-100'
                                     }`}>Elizabeth's Notes:</h5>
-                                    <p className={`text-sm leading-relaxed w-full ${
+                                    <div className={`text-sm leading-relaxed w-full ${
                                       booking.status === 'confirmed' || booking.status === 'completed'
                                         ? 'text-green-800 dark:text-green-200'
                                         : 'text-red-800 dark:text-red-200'
-                                    }`}>{booking.notes}</p>
+                                    }`}>
+                                      <p className="mb-2">{booking.notes}</p>
+                                      {(booking.status === 'confirmed' || booking.status === 'completed') && booking.reading_type === 'in_person' && (
+                                        <div className="mt-3 pt-2 border-t border-green-200 dark:border-green-700">
+                                          <p className="font-medium mb-1">✅ Your reading is confirmed!</p>
+                                          <div className="flex items-center gap-2">
+                                            <span>Location:</span>
+                                            <a 
+                                              href="https://www.google.com/maps/search/?api=1&query=OX44+9DJ"
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="text-blue-600 hover:text-blue-800 underline font-medium"
+                                            >
+                                              OX44 9DJ
+                                            </a>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 )}
 
@@ -765,23 +783,6 @@ const UserProfile = () => {
                                     </Dialog>
                                   )}
                                 </div>
-
-                                {/* Address Link for In-Person Readings */}
-                                {booking.reading_type === 'in_person' && (
-                                  <div className="pt-2 border-t">
-                                    <div className="flex items-center gap-2 text-sm">
-                                      <span className="text-muted-foreground">Reading Location:</span>
-                                      <a 
-                                        href="https://www.google.com/maps/search/?api=1&query=OX44+9DJ"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-blue-600 hover:text-blue-800 underline font-medium"
-                                      >
-                                        OX44 9DJ
-                                      </a>
-                                    </div>
-                                  </div>
-                                )}
 
                                 {/* Booking Date */}
                                 <div className="text-xs text-muted-foreground pt-2 border-t">
