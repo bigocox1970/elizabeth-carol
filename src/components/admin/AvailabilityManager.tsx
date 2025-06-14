@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Plus, Trash2, Save, ChevronLeft, ChevronRight, Copy, X, List, Grid3X3, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { sendBookingApprovalEmail } from "@/lib/emailService";
+import PendingBookingsNotification from "./PendingBookingsNotification";
 
 interface AvailabilitySlot {
   id?: number;
@@ -447,10 +449,28 @@ const AvailabilityManager = () => {
         return;
       }
 
+      // Get booking details for email
+      const booking = bookings.find(b => b.id === bookingId);
+      const slot = slots.find(s => s.id === booking?.availability_slot_id);
+
       setBookings(prev => prev.map(b => 
         b.id === bookingId ? { ...b, status: 'confirmed' } : b
       ));
       toast.success('Booking approved successfully');
+
+      // Send email notification to customer
+      if (booking && slot) {
+        await sendBookingApprovalEmail({
+          customerEmail: booking.client_email || '',
+          customerName: booking.client_name || 'Customer',
+          date: formatDate(slot.date),
+          time: `${formatTime(slot.start_time)} - ${formatTime(slot.end_time)}`,
+          serviceType: slot.service_type === 'both' ? 'In-person & Remote' :
+                      slot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only',
+          notes: slot.notes,
+          approved: true
+        });
+      }
     } catch (error) {
       console.error('Error approving booking:', error);
       toast.error('Failed to approve booking');
@@ -470,10 +490,28 @@ const AvailabilityManager = () => {
         return;
       }
 
+      // Get booking details for email
+      const booking = bookings.find(b => b.id === bookingId);
+      const slot = slots.find(s => s.id === booking?.availability_slot_id);
+
       setBookings(prev => prev.map(b => 
         b.id === bookingId ? { ...b, status: 'cancelled' } : b
       ));
       toast.success('Booking declined');
+
+      // Send email notification to customer
+      if (booking && slot) {
+        await sendBookingApprovalEmail({
+          customerEmail: booking.client_email || '',
+          customerName: booking.client_name || 'Customer',
+          date: formatDate(slot.date),
+          time: `${formatTime(slot.start_time)} - ${formatTime(slot.end_time)}`,
+          serviceType: slot.service_type === 'both' ? 'In-person & Remote' :
+                      slot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only',
+          notes: slot.notes,
+          approved: false
+        });
+      }
     } catch (error) {
       console.error('Error declining booking:', error);
       toast.error('Failed to decline booking');
@@ -715,6 +753,8 @@ const AvailabilityManager = () => {
 
   return (
     <div className="space-y-6">
+      <PendingBookingsNotification />
+      
       <div className="text-center">
         <h2 className="text-2xl font-bold text-foreground mb-2">Manage Your Availability</h2>
         <p className="text-muted-foreground mb-4">

@@ -6,6 +6,7 @@ import { Calendar, ChevronLeft, ChevronRight, Clock, User, CheckCircle } from 'l
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { sendCustomerBookingConfirmation, sendAdminBookingNotification } from '@/lib/emailService';
 
 interface AvailabilitySlot {
   id: number;
@@ -157,8 +158,26 @@ const Book = () => {
         return;
       }
 
-      // TODO: Send email notification to mum
-      await sendEmailNotification(selectedSlot, user);
+      // Send email notifications
+      await sendCustomerBookingConfirmation({
+        customerEmail: user.email!,
+        customerName: user.user_metadata?.name || user.email?.split('@')[0] || 'Customer',
+        date: formatDate(selectedSlot.date),
+        time: `${formatTime(selectedSlot.start_time)} - ${formatTime(selectedSlot.end_time)}`,
+        serviceType: selectedSlot.service_type === 'both' ? 'In-person & Remote' :
+                    selectedSlot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only',
+        notes: selectedSlot.notes
+      });
+
+      await sendAdminBookingNotification({
+        customerEmail: user.email!,
+        customerName: user.user_metadata?.name || user.email?.split('@')[0] || 'Customer',
+        date: formatDate(selectedSlot.date),
+        time: `${formatTime(selectedSlot.start_time)} - ${formatTime(selectedSlot.end_time)}`,
+        serviceType: selectedSlot.service_type === 'both' ? 'In-person & Remote' :
+                    selectedSlot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only',
+        notes: selectedSlot.notes
+      });
 
       setBookingStep('complete');
       toast.success('Booking request sent successfully!');
@@ -166,16 +185,6 @@ const Book = () => {
       console.error('Error:', error);
       toast.error('Failed to send booking request');
     }
-  };
-
-  const sendEmailNotification = async (slot: AvailabilitySlot, user: { email?: string }) => {
-    // TODO: Implement email notification service
-    console.log('Email notification would be sent:', {
-      slot,
-      user: user.email,
-      date: slot.date,
-      time: `${slot.start_time} - ${slot.end_time}`
-    });
   };
 
   const formatTime = (timeString: string) => {
