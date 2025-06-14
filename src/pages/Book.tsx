@@ -28,7 +28,8 @@ interface Booking {
 const Book = () => {
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [bookingLoading, setBookingLoading] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<AvailabilitySlot | null>(null);
@@ -42,7 +43,7 @@ const Book = () => {
 
   const loadAvailability = async () => {
     try {
-      setLoading(true);
+      setInitialLoading(true);
       
       // Load future availability slots only
       const today = new Date().toISOString().split('T')[0];
@@ -78,7 +79,7 @@ const Book = () => {
       console.error('Error loading availability:', error);
       toast.error('Failed to load availability');
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
     }
   };
 
@@ -139,7 +140,7 @@ const Book = () => {
   const [showProgressModal, setShowProgressModal] = useState<boolean>(false);
 
   const handleBookingRequest = async () => {
-    if (!selectedSlot || !selectedReadingType || loading) return;
+    if (!selectedSlot || !selectedReadingType || bookingLoading) return;
 
     // Check if user is logged in
     if (!user) {
@@ -148,7 +149,7 @@ const Book = () => {
       return;
     }
 
-    setLoading(true);
+    setBookingLoading(true);
     setShowProgressModal(true);
     setProgressStage(1);
     setBookingProgress('Validating booking request...');
@@ -237,7 +238,7 @@ const Book = () => {
       setProgressStage(0);
       setBookingProgress('');
     } finally {
-      setLoading(false);
+      setBookingLoading(false);
     }
   };
 
@@ -257,7 +258,7 @@ const Book = () => {
     });
   };
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <div className="bg-background">
         <SEO 
@@ -505,7 +506,7 @@ const Book = () => {
               </div>
               
               {/* Progress Indicator - Shows during booking process */}
-              {loading && bookingProgress && (
+              {bookingLoading && bookingProgress && (
                 <div className="p-4 border rounded-lg bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
                   <div className="flex items-center gap-3">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
@@ -522,11 +523,11 @@ const Book = () => {
                 <div className="pt-4 border-t">
                   <Button 
                     onClick={handleBookingRequest}
-                    disabled={loading}
+                    disabled={bookingLoading}
                     className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     size="lg"
                   >
-                    {loading ? (
+                    {bookingLoading ? (
                       <div className="flex items-center gap-2">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                         {bookingProgress || 'Processing...'}
