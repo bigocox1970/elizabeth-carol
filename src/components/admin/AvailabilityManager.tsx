@@ -987,6 +987,14 @@ const AvailabilityManager = () => {
                                             </div>
                                           )}
                                         </div>
+                                        {(confirmedBooking?.reading_type || pendingBooking?.reading_type) && (
+                                          <div className="text-sm font-medium text-primary mt-2">
+                                            📖 {(confirmedBooking?.reading_type || pendingBooking?.reading_type) === 'in_person' ? 'One to One (In-person)' :
+                                                (confirmedBooking?.reading_type || pendingBooking?.reading_type) === 'video' ? 'Video Call' :
+                                                (confirmedBooking?.reading_type || pendingBooking?.reading_type) === 'telephone' ? 'Telephone' : 
+                                                (confirmedBooking?.reading_type || pendingBooking?.reading_type)}
+                                          </div>
+                                        )}
                                         {(confirmedBooking?.notes || pendingBooking?.notes) && (
                                           <div className="text-sm text-muted-foreground mt-2 italic">
                                             "{confirmedBooking?.notes || pendingBooking?.notes}"

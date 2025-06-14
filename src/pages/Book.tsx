@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, ChevronLeft, ChevronRight, Clock, User, CheckCircle } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Clock, User, CheckCircle, Video, Phone, UserCheck } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -29,7 +29,8 @@ const Book = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<AvailabilitySlot | null>(null);
-  const [bookingStep, setBookingStep] = useState<'calendar' | 'confirm' | 'complete'>('calendar');
+  const [selectedReadingType, setSelectedReadingType] = useState<'in_person' | 'video' | 'telephone' | null>(null);
+  const [bookingStep, setBookingStep] = useState<'calendar' | 'confirm' | 'reading-type' | 'complete'>('calendar');
   const { user } = useAuth();
 
   useEffect(() => {
@@ -127,20 +128,21 @@ const Book = () => {
 
   const selectSlot = (slot: AvailabilitySlot) => {
     setSelectedSlot(slot);
-    if (user) {
-      // User is logged in, proceed with booking
-      handleBookingRequest();
-    } else {
-      // Redirect to login with the current page as redirect
-      window.location.href = `/auth?mode=login&redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
-    }
+    setBookingStep('reading-type');
   };
 
   const handleBookingRequest = async () => {
-    if (!selectedSlot || !user) return;
+    if (!selectedSlot || !selectedReadingType) return;
+
+    // Check if user is logged in
+    if (!user) {
+      // Redirect to login with the current page as redirect
+      window.location.href = `/auth?mode=login&redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+      return;
+    }
 
     try {
-      // For now, we'll create a booking request in the bookings table with 'pending' status
+      // Create a booking request in the bookings table with 'pending' status
       const { error } = await supabase
         .from('bookings')
         .insert({
@@ -148,6 +150,7 @@ const Book = () => {
           client_name: user.user_metadata?.name || user.email?.split('@')[0],
           client_email: user.email,
           booking_type: 'online',
+          reading_type: selectedReadingType,
           status: 'pending',
           notes: 'Customer booking request - needs manual approval'
         });
@@ -159,13 +162,15 @@ const Book = () => {
       }
 
       // Send email notifications
+      const readingTypeDisplay = selectedReadingType === 'in_person' ? 'One to One (In-person)' :
+                                selectedReadingType === 'video' ? 'Video Call' : 'Telephone';
+
       await sendCustomerBookingConfirmation({
         customerEmail: user.email!,
         customerName: user.user_metadata?.name || user.email?.split('@')[0] || 'Customer',
         date: formatDate(selectedSlot.date),
         time: `${formatTime(selectedSlot.start_time)} - ${formatTime(selectedSlot.end_time)}`,
-        serviceType: selectedSlot.service_type === 'both' ? 'In-person & Remote' :
-                    selectedSlot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only',
+        serviceType: readingTypeDisplay,
         notes: selectedSlot.notes
       });
 
@@ -174,8 +179,7 @@ const Book = () => {
         customerName: user.user_metadata?.name || user.email?.split('@')[0] || 'Customer',
         date: formatDate(selectedSlot.date),
         time: `${formatTime(selectedSlot.start_time)} - ${formatTime(selectedSlot.end_time)}`,
-        serviceType: selectedSlot.service_type === 'both' ? 'In-person & Remote' :
-                    selectedSlot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only',
+        serviceType: readingTypeDisplay,
         notes: selectedSlot.notes
       });
 
@@ -355,6 +359,94 @@ const Book = () => {
           </Card>
         )}
 
+                 {bookingStep === 'reading-type' && selectedSlot && (
+           <Card>
+             <CardHeader>
+               <div className="flex items-center justify-between">
+                 <CardTitle className="flex items-center gap-2">
+                   <UserCheck className="w-5 h-5" />
+                   Choose Your Reading Type
+                 </CardTitle>
+                 <Button variant="outline" size="sm" onClick={() => setBookingStep('confirm')}>
+                   ← Back to Times
+                 </Button>
+               </div>
+               <CardDescription>
+                 Select how you'd like to receive your reading
+               </CardDescription>
+             </CardHeader>
+             <CardContent className="space-y-4">
+               <div className="p-4 border rounded-lg bg-blue-50 dark:bg-blue-950/20">
+                 <h4 className="font-medium mb-2">Selected Time Slot:</h4>
+                 <p className="text-sm">
+                   {formatDate(selectedSlot.date)} at {formatTime(selectedSlot.start_time)} - {formatTime(selectedSlot.end_time)}
+                 </p>
+                 <Badge variant="outline" className="text-xs mt-2">
+                   {selectedSlot.service_type === 'both' ? 'In-person & Remote Available' :
+                    selectedSlot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only'}
+                 </Badge>
+               </div>
+               
+               <div className="space-y-3">
+                 {selectedSlot.service_type !== 'remote' && (
+                   <Button 
+                     variant="outline"
+                     className="w-full p-6 h-auto flex flex-col gap-2 hover:bg-primary hover:text-primary-foreground"
+                     onClick={() => {
+                       setSelectedReadingType('in_person');
+                       handleBookingRequest();
+                     }}
+                   >
+                     <UserCheck className="w-6 h-6" />
+                     <div className="text-center">
+                       <div className="font-medium">One to One (In-person)</div>
+                       <div className="text-xs text-muted-foreground">Face-to-face reading session</div>
+                     </div>
+                   </Button>
+                 )}
+                 
+                 {selectedSlot.service_type !== 'in_person' && (
+                   <>
+                     <Button 
+                       variant="outline"
+                       className="w-full p-6 h-auto flex flex-col gap-2 hover:bg-primary hover:text-primary-foreground"
+                       onClick={() => {
+                         setSelectedReadingType('video');
+                         handleBookingRequest();
+                       }}
+                     >
+                       <Video className="w-6 h-6" />
+                       <div className="text-center">
+                         <div className="font-medium">Video Call</div>
+                         <div className="text-xs text-muted-foreground">Online video reading session</div>
+                       </div>
+                     </Button>
+                     
+                     <Button 
+                       variant="outline"
+                       className="w-full p-6 h-auto flex flex-col gap-2 hover:bg-primary hover:text-primary-foreground"
+                       onClick={() => {
+                         setSelectedReadingType('telephone');
+                         handleBookingRequest();
+                       }}
+                     >
+                       <Phone className="w-6 h-6" />
+                       <div className="text-center">
+                         <div className="font-medium">Telephone</div>
+                         <div className="text-xs text-muted-foreground">Phone call reading session</div>
+                       </div>
+                     </Button>
+                   </>
+                 )}
+               </div>
+               
+               <div className="text-xs text-muted-foreground text-center pt-2">
+                 Click on your preferred reading type to proceed
+               </div>
+             </CardContent>
+           </Card>
+         )}
+
         {bookingStep === 'complete' && selectedSlot && (
           <Card>
             <CardHeader>
@@ -368,7 +460,10 @@ const Book = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="p-4 border rounded-lg bg-green-50 dark:bg-green-950/20">
-                <h4 className="font-medium mb-2">Requested Time Slot:</h4>
+                <h4 className="font-medium mb-2">Requested Reading:</h4>
+                <p className="text-sm">
+                  <strong>{selectedReadingType === 'in_person' ? 'One to One (In-person)' : selectedReadingType === 'video' ? 'Video Call' : 'Telephone'}</strong>
+                </p>
                 <p className="text-sm">
                   {formatDate(selectedSlot.date)} at {formatTime(selectedSlot.start_time)} - {formatTime(selectedSlot.end_time)}
                 </p>
@@ -386,6 +481,7 @@ const Book = () => {
                   setBookingStep('calendar');
                   setSelectedSlot(null);
                   setSelectedDate(null);
+                  setSelectedReadingType(null);
                 }}
               >
                 Book Another Reading
