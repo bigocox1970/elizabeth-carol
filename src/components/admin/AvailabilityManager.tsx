@@ -1131,10 +1131,19 @@ const AvailabilityManager = () => {
                               <Badge variant={isSlotBooked(slot.id!) ? "default" : "secondary"}>
                                 {isSlotBooked(slot.id!) ? '🔵 Booked' : '🟢 Available'}
                               </Badge>
-                              <Badge variant="outline" className="text-xs">
-                                {slot.service_type === 'both' ? 'In-person & Remote' :
-                                 slot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only'}
-                              </Badge>
+                              {isSlotBooked(slot.id!) && booking?.reading_type ? (
+                                <Badge variant="secondary" className="text-xs">
+                                  {booking.reading_type === 'in_person' && '🏠 In-person'}
+                                  {booking.reading_type === 'video' && '📹 Video'}
+                                  {booking.reading_type === 'phone' && '📞 Phone'}
+                                  {booking.reading_type === 'other' && '✨ Other'}
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-xs">
+                                  {slot.service_type === 'both' ? 'In-person & Remote' :
+                                   slot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only'}
+                                </Badge>
+                              )}
                             </div>
                             {booking && (booking.client_name || booking.client_email) && (
                               <p className="text-sm text-muted-foreground mt-1">
