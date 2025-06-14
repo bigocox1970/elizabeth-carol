@@ -396,7 +396,7 @@ const Book = () => {
                 
                 {selectedSlot.service_type !== 'remote' && (
                   <Button 
-                    variant={selectedReadingType === 'in_person' ? 'default' : 'outline'}
+                    variant="outline"
                     className={`w-full p-6 h-auto flex flex-col gap-2 transition-all duration-200 ${
                       selectedReadingType === 'in_person' 
                         ? 'bg-green-50 border-2 border-green-500 text-green-800 shadow-md dark:bg-green-950/20 dark:text-green-200' 
@@ -415,7 +415,7 @@ const Book = () => {
                 {selectedSlot.service_type !== 'in_person' && (
                   <>
                     <Button 
-                      variant={selectedReadingType === 'video' ? 'default' : 'outline'}
+                      variant="outline"
                       className={`w-full p-6 h-auto flex flex-col gap-2 transition-all duration-200 ${
                         selectedReadingType === 'video' 
                           ? 'bg-green-50 border-2 border-green-500 text-green-800 shadow-md dark:bg-green-950/20 dark:text-green-200' 
@@ -431,7 +431,7 @@ const Book = () => {
                     </Button>
                     
                     <Button 
-                      variant={selectedReadingType === 'telephone' ? 'default' : 'outline'}
+                      variant="outline"
                       className={`w-full p-6 h-auto flex flex-col gap-2 transition-all duration-200 ${
                         selectedReadingType === 'telephone' 
                           ? 'bg-green-50 border-2 border-green-500 text-green-800 shadow-md dark:bg-green-950/20 dark:text-green-200' 
