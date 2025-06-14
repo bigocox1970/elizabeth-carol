@@ -448,11 +448,19 @@ const Book = () => {
                 <div className="pt-4 border-t">
                   <Button 
                     onClick={handleBookingRequest}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 shadow-lg"
+                    disabled={loading}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     size="lg"
                   >
-                    Book Your {selectedReadingType === 'in_person' ? 'One to One Reading' : 
-                               selectedReadingType === 'video' ? 'Video Call Reading' : 'Telephone Reading'}
+                    {loading ? (
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Sending Request...
+                      </div>
+                    ) : (
+                      `Book Your ${selectedReadingType === 'in_person' ? 'One to One Reading' : 
+                                   selectedReadingType === 'video' ? 'Video Call Reading' : 'Telephone Reading'}`
+                    )}
                   </Button>
                 </div>
               )}
