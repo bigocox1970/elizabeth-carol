@@ -118,8 +118,7 @@ const AvailabilityManager = () => {
         .from('bookings')
         .select(`
           *,
-          availability_slots!inner(date),
-          profiles(name, email, phone)
+          availability_slots!inner(date)
         `)
         .gte('availability_slots.date', today);
 
@@ -130,7 +129,6 @@ const AvailabilityManager = () => {
       }
 
       console.log('📞 DEBUG: Loaded bookings data:', bookingsData);
-      console.log('📞 DEBUG: Bookings with user profiles:', bookingsData?.filter(b => b.profiles));
 
       setSlots(slotsData || []);
       setBookings(bookingsData || []);
