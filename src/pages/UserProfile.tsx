@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { getUserComments, getUserReviews, updateComment, updateReview, deleteComment, deleteReview, isUserAdmin, getUserBookings, updateBookingUserNotes, cancelBooking, createReviewForBooking } from "@/lib/supabase";
+import { getUserComments, getUserReviews, updateComment, updateReview, deleteComment, deleteReview, isUserAdmin, getUserBookings, updateBookingUserNotes, cancelBooking, createReviewForBooking, deleteBooking } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -441,6 +441,28 @@ const UserProfile = () => {
     }
   };
 
+  const handleDeleteBooking = async (bookingId: number) => {
+    try {
+      const { error } = await deleteBooking(bookingId);
+      if (error) throw error;
+
+      // Update local state
+      setBookings(bookings.filter(booking => booking.id !== bookingId));
+
+      toast({
+        title: "Success",
+        description: "Cancelled booking has been deleted.",
+      });
+    } catch (error) {
+      console.error("Error deleting booking:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete booking. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const canCancelBooking = (booking: Booking) => {
     if (booking.status !== 'pending' && booking.status !== 'confirmed') return false;
     
@@ -781,6 +803,35 @@ const UserProfile = () => {
                                         </DialogFooter>
                                       </DialogContent>
                                     </Dialog>
+                                  )}
+
+                                  {/* Delete Button for Cancelled Bookings */}
+                                  {booking.status === 'cancelled' && (
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button variant="outline" size="sm" className="text-red-600 border-red-300 hover:bg-red-50">
+                                          <Trash2 className="w-4 h-4 mr-1" />
+                                          Delete
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Delete Cancelled Booking</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            Are you sure you want to permanently delete this cancelled booking? This action cannot be undone.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Keep Booking</AlertDialogCancel>
+                                          <AlertDialogAction
+                                            onClick={() => handleDeleteBooking(booking.id)}
+                                            className="bg-red-600 hover:bg-red-700"
+                                          >
+                                            Delete Permanently
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
                                   )}
                                 </div>
 

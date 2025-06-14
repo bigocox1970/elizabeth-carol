@@ -339,3 +339,17 @@ export const createReviewForBooking = async (bookingId: number, content: string,
 
   return { data, error };
 };
+
+export const deleteBooking = async (bookingId: number) => {
+  const { data: user } = await supabase.auth.getUser();
+  if (!user.user) return { data: null, error: new Error('Not authenticated') };
+
+  const { data, error } = await supabase
+    .from('bookings')
+    .delete()
+    .eq('id', bookingId)
+    .eq('client_email', user.user.email)
+    .eq('status', 'cancelled'); // Only allow deletion of cancelled bookings
+
+  return { data, error };
+};
