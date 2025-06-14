@@ -1,105 +1,63 @@
 // Email service for booking notifications
 // You can replace this with your preferred email service (Resend, SendGrid, etc.)
 
-interface BookingEmailData {
-  customerEmail: string;
+interface EmailData {
   customerName: string;
+  customerEmail: string;
   date: string;
   time: string;
   serviceType: string;
   notes?: string;
 }
 
-interface AdminNotificationData {
-  customerEmail: string;
-  customerName: string;
-  date: string;
-  time: string;
-  serviceType: string;
-  notes?: string;
-}
-
-// For now, we'll use a simple fetch to a serverless function
-// You'll need to set up the actual email service of your choice
-
-export const sendCustomerBookingConfirmation = async (data: BookingEmailData) => {
+// Use the Netlify function to send emails
+const sendEmailViaNetlify = async (type: string, data: EmailData) => {
   try {
-    // TODO: Replace with your actual email service
-    console.log('Sending customer confirmation email:', data);
+    console.log(`🔄 Attempting to send ${type} email to:`, data.customerEmail);
+    console.log('📧 Email data:', data);
     
-    // Example with fetch to a serverless function
-    // const response = await fetch('/api/send-email', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({
-    //     to: data.customerEmail,
-    //     subject: 'Booking Request Received - Elizabeth Carol Psychic Readings',
-    //     template: 'customer-booking-request',
-    //     data
-    //   })
-    // });
+    const response = await fetch('/.netlify/functions/send-booking-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ type, data })
+    });
+
+    console.log('📡 Response status:', response.status);
+    const result = await response.json();
+    console.log('📨 Response result:', result);
     
-    // For demonstration, we'll simulate success
-    return { success: true };
+    if (!response.ok) {
+      throw new Error(result.message || 'Failed to send email');
+    }
+
+    console.log(`✅ ${type} email sent successfully!`);
+    return result;
   } catch (error) {
-    console.error('Error sending customer email:', error);
-    return { success: false, error };
+    console.error(`❌ Failed to send ${type} email:`, error);
+    throw error;
   }
 };
 
-export const sendAdminBookingNotification = async (data: AdminNotificationData) => {
-  try {
-    // TODO: Replace with your actual email service
-    console.log('Sending admin notification email:', data);
-    
-    // Example with fetch to a serverless function
-    // const response = await fetch('/api/send-email', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({
-    //     to: 'elizabeth@example.com', // Replace with mum's email
-    //     subject: 'New Booking Request - Action Required',
-    //     template: 'admin-booking-notification',
-    //     data
-    //   })
-    // });
-    
-    // For demonstration, we'll simulate success
-    return { success: true };
-  } catch (error) {
-    console.error('Error sending admin email:', error);
-    return { success: false, error };
-  }
+export const sendCustomerBookingConfirmation = async (data: EmailData) => {
+  console.log('🎯 sendCustomerBookingConfirmation called');
+  return await sendEmailViaNetlify('customer-booking-request', data);
 };
 
-export const sendBookingApprovalEmail = async (data: BookingEmailData & { approved: boolean }) => {
-  try {
-    console.log('Sending booking approval/decline email:', data);
-    
-    // TODO: Replace with your actual email service
-    // const response = await fetch('/api/send-email', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({
-    //     to: data.customerEmail,
-    //     subject: data.approved 
-    //       ? 'Booking Confirmed - Elizabeth Carol Psychic Readings'
-    //       : 'Booking Request Update - Elizabeth Carol Psychic Readings',
-    //     template: data.approved ? 'booking-approved' : 'booking-declined',
-    //     data
-    //   })
-    // });
-    
-    return { success: true };
-  } catch (error) {
-    console.error('Error sending approval email:', error);
-    return { success: false, error };
-  }
+export const sendAdminBookingNotification = async (data: EmailData) => {
+  console.log('🎯 sendAdminBookingNotification called');
+  return await sendEmailViaNetlify('admin-booking-notification', data);
+};
+
+export const sendBookingApprovalEmail = async (data: EmailData & { approved: boolean }) => {
+  console.log('🎯 sendBookingApprovalEmail called');
+  return await sendEmailViaNetlify('booking-approval', data);
 };
 
 // Email templates (you can customize these)
 export const emailTemplates = {
-  customerBookingRequest: (data: BookingEmailData) => ({
+  customerBookingRequest: (data: EmailData) => ({
     subject: 'Booking Request Received - Elizabeth Carol Psychic Readings',
     html: `
       <h2>Booking Request Received</h2>
@@ -117,7 +75,7 @@ export const emailTemplates = {
     `
   }),
   
-  adminBookingNotification: (data: AdminNotificationData) => ({
+  adminBookingNotification: (data: EmailData) => ({
     subject: 'New Booking Request - Action Required',
     html: `
       <h2>New Booking Request</h2>
@@ -134,7 +92,7 @@ export const emailTemplates = {
     `
   }),
   
-  bookingApproved: (data: BookingEmailData) => ({
+  bookingApproved: (data: EmailData) => ({
     subject: 'Booking Confirmed - Elizabeth Carol Psychic Readings',
     html: `
       <h2>Booking Confirmed!</h2>
@@ -151,7 +109,7 @@ export const emailTemplates = {
     `
   }),
   
-  bookingDeclined: (data: BookingEmailData) => ({
+  bookingDeclined: (data: EmailData) => ({
     subject: 'Booking Request Update - Elizabeth Carol Psychic Readings',
     html: `
       <h2>Booking Request Update</h2>
