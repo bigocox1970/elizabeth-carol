@@ -737,7 +737,7 @@ const AvailabilityManager = () => {
                       variant="ghost"
                       className={`w-full h-full p-1 text-xs sm:text-sm min-w-0 ${
                         hasBookings(date)
-                          ? 'bg-blue-100 hover:bg-blue-200 text-blue-800 border border-blue-300'
+                          ? 'bg-blue-100 hover:bg-blue-200 text-blue-800 border-2 border-blue-500 shadow-md'
                           : hasAvailability(date) 
                             ? 'bg-green-100 hover:bg-green-200 text-green-800 border border-green-300' 
                             : 'hover:bg-muted'
@@ -1129,7 +1129,11 @@ const AvailabilityManager = () => {
                     {getSlotsForDate(new Date(selectedDate)).map((slot) => {
                       const booking = bookings.find(b => b.availability_slot_id === slot.id && b.status === 'confirmed');
                       return (
-                        <div key={slot.id} className="flex items-center gap-3 p-3 border rounded-lg bg-muted/50">
+                        <div key={slot.id} className={`flex items-center gap-3 p-3 rounded-lg bg-muted/50 ${
+                          isSlotBooked(slot.id!) 
+                            ? 'border-2 border-blue-500 shadow-md bg-blue-50 dark:bg-blue-950/20' 
+                            : 'border'
+                        }`}>
                           {showEditMode && (
                             <input
                               type="checkbox"
@@ -1150,7 +1154,7 @@ const AvailabilityManager = () => {
                                 <Badge variant="secondary" className="text-xs">
                                   {booking.reading_type === 'in_person' && '🏠 In-person'}
                                   {booking.reading_type === 'video' && '📹 Video'}
-                                                                     {booking.reading_type === 'telephone' && '📞 Telephone'}
+                                  {booking.reading_type === 'telephone' && '📞 Telephone'}
                                   {booking.reading_type === 'other' && '✨ Other'}
                                 </Badge>
                               ) : (
