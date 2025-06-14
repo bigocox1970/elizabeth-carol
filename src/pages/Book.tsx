@@ -7,6 +7,9 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sendCustomerBookingConfirmation, sendAdminBookingNotification } from '@/lib/emailService';
+import Navigation from '@/components/Navigation';
+import Footer from '@/components/Footer';
+import SEO from '@/components/SEO';
 
 interface AvailabilitySlot {
   id: number;
@@ -212,18 +215,32 @@ const Book = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-purple-900 py-12">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-background">
+        <SEO 
+          title="Book Your Reading - Elizabeth Carol"
+          description="Book your personal psychic reading with Elizabeth Carol. Choose from in-person, video call, or telephone readings."
+        />
+        <Navigation />
+        <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-purple-900 py-12">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-center p-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-purple-900 py-12">
+    <div className="min-h-screen bg-background">
+      <SEO 
+        title="Book Your Reading - Elizabeth Carol"
+        description="Book your personal psychic reading with Elizabeth Carol. Choose from in-person, video call, or telephone readings."
+      />
+      <Navigation />
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-purple-900 py-12">
       <div className="container mx-auto px-4 max-w-4xl">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
@@ -517,6 +534,8 @@ const Book = () => {
           </Card>
         )}
       </div>
+      </div>
+      <Footer />
     </div>
   );
 };

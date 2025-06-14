@@ -66,7 +66,7 @@ const Footer = () => {
               <Link to="/services" className="text-muted-foreground hover:text-primary transition-colors">
                 View All Services
               </Link>
-              <Link to="/contact" className="text-muted-foreground hover:text-primary transition-colors">
+              <Link to="/book" className="text-muted-foreground hover:text-primary transition-colors">
                 Book a Reading
               </Link>
             </nav>
