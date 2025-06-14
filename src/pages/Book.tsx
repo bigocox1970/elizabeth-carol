@@ -260,51 +260,76 @@ const Book = () => {
 
   if (initialLoading) {
     return (
-      <div className="bg-background">
+      <div className="min-h-screen bg-background">
         <SEO 
           title="Book Your Reading - Elizabeth Carol"
           description="Book your personal psychic reading with Elizabeth Carol. Choose from in-person, video call, or telephone readings."
         />
         <Navigation />
-        <div className="bg-background py-12">
+        
+        {/* Hero Section */}
+        <section className="py-20 bg-gradient-celestial">
+          <div className="container mx-auto px-4">
+            <div className="max-w-4xl mx-auto text-center">
+              <h1 className="text-4xl md:text-5xl font-serif font-bold text-foreground mb-6">
+                Book Your Reading
+              </h1>
+              <p className="text-xl text-muted-foreground leading-relaxed">
+                Loading available time slots...
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Loading Content */}
+        <section className="py-20">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-center p-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           </div>
-        </div>
+        </section>
         <Footer />
       </div>
     );
   }
 
   return (
-    <div className="bg-background">
+    <div className="min-h-screen bg-background">
       <SEO 
         title="Book Your Reading - Elizabeth Carol"
         description="Book your personal psychic reading with Elizabeth Carol. Choose from in-person, video call, or telephone readings."
       />
       <Navigation />
-      <div className="bg-background py-12">
-      <div className="container mx-auto px-4 max-w-4xl">
-                  <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-foreground mb-4">
+      
+      {/* Hero Section */}
+      <section className="py-20 bg-gradient-celestial">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="text-4xl md:text-5xl font-serif font-bold text-foreground mb-6">
               Book Your Reading
             </h1>
-            <p className="text-lg text-muted-foreground">
-              Choose an available time slot for your personal reading with Elizabeth Carol
+            <p className="text-xl text-muted-foreground leading-relaxed">
+              Choose an available time slot for your personal reading with Elizabeth Carol. 
+              Select from in-person, video call, or telephone sessions to suit your needs.
             </p>
           </div>
+        </div>
+      </section>
+
+      {/* Main Content */}
+      <section className="py-20">
+        <div className="container mx-auto px-4 max-w-4xl">
 
         {bookingStep === 'calendar' && (
-          <Card>
+          <Card className="hover:shadow-lg hover:shadow-primary/20 transition-all duration-300">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" onClick={() => navigateDate('prev')}>
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
-                  <h3 className="font-semibold min-w-[200px] text-center">
+                  <h3 className="font-serif font-semibold min-w-[200px] text-center text-foreground">
                     {currentDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
                   </h3>
                   <Button variant="outline" size="sm" onClick={() => navigateDate('next')}>
@@ -373,10 +398,10 @@ const Book = () => {
         )}
 
         {bookingStep === 'confirm' && selectedDate && (
-          <Card>
+          <Card className="hover:shadow-lg hover:shadow-primary/20 transition-all duration-300">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 font-serif text-foreground">
                   <Calendar className="w-5 h-5" />
                   {formatDate(selectedDate)}
                 </CardTitle>
@@ -420,10 +445,10 @@ const Book = () => {
         )}
 
         {bookingStep === 'reading-type' && selectedSlot && (
-          <Card>
+          <Card className="hover:shadow-lg hover:shadow-primary/20 transition-all duration-300">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 font-serif text-foreground">
                   <UserCheck className="w-5 h-5" />
                   Choose Your Reading Type
                 </CardTitle>
@@ -550,9 +575,9 @@ const Book = () => {
         )}
 
         {bookingStep === 'complete' && selectedSlot && (
-          <Card>
+          <Card className="hover:shadow-lg hover:shadow-primary/20 transition-all duration-300">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-green-600">
+              <CardTitle className="flex items-center gap-2 text-green-600 font-serif">
                 <CheckCircle className="w-5 h-5" />
                 Booking Request Sent!
               </CardTitle>
@@ -591,8 +616,8 @@ const Book = () => {
             </CardContent>
           </Card>
         )}
-      </div>
-      </div>
+        </div>
+      </section>
       <Footer />
 
       {/* Progress Modal Overlay */}
