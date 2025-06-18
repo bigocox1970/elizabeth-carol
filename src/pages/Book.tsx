@@ -26,6 +26,15 @@ interface Booking {
   status: string;
 }
 
+// TypeScript declaration for window.paypal
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+declare global {
+  interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    paypal?: any;
+  }
+}
+
 const Book = () => {
   const navigate = useNavigate();
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
@@ -328,6 +337,19 @@ const Book = () => {
       month: 'long',
       day: 'numeric'
     });
+  };
+
+  // PayPal Hosted Button integration
+  // IMPORTANT: Make sure the PayPal SDK script is included in public/index.html as per PayPal's instructions.
+  const PayPalButton = () => {
+    useEffect(() => {
+      if (window.paypal && window.paypal.HostedButtons) {
+        window.paypal.HostedButtons({
+          hostedButtonId: "CS7837DA9Y362" // £1 test button
+        }).render("#paypal-container-CS7837DA9Y362");
+      }
+    }, []);
+    return <div id="paypal-container-CS7837DA9Y362"></div>;
   };
 
   if (initialLoading) {
@@ -654,24 +676,7 @@ const Book = () => {
               {/* Book Button - Appears when reading type is selected */}
               {selectedReadingType && (
                 <div className="pt-4 border-t">
-                  <Button 
-                    onClick={() => {
-                      window.location.href = "https://www.paypal.com/hostedbutton?hosted_button_id=ZLXVJCT2HUPZA";
-                    }}
-                    disabled={bookingLoading}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                    size="lg"
-                  >
-                    {bookingLoading ? (
-                      <div className="flex items-center gap-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        {bookingProgress || 'Processing...'}
-                      </div>
-                    ) : (
-                      `Book Your ${selectedReadingType === 'in_person' ? 'One to One Reading' : 
-                                   selectedReadingType === 'video' ? 'Video Call Reading' : 'Telephone Reading'}`
-                    )}
-                  </Button>
+                  <PayPalButton />
                 </div>
               )}
               
