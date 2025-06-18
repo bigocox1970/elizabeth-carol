@@ -36,6 +36,7 @@ interface Booking {
     email?: string;
     phone?: string;
   };
+  payment_status?: string;
 }
 
 interface Client {
@@ -44,6 +45,13 @@ interface Client {
   name?: string;
   phone?: string;
 }
+
+// Add payment status options
+const paymentStatusOptions = [
+  { value: 'invoice_sent', label: 'Invoice sent' },
+  { value: 'payment_received', label: 'Payment received' },
+  { value: 'refund_sent', label: 'Refund sent' },
+];
 
 const AvailabilityManager = () => {
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
@@ -1110,6 +1118,31 @@ const AvailabilityManager = () => {
                                         {(confirmedBooking?.notes || pendingBooking?.notes) && (
                                           <div className="text-sm text-muted-foreground mt-2 italic">
                                             "{confirmedBooking?.notes || pendingBooking?.notes}"
+                                          </div>
+                                        )}
+                                        
+                                        {/* Payment Status Dropdown */}
+                                        {hasBooking && (
+                                          <div className="mt-3 flex items-center gap-2">
+                                            <label htmlFor={`payment-status-${hasBooking.id}`} className="text-xs font-medium">Payment Status:</label>
+                                            <select
+                                              id={`payment-status-${hasBooking.id}`}
+                                              value={hasBooking.payment_status || 'invoice_sent'}
+                                              onChange={async (e) => {
+                                                const newStatus = e.target.value;
+                                                // Save to DB
+                                                await supabase.from('bookings').update({ payment_status: newStatus }).eq('id', hasBooking.id);
+                                                // If payment received, show prompt
+                                                if (newStatus === 'payment_received') {
+                                                  toast.info('Please click the Approve button to confirm this booking.');
+                                                }
+                                              }}
+                                              className={`text-xs border rounded px-2 py-1 ${hasBooking.payment_status === 'payment_received' ? 'text-green-600 font-semibold' : ''}`}
+                                            >
+                                              {paymentStatusOptions.map(opt => (
+                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                              ))}
+                                            </select>
                                           </div>
                                         )}
                                         
