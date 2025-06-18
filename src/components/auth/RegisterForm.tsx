@@ -22,6 +22,7 @@ const RegisterForm = ({ onSuccess, onLoginClick }: RegisterFormProps) => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    phone: "",
     password: "",
     confirmPassword: "",
     subscribeToNewsletter: true, // Default to checked
@@ -46,7 +47,7 @@ const RegisterForm = ({ onSuccess, onLoginClick }: RegisterFormProps) => {
     setError(null);
 
     // Validate form
-    if (!formData.name || !formData.email || !formData.password) {
+    if (!formData.name || !formData.email || !formData.phone || !formData.password) {
       setError("All fields are required");
       return;
     }
@@ -65,10 +66,24 @@ const RegisterForm = ({ onSuccess, onLoginClick }: RegisterFormProps) => {
       setIsLoading(true);
       const { data, error } = await signUp(formData.email, formData.password, {
         name: formData.name,
+        phone: formData.phone,
       });
 
       if (error) {
         throw error;
+      }
+
+      // Upsert user profile with phone number after successful signup
+      // Wait for user to be available (may need to prompt for email confirmation in production)
+      const { getCurrentUser } = await import('@/lib/supabase');
+      const { user } = await getCurrentUser();
+      if (user) {
+        await import('@/lib/supabase').then(m => m.supabase.from('profiles').upsert({
+          id: user.id,
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone
+        }));
       }
 
       // If newsletter subscription is enabled and user signed up successfully
@@ -153,6 +168,19 @@ const RegisterForm = ({ onSuccess, onLoginClick }: RegisterFormProps) => {
               type="email"
               placeholder="your.email@example.com"
               value={formData.email}
+              onChange={handleChange}
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone</Label>
+            <Input
+              id="phone"
+              name="phone"
+              type="tel"
+              placeholder="Your phone number"
+              value={formData.phone}
               onChange={handleChange}
               disabled={isLoading}
             />

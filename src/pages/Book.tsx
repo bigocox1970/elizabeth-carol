@@ -126,27 +126,41 @@ const Book = () => {
     return getAvailableSlotsForDate(dateObj).length > 0;
   };
 
-  // Helper function to get previous day with available slots
+  // Helper function to get previous day with available slots (searches up to 30 days back)
   const getPreviousDayWithSlots = (currentDateString: string) => {
     const currentDateObj = new Date(currentDateString);
-    const prevDay = new Date(currentDateObj);
-    prevDay.setDate(prevDay.getDate() - 1);
-    const prevDateString = prevDay.toISOString().split('T')[0];
     const today = new Date().toISOString().split('T')[0];
     
-    if (prevDateString < today) return null;
-    if (hasAvailableSlotsForDateString(prevDateString)) return prevDateString;
+    // Search up to 30 days back for a day with available slots
+    for (let i = 1; i <= 30; i++) {
+      const checkDay = new Date(currentDateObj);
+      checkDay.setDate(checkDay.getDate() - i);
+      const checkDateString = checkDay.toISOString().split('T')[0];
+      
+      // Don't go before today
+      if (checkDateString < today) break;
+      
+      if (hasAvailableSlotsForDateString(checkDateString)) {
+        return checkDateString;
+      }
+    }
     return null;
   };
 
-  // Helper function to get next day with available slots
+  // Helper function to get next day with available slots (searches up to 90 days ahead)
   const getNextDayWithSlots = (currentDateString: string) => {
     const currentDateObj = new Date(currentDateString);
-    const nextDay = new Date(currentDateObj);
-    nextDay.setDate(nextDay.getDate() + 1);
-    const nextDateString = nextDay.toISOString().split('T')[0];
     
-    if (hasAvailableSlotsForDateString(nextDateString)) return nextDateString;
+    // Search up to 90 days ahead for a day with available slots
+    for (let i = 1; i <= 90; i++) {
+      const checkDay = new Date(currentDateObj);
+      checkDay.setDate(checkDay.getDate() + i);
+      const checkDateString = checkDay.toISOString().split('T')[0];
+      
+      if (hasAvailableSlotsForDateString(checkDateString)) {
+        return checkDateString;
+      }
+    }
     return null;
   };
 
@@ -157,7 +171,12 @@ const Book = () => {
   };
 
   const selectDate = (date: Date) => {
-    const dateString = date.toISOString().split('T')[0];
+    // Fix timezone issue by using local date formatting
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateString = `${year}-${month}-${day}`;
+    
     setSelectedDate(dateString);
     setBookingStep('confirm');
   };
@@ -188,18 +207,31 @@ const Book = () => {
     
     try {
       // Stage 1: Validate and create booking request
-      await new Promise(resolve => setTimeout(resolve, 800)); // Show validation stage
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Increased for validation
       
+      // Fetch user profile info
+      let profile = null;
+      if (user) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('name, email, phone')
+          .eq('id', user.id)
+          .single();
+        profile = profileData;
+      }
+
       const { error } = await supabase
         .from('bookings')
         .insert({
           availability_slot_id: selectedSlot.id,
-          client_name: user.user_metadata?.name || user.email?.split('@')[0],
-          client_email: user.email,
+          user_id: user.id,
           booking_type: 'online',
           reading_type: selectedReadingType,
           status: 'pending',
-          notes: 'Customer booking request'
+          notes: 'Customer booking request',
+          client_name: profile?.name || user.user_metadata?.name || user.email?.split('@')[0] || '',
+          client_email: profile?.email || user.email || '',
+          client_phone: profile?.phone || ''
         });
 
       if (error) {
@@ -214,7 +246,7 @@ const Book = () => {
       // Stage 2: Drafting emails
       setProgressStage(2);
       setBookingProgress('Drafting email notifications...');
-      await new Promise(resolve => setTimeout(resolve, 600));
+      await new Promise(resolve => setTimeout(resolve, 1200)); // Increased
 
       const readingTypeDisplay = selectedReadingType === 'in_person' ? 'One to One (In-person)' :
                                 selectedReadingType === 'video' ? 'Video Call' : 'Telephone';
@@ -228,17 +260,11 @@ const Book = () => {
         notes: selectedSlot.notes
       };
 
-      // Stage 3: Send email to Elizabeth Carol
+      // Stage 3: Send both emails in parallel
       setProgressStage(3);
-      setBookingProgress('Sending notification to Elizabeth Carol...');
-      await new Promise(resolve => setTimeout(resolve, 800));
-
-      // Stage 4: Send confirmation email to customer
-      setProgressStage(4);
-      setBookingProgress('Sending confirmation email to you...');
-      await new Promise(resolve => setTimeout(resolve, 600));
-
-      // Send both emails in parallel
+      setBookingProgress('Sending email notifications...');
+      
+      // Send both emails in parallel (no artificial delay here - let the real email time show)
       const emailPromises = [
         sendCustomerBookingConfirmation(emailData),
         sendAdminBookingNotification(emailData)
@@ -246,19 +272,20 @@ const Book = () => {
 
       try {
         await Promise.all(emailPromises);
-        
-        // Stage 5: Complete
-        setProgressStage(5);
-        setBookingProgress('Completing booking process...');
-        await new Promise(resolve => setTimeout(resolve, 600));
-        setBookingProgress('Booking request sent successfully!');
       } catch (emailError) {
         console.warn('Email sending failed, but booking was created:', emailError);
-        setProgressStage(5);
-        setBookingProgress('Completing booking process...');
-        await new Promise(resolve => setTimeout(resolve, 600));
-        setBookingProgress('Booking created (email delivery may be delayed)');
       }
+      
+      // Stage 4: Processing
+      setProgressStage(4);
+      setBookingProgress('Processing your booking...');
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Show processing stage
+      
+      // Stage 5: Complete
+      setProgressStage(5);
+      setBookingProgress('Completing booking process...');
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setBookingProgress('Booking request sent successfully!');
 
       // Show completion stage briefly
       await new Promise(resolve => setTimeout(resolve, 1200));
@@ -727,7 +754,7 @@ const Book = () => {
                       <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div> : '1'}
                   </div>
                   <span className={`${progressStage >= 1 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                    Validating & sending request to Elizabeth Carol
+                    Validating booking details
                   </span>
                 </div>
 
@@ -753,7 +780,7 @@ const Book = () => {
                       <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div> : '3'}
                   </div>
                   <span className={`${progressStage >= 3 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                    Sending notification to Elizabeth Carol
+                    Sending email notifications
                   </span>
                 </div>
 
@@ -766,7 +793,7 @@ const Book = () => {
                       <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div> : '4'}
                   </div>
                   <span className={`${progressStage >= 4 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                    Sending confirmation email to you
+                    Processing your booking
                   </span>
                 </div>
 
@@ -777,7 +804,7 @@ const Book = () => {
                     {progressStage >= 5 ? '✓' : '5'}
                   </div>
                   <span className={`${progressStage >= 5 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                    Completing booking process
+                    Finalizing booking
                   </span>
                 </div>
               </div>
