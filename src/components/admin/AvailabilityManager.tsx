@@ -48,6 +48,7 @@ interface Client {
 
 // Add payment status options
 const paymentStatusOptions = [
+  { value: '', label: 'Please select' },
   { value: 'invoice_sent', label: 'Invoice sent' },
   { value: 'payment_received', label: 'Payment received' },
   { value: 'refund_sent', label: 'Refund sent' },
@@ -81,6 +82,7 @@ const AvailabilityManager = () => {
   });
   const [showEditMode, setShowEditMode] = useState(false);
   const [bookingPhones, setBookingPhones] = useState<{[key: number]: string}>({});
+  const [paymentStatuses, setPaymentStatuses] = useState<Record<number, string>>({});
 
   useEffect(() => {
     loadAvailability();
@@ -1121,28 +1123,59 @@ const AvailabilityManager = () => {
                                           </div>
                                         )}
                                         
-                                        {/* Payment Status Dropdown */}
+                                        {/* Payment Status Dropdown and Invoice/Copy Buttons */}
                                         {hasBooking && (
                                           <div className="mt-3 flex items-center gap-2">
                                             <label htmlFor={`payment-status-${hasBooking.id}`} className="text-xs font-medium">Payment Status:</label>
                                             <select
                                               id={`payment-status-${hasBooking.id}`}
-                                              value={hasBooking.payment_status || 'invoice_sent'}
+                                              value={paymentStatuses[hasBooking.id] ?? hasBooking.payment_status ?? ''}
                                               onChange={async (e) => {
                                                 const newStatus = e.target.value;
                                                 // Save to DB
                                                 await supabase.from('bookings').update({ payment_status: newStatus }).eq('id', hasBooking.id);
+                                                // Update local state
+                                                setPaymentStatuses(prev => ({ ...prev, [hasBooking.id]: newStatus }));
                                                 // If payment received, show prompt
                                                 if (newStatus === 'payment_received') {
                                                   toast.info('Please click the Approve button to confirm this booking.');
                                                 }
                                               }}
-                                              className={`text-xs border rounded px-2 py-1 ${hasBooking.payment_status === 'payment_received' ? 'text-green-600 font-semibold' : ''}`}
+                                              className={`text-xs border rounded px-2 py-1 ${
+                                                (paymentStatuses[hasBooking.id] ?? hasBooking.payment_status) === 'payment_received' ? 'text-green-600 font-semibold' : ''
+                                              }`}
                                             >
                                               {paymentStatusOptions.map(opt => (
                                                 <option key={opt.value} value={opt.value}>{opt.label}</option>
                                               ))}
                                             </select>
+                                            {/* Send Invoice Button */}
+                                            {hasBooking.client_email && (
+                                              <>
+                                                <Button
+                                                  size="sm"
+                                                  variant="outline"
+                                                  className="text-xs"
+                                                  onClick={() => {
+                                                    // Open PayPal in new tab (generic link, as pre-filling is limited)
+                                                    window.open('https://www.paypal.com/invoice/create', '_blank');
+                                                  }}
+                                                >
+                                                  Send Invoice
+                                                </Button>
+                                                <Button
+                                                  size="sm"
+                                                  variant="outline"
+                                                  className="text-xs"
+                                                  onClick={() => {
+                                                    navigator.clipboard.writeText(hasBooking.client_email);
+                                                    toast.success('Email copied to clipboard!');
+                                                  }}
+                                                >
+                                                  Copy
+                                                </Button>
+                                              </>
+                                            )}
                                           </div>
                                         )}
                                         
