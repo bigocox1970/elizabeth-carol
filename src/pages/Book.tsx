@@ -346,10 +346,18 @@ const Book = () => {
       if (window.paypal && window.paypal.HostedButtons) {
         window.paypal.HostedButtons({
           hostedButtonId: "CS7837DA9Y362" // £1 test button
-        }).render("#paypal-container-CS7837DA9Y362");
+        }).render("#paypal-container-paypal-test");
       }
     }, []);
-    return <div id="paypal-container-CS7837DA9Y362"></div>;
+    // Fallback if PayPal SDK is not loaded
+    return (
+      <div>
+        <div id="paypal-container-paypal-test"></div>
+        {!(window.paypal && window.paypal.HostedButtons) && (
+          <div className="text-red-600 text-center mt-2">PayPal button failed to load. Please refresh the page.</div>
+        )}
+      </div>
+    );
   };
 
   if (initialLoading) {
