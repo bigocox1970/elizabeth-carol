@@ -1045,7 +1045,9 @@ const AvailabilityManager = () => {
                           const hasBooking = confirmedBooking || pendingBooking;
                           
                           return (
-                            <Card key={slot.id} className="hover:shadow-md transition-shadow max-w-none">
+                            <Card key={slot.id} className={`hover:shadow-md transition-shadow max-w-none ${
+                              confirmedBooking ? 'border-2 border-green-500' : pendingBooking ? 'border-2 border-red-500' : ''
+                            }`}>
                               <CardContent className="p-4">
                                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
                                   {/* Time and Basic Info */}
@@ -1372,9 +1374,9 @@ const AvailabilityManager = () => {
                       return (
                         <div key={slot.id} className={`flex items-center gap-3 p-3 rounded-lg bg-muted/50 ${
                           confirmedBooking
-                            ? 'border-2 border-blue-500 shadow-md bg-blue-50 dark:bg-blue-950/20'
+                            ? 'border-2 border-green-500 shadow-md bg-green-50 dark:bg-green-950/20'
                             : pendingBooking
-                              ? 'border-2 border-orange-500 shadow-md bg-orange-50 dark:bg-orange-950/20'
+                              ? 'border-2 border-red-500 shadow-md bg-red-50 dark:bg-red-950/20'
                               : 'border'
                         }`}>
                           {showEditMode && (
@@ -1455,7 +1457,7 @@ const AvailabilityManager = () => {
                     })}
                   </div>
                   {selectedSlots.length > 0 && (
-                    <div className="text-sm text-muted-foreground bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="text-sm text-muted-foreground bg-green-50 dark:bg-green-950/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
                       💡 <strong>Tip:</strong> {selectedSlots.length} slot{selectedSlots.length === 1 ? '' : 's'} selected. Click "Copy" to duplicate to other days.
                     </div>
                   )}

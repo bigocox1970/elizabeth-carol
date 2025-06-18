@@ -209,6 +209,17 @@ const Book = () => {
       // Stage 1: Validate and create booking request
       await new Promise(resolve => setTimeout(resolve, 1500)); // Increased for validation
       
+      // Fetch user profile info
+      let profile = null;
+      if (user) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('name, email, phone')
+          .eq('id', user.id)
+          .single();
+        profile = profileData;
+      }
+
       const { error } = await supabase
         .from('bookings')
         .insert({
@@ -217,7 +228,10 @@ const Book = () => {
           booking_type: 'online',
           reading_type: selectedReadingType,
           status: 'pending',
-          notes: 'Customer booking request'
+          notes: 'Customer booking request',
+          client_name: profile?.name || user.user_metadata?.name || user.email?.split('@')[0] || '',
+          client_email: profile?.email || user.email || '',
+          client_phone: profile?.phone || ''
         });
 
       if (error) {

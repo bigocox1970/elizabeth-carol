@@ -73,6 +73,18 @@ const RegisterForm = ({ onSuccess, onLoginClick }: RegisterFormProps) => {
         throw error;
       }
 
+      // Upsert user profile with phone number after successful signup
+      // Wait for user to be available (may need to prompt for email confirmation in production)
+      const { user } = await import('@/lib/supabase').then(m => m.getCurrentUser());
+      if (user) {
+        await import('@/lib/supabase').then(m => m.supabase.from('profiles').upsert({
+          id: user.id,
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone
+        }));
+      }
+
       // If newsletter subscription is enabled and user signed up successfully
       if (formData.subscribeToNewsletter) {
         try {
