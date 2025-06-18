@@ -75,7 +75,8 @@ const RegisterForm = ({ onSuccess, onLoginClick }: RegisterFormProps) => {
 
       // Upsert user profile with phone number after successful signup
       // Wait for user to be available (may need to prompt for email confirmation in production)
-      const { user } = await import('@/lib/supabase').then(m => m.getCurrentUser());
+      const { getCurrentUser } = await import('@/lib/supabase');
+      const { user } = await getCurrentUser();
       if (user) {
         await import('@/lib/supabase').then(m => m.supabase.from('profiles').upsert({
           id: user.id,
