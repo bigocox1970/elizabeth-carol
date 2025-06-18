@@ -1172,7 +1172,7 @@ const AvailabilityManager = () => {
                                                     toast.success('Email copied to clipboard!');
                                                   }}
                                                 >
-                                                  Copy
+                                                  Copy Email
                                                 </Button>
                                               </>
                                             )}
