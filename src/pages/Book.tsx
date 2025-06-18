@@ -655,7 +655,9 @@ const Book = () => {
               {selectedReadingType && (
                 <div className="pt-4 border-t">
                   <Button 
-                    onClick={handleBookingRequest}
+                    onClick={() => {
+                      window.location.href = "https://www.paypal.com/hostedbutton?hosted_button_id=ZLXVJCT2HUPZA";
+                    }}
                     disabled={bookingLoading}
                     className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     size="lg"
