@@ -131,18 +131,31 @@ const UserProfile = () => {
           .eq('id', user.id)
           .single();
 
+        // If profile is missing or phone is missing, sync from Auth metadata
+        if (!profile || !profile.phone) {
+          const phoneFromAuth = user.user_metadata?.phone || '';
+          const nameFromAuth = user.user_metadata?.name || '';
+          const emailFromAuth = user.email || '';
+          await supabase.from('profiles').upsert({
+            id: user.id,
+            name: nameFromAuth,
+            email: emailFromAuth,
+            phone: phoneFromAuth
+          });
+        }
+
         if (profile) {
           setProfileData({
             name: profile.name || user.user_metadata?.name || '',
             email: profile.email || user.email || '',
-            phone: profile.phone || ''
+            phone: profile.phone || user.user_metadata?.phone || ''
           });
         } else {
           // Fallback to user metadata if no profile found
           setProfileData({
             name: user.user_metadata?.name || '',
             email: user.email || '',
-            phone: ''
+            phone: user.user_metadata?.phone || ''
           });
         }
 
