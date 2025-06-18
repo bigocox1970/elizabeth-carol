@@ -1100,12 +1100,16 @@ const AvailabilityManager = () => {
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 mt-1">
                                           {(confirmedBooking?.client_email || pendingBooking?.client_email) && (
                                             <div className="text-sm text-muted-foreground">
-                                              📧 {confirmedBooking?.client_email || pendingBooking?.client_email}
+                                              📧 <a href={`mailto:${confirmedBooking?.client_email || pendingBooking?.client_email}`} className="underline hover:text-primary">
+                                                {confirmedBooking?.client_email || pendingBooking?.client_email}
+                                              </a>
                                             </div>
                                           )}
                                           {(confirmedBooking?.client_phone || bookingPhones[confirmedBooking?.id || 0] || pendingBooking?.client_phone || bookingPhones[pendingBooking?.id || 0]) && (
                                             <div className="text-sm text-muted-foreground">
-                                              📞 {confirmedBooking?.client_phone || bookingPhones[confirmedBooking?.id || 0] || pendingBooking?.client_phone || bookingPhones[pendingBooking?.id || 0]}
+                                              📞 <a href={`tel:${confirmedBooking?.client_phone || bookingPhones[confirmedBooking?.id || 0] || pendingBooking?.client_phone || bookingPhones[pendingBooking?.id || 0]}`} className="underline hover:text-primary">
+                                                {confirmedBooking?.client_phone || bookingPhones[confirmedBooking?.id || 0] || pendingBooking?.client_phone || bookingPhones[pendingBooking?.id || 0]}
+                                              </a>
                                             </div>
                                           )}
                                         </div>
