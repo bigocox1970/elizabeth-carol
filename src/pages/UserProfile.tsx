@@ -728,8 +728,8 @@ const UserProfile = () => {
                           Cancellation Policy
                         </h4>
                         <p className="text-sm text-blue-800 dark:text-blue-200">
-                          • <strong>50% refund</strong> if cancelled 48+ hours before your reading<br/>
-                          • <strong>No refund</strong> if cancelled less than 48 hours before your reading
+                          • <strong>100% refund</strong> if cancelled 48+ hours before your reading<br/>
+                          • <strong>Unable to cancel</strong> less than 48 hours before your reading
                         </p>
                       </div>
 
@@ -899,18 +899,18 @@ const UserProfile = () => {
                                 {/* Action Buttons */}
                                 <div className="flex flex-wrap gap-2 pt-2">
                                   {/* Cancel Button */}
-                                  {canCancelBooking(booking) && (
+                                  {canCancelBooking(booking) ? (
                                     <AlertDialog>
                                       <AlertDialogTrigger asChild>
                                         <Button variant="outline" size="sm" className="text-orange-600 border-orange-300 hover:bg-orange-50">
-                                          Cancel Booking ({getCancellationRefund(booking)})
+                                          Cancel Booking (100% refund)
                                         </Button>
                                       </AlertDialogTrigger>
                                       <AlertDialogContent>
                                         <AlertDialogHeader>
                                           <AlertDialogTitle>Cancel Booking</AlertDialogTitle>
                                           <AlertDialogDescription>
-                                            Are you sure you want to cancel this booking? You will receive a {getCancellationRefund(booking).toLowerCase()}.
+                                            Are you sure you want to cancel this booking? You will receive a 100% refund.
                                           </AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
@@ -924,6 +924,8 @@ const UserProfile = () => {
                                         </AlertDialogFooter>
                                       </AlertDialogContent>
                                     </AlertDialog>
+                                  ) : (
+                                    <div className="text-sm text-red-600 font-medium py-2">Unable to cancel this close to your booking</div>
                                   )}
 
                                   {/* Review Button - Show when reading date has passed and booking was confirmed */}

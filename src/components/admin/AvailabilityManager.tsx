@@ -508,9 +508,9 @@ const AvailabilityManager = () => {
       const now = new Date();
       const hoursUntilBooking = (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
       
-      let refundAmount = 'No refund';
+      let refundAmount = 'Unable to cancel';
       if (hoursUntilBooking >= 48) {
-        refundAmount = '50% refund';
+        refundAmount = '100% refund';
       }
 
       // Send cancellation email to customer
@@ -522,8 +522,9 @@ const AvailabilityManager = () => {
             date: formatDate(slot.date),
             time: `${formatTime(slot.start_time)} - ${formatTime(slot.end_time)}`,
             serviceType: booking.reading_type === 'in_person' ? 'One to One (In-person)' :
-                        booking.reading_type === 'video' ? 'Video Call' : 
-                        booking.reading_type === 'telephone' ? 'Telephone' : 'Reading',
+                        booking.reading_type === 'video' ? 'Video Call' :
+                        booking.reading_type === 'telephone' ? 'Telephone' :
+                        booking.reading_type || '',
             notes: slot.notes,
             refundAmount: refundAmount
           });
@@ -570,8 +571,10 @@ const AvailabilityManager = () => {
           customerName: booking.client_name || 'Customer',
           date: formatDate(slot.date),
           time: `${formatTime(slot.start_time)} - ${formatTime(slot.end_time)}`,
-          serviceType: slot.service_type === 'both' ? 'In-person & Remote' :
-                      slot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only',
+          serviceType: booking.reading_type === 'in_person' ? 'One to One (In-person)' :
+                      booking.reading_type === 'video' ? 'Video Call' :
+                      booking.reading_type === 'telephone' ? 'Telephone' :
+                      booking.reading_type || '',
           notes: slot.notes,
           approved: true
         });
@@ -611,8 +614,10 @@ const AvailabilityManager = () => {
           customerName: booking.client_name || 'Customer',
           date: formatDate(slot.date),
           time: `${formatTime(slot.start_time)} - ${formatTime(slot.end_time)}`,
-          serviceType: slot.service_type === 'both' ? 'In-person & Remote' :
-                      slot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only',
+          serviceType: booking.reading_type === 'in_person' ? 'One to One (In-person)' :
+                      booking.reading_type === 'video' ? 'Video Call' :
+                      booking.reading_type === 'telephone' ? 'Telephone' :
+                      booking.reading_type || '',
           notes: slot.notes,
           approved: false
         });
