@@ -106,8 +106,19 @@ const Footer = () => {
 
         <div className="border-t border-border pt-8 mt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <div className="text-sm text-muted-foreground">
-              © 2024 Elizabeth Carol. All rights reserved.
+            <div className="text-center md:text-left text-sm text-muted-foreground space-y-2 md:space-y-0">
+              <div>© 2024 Elizabeth Carol. All rights reserved.</div>
+              <div>
+                Website Design by{" "}
+                <a
+                  href="https://diamondinternet.co.uk/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-primary transition-colors underline"
+                >
+                  Diamond Internet
+                </a>
+              </div>
             </div>
             <div className="flex space-x-6 text-sm">
               <Link to="/privacy" className="text-muted-foreground hover:text-primary transition-colors">
