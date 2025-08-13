@@ -16,6 +16,7 @@ import { Star, Edit, Trash2, LogOut, User, Calendar, Clock, MessageSquare, X, Al
 import { useToast } from "@/components/ui/use-toast";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { supabase } from "@/lib/supabase";
 
 interface Comment {
   id: number;
@@ -61,7 +62,7 @@ const UserProfile = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("readings"); // Will be updated based on admin status
+  const [activeTab, setActiveTab] = useState<string>(""); // Start with empty string to avoid race condition
   const [editingComment, setEditingComment] = useState<Comment | null>(null);
   const [editingReview, setEditingReview] = useState<Review | null>(null);
   const [commentDialogOpen, setCommentDialogOpen] = useState(false);
@@ -73,6 +74,14 @@ const UserProfile = () => {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   
+  // Profile editing state
+  const [profileData, setProfileData] = useState({
+    name: '',
+    email: '',
+    phone: ''
+  });
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  
   // Booking-related state
   const [editingBookingNotes, setEditingBookingNotes] = useState<number | null>(null);
   const [bookingNotesContent, setBookingNotesContent] = useState("");
@@ -81,14 +90,6 @@ const UserProfile = () => {
   const [reviewRating, setReviewRating] = useState(5);
   const [fullScreenNotesOpen, setFullScreenNotesOpen] = useState(false);
   const [fullScreenNotesBooking, setFullScreenNotesBooking] = useState<Booking | null>(null);
-
-  useEffect(() => {
-    // Handle URL tab parameter
-    const tabParam = searchParams.get('tab');
-    if (tabParam && ['readings', 'comments', 'reviews', 'account'].includes(tabParam)) {
-      setActiveTab(tabParam);
-    }
-  }, [searchParams]);
 
   useEffect(() => {
     // Don't redirect if auth is still loading
@@ -100,46 +101,121 @@ const UserProfile = () => {
     }
 
     const fetchUserContent = async () => {
-      setLoading(true);
+      if (!user) return;
+
       try {
-        // Check if user is admin
+        setLoading(true);
+
+        // Check if user is admin first
         const adminStatus = await isUserAdmin();
+        console.log('Admin status for user:', user.email, 'is:', adminStatus);
         setIsAdmin(adminStatus);
 
-        // Set default tab based on admin status (only if no URL tab parameter)
+        // Set default tab based on admin status and URL parameters
         const tabParam = searchParams.get('tab');
-        if (!tabParam) {
-          setActiveTab(adminStatus ? "account" : "readings");
+        console.log('URL tab parameter:', tabParam);
+        if (tabParam && ['readings', 'comments', 'reviews', 'account'].includes(tabParam)) {
+          console.log('Setting tab from URL parameter:', tabParam);
+          setActiveTab(tabParam);
+        } else {
+          // Set default tab based on admin status
+          const defaultTab = adminStatus ? "account" : "readings";
+          console.log('Setting default tab based on admin status:', defaultTab);
+          setActiveTab(defaultTab);
         }
 
-        // Fetch user's comments
-        const { data: commentsData, error: commentsError } = await getUserComments();
-        if (commentsError) throw commentsError;
-        setComments(commentsData || []);
+        // Load user profile data
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('name, email, phone')
+          .eq('id', user.id)
+          .single();
 
-        // Fetch user's reviews
-        const { data: reviewsData, error: reviewsError } = await getUserReviews();
-        if (reviewsError) throw reviewsError;
-        setReviews(reviewsData || []);
+        // If profile is missing or phone is missing, sync from Auth metadata
+        if (!profile || !profile.phone) {
+          const phoneFromAuth = user.user_metadata?.phone || '';
+          const nameFromAuth = user.user_metadata?.name || '';
+          const emailFromAuth = user.email || '';
+          await supabase.from('profiles').upsert({
+            id: user.id,
+            name: nameFromAuth,
+            email: emailFromAuth,
+            phone: phoneFromAuth
+          });
+        }
 
-        // Fetch user's bookings
-        const { data: bookingsData, error: bookingsError } = await getUserBookings();
-        if (bookingsError) throw bookingsError;
-        setBookings(bookingsData || []);
+        if (profile) {
+          setProfileData({
+            name: profile.name || user.user_metadata?.name || '',
+            email: profile.email || user.email || '',
+            phone: profile.phone || user.user_metadata?.phone || ''
+          });
+        } else {
+          // Fallback to user metadata if no profile found
+          setProfileData({
+            name: user.user_metadata?.name || '',
+            email: user.email || '',
+            phone: user.user_metadata?.phone || ''
+          });
+        }
+
+        // Load user's comments
+        const { data: commentsData, error: commentsError } = await supabase
+          .from('comments')
+          .select('*')
+          .eq('email', user.email)
+          .order('created_at', { ascending: false });
+
+        if (commentsError) {
+          console.error('Error fetching comments:', commentsError);
+        } else {
+          setComments(commentsData || []);
+        }
+
+        // Load user's reviews
+        const { data: reviewsData, error: reviewsError } = await supabase
+          .from('reviews')
+          .select('*')
+          .eq('email', user.email)
+          .order('created_at', { ascending: false });
+
+        if (reviewsError) {
+          console.error('Error fetching reviews:', reviewsError);
+        } else {
+          setReviews(reviewsData || []);
+        }
+
+        // Load user's bookings
+        const { data: bookingsData, error: bookingsError } = await supabase
+          .from('bookings')
+          .select(`
+            *,
+            availability_slots (
+              id,
+              date,
+              start_time,
+              end_time,
+              service_type,
+              notes
+            )
+          `)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (bookingsError) {
+          console.error('Error fetching bookings:', bookingsError);
+        } else {
+          setBookings(bookingsData || []);
+        }
       } catch (error) {
-        console.error("Error fetching user content:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load your content. Please try again later.",
-          variant: "destructive",
-        });
+        console.error('Error fetching user content:', error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchUserContent();
-  }, [user, navigate, toast, authLoading]);
+  }, [user, navigate, toast, authLoading, searchParams]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -279,6 +355,15 @@ const UserProfile = () => {
   };
 
   const handlePasswordChange = async () => {
+    if (!newPassword || !confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Please fill in both password fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       toast({
         title: "Error",
@@ -297,14 +382,17 @@ const UserProfile = () => {
       return;
     }
 
-    setIsChangingPassword(true);
     try {
-      const { error } = await updatePassword(newPassword);
+      setIsChangingPassword(true);
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
       if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Your password has been updated successfully.",
+        description: "Password updated successfully.",
       });
 
       setNewPassword("");
@@ -313,11 +401,46 @@ const UserProfile = () => {
       console.error("Error updating password:", error);
       toast({
         title: "Error",
-        description: "Failed to update your password. Please try again.",
+        description: "Failed to update password. Please try again.",
         variant: "destructive",
       });
     } finally {
       setIsChangingPassword(false);
+    }
+  };
+
+  const handleProfileUpdate = async () => {
+    if (!user) return;
+
+    try {
+      setIsUpdatingProfile(true);
+
+      // Update profile in database
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          name: profileData.name,
+          email: profileData.email,
+          phone: profileData.phone,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Profile updated successfully.",
+      });
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingProfile(false);
     }
   };
 
@@ -569,7 +692,7 @@ const UserProfile = () => {
             </div>
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <Tabs value={activeTab || "readings"} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="grid grid-cols-4 w-full">
               <TabsTrigger value="readings">Readings</TabsTrigger>
               <TabsTrigger value="comments">Comments</TabsTrigger>
@@ -592,7 +715,7 @@ const UserProfile = () => {
                     <div className="text-center py-8 text-muted-foreground">
                       <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
                       <p>You haven't booked any readings yet.</p>
-                      <Button className="mt-4" onClick={() => navigate("/book")}>
+                      <Button className="mt-4" onClick={() => navigate("/contact")}>
                         Book Your First Reading
                       </Button>
                     </div>
@@ -605,8 +728,8 @@ const UserProfile = () => {
                           Cancellation Policy
                         </h4>
                         <p className="text-sm text-blue-800 dark:text-blue-200">
-                          • <strong>50% refund</strong> if cancelled 48+ hours before your reading<br/>
-                          • <strong>No refund</strong> if cancelled less than 48 hours before your reading
+                          • <strong>100% refund</strong> if cancelled 48+ hours before your reading<br/>
+                          • <strong>Unable to cancel</strong> less than 48 hours before your reading
                         </p>
                       </div>
 
@@ -776,18 +899,18 @@ const UserProfile = () => {
                                 {/* Action Buttons */}
                                 <div className="flex flex-wrap gap-2 pt-2">
                                   {/* Cancel Button */}
-                                  {canCancelBooking(booking) && (
+                                  {canCancelBooking(booking) ? (
                                     <AlertDialog>
                                       <AlertDialogTrigger asChild>
                                         <Button variant="outline" size="sm" className="text-orange-600 border-orange-300 hover:bg-orange-50">
-                                          Cancel Booking ({getCancellationRefund(booking)})
+                                          Cancel Booking (100% refund)
                                         </Button>
                                       </AlertDialogTrigger>
                                       <AlertDialogContent>
                                         <AlertDialogHeader>
                                           <AlertDialogTitle>Cancel Booking</AlertDialogTitle>
                                           <AlertDialogDescription>
-                                            Are you sure you want to cancel this booking? You will receive a {getCancellationRefund(booking).toLowerCase()}.
+                                            Are you sure you want to cancel this booking? You will receive a 100% refund.
                                           </AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
@@ -801,6 +924,8 @@ const UserProfile = () => {
                                         </AlertDialogFooter>
                                       </AlertDialogContent>
                                     </AlertDialog>
+                                  ) : (
+                                    <div className="text-sm text-red-600 font-medium py-2">Unable to cancel this close to your booking</div>
                                   )}
 
                                   {/* Review Button - Show when reading date has passed and booking was confirmed */}
@@ -1149,6 +1274,51 @@ const UserProfile = () => {
                       </Button>
                     </div>
                   )}
+                  
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Profile Information</h3>
+                    <div className="space-y-2">
+                      <Label htmlFor="profileName">Name</Label>
+                      <Input
+                        id="profileName"
+                        value={profileData.name}
+                        onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                        placeholder="Your name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="profileEmail">Email</Label>
+                      <Input
+                        id="profileEmail"
+                        type="email"
+                        value={profileData.email}
+                        onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                        placeholder="your.email@example.com"
+                        disabled
+                        className="bg-muted"
+                      />
+                      <p className="text-xs text-muted-foreground">Email cannot be changed here. Contact support if needed.</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="profilePhone">Phone Number</Label>
+                      <Input
+                        id="profilePhone"
+                        type="tel"
+                        value={profileData.phone}
+                        onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                        placeholder="Your phone number"
+                      />
+                      <p className="text-xs text-muted-foreground">Used for booking confirmations and contact purposes.</p>
+                    </div>
+                    <Button
+                      onClick={handleProfileUpdate}
+                      disabled={isUpdatingProfile}
+                      className="w-full"
+                    >
+                      {isUpdatingProfile ? "Updating..." : "Update Profile"}
+                    </Button>
+                  </div>
+                  
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold">Change Password</h3>
                     <div className="space-y-2">

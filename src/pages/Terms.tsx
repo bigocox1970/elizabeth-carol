@@ -108,9 +108,9 @@ const Terms = () => {
                   <strong>Client Cancellations:</strong>
                 </p>
                 <ul className="list-disc list-inside space-y-2 text-muted-foreground ml-4">
-                  <li>24 hours notice required for all cancellations</li>
-                  <li>Cancellations with 24+ hours notice: Full refund or rescheduling available</li>
-                  <li>Cancellations with less than 24 hours notice: 50% charge applies</li>
+                  <li>48 hours notice required for all cancellations</li>
+                  <li>Cancellations with 48+ hours notice: 100% refund or rescheduling available</li>
+                  <li>Cancellations with less than 48 hours notice: Unable to cancel</li>
                   <li>No-shows: Full payment required</li>
                   <li>Emergency situations will be considered on a case-by-case basis</li>
                 </ul>

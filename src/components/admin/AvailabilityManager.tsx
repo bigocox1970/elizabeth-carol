@@ -22,6 +22,7 @@ interface AvailabilitySlot {
 interface Booking {
   id?: number;
   availability_slot_id: number;
+  user_id?: string;
   client_name?: string;
   client_email?: string;
   client_phone?: string;
@@ -29,6 +30,13 @@ interface Booking {
   reading_type?: 'in_person' | 'video' | 'telephone' | 'other';
   status: 'confirmed' | 'cancelled' | 'completed' | 'pending';
   notes?: string;
+  user_notes?: string;
+  profiles?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+  };
+  payment_status?: string;
 }
 
 interface Client {
@@ -37,6 +45,14 @@ interface Client {
   name?: string;
   phone?: string;
 }
+
+// Add payment status options
+const paymentStatusOptions = [
+  { value: '', label: 'Please select' },
+  { value: 'invoice_sent', label: 'Invoice sent' },
+  { value: 'payment_received', label: 'Payment received' },
+  { value: 'refund_sent', label: 'Refund sent' },
+];
 
 const AvailabilityManager = () => {
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
@@ -65,6 +81,8 @@ const AvailabilityManager = () => {
     notes: ''
   });
   const [showEditMode, setShowEditMode] = useState(false);
+  const [bookingPhones, setBookingPhones] = useState<{[key: number]: string}>({});
+  const [paymentStatuses, setPaymentStatuses] = useState<Record<number, string>>({});
 
   useEffect(() => {
     loadAvailability();
@@ -121,14 +139,43 @@ const AvailabilityManager = () => {
         return;
       }
 
+      console.log('📞 DEBUG: Loaded bookings data:', bookingsData);
+
       setSlots(slotsData || []);
       setBookings(bookingsData || []);
+      
+      // Fetch phone numbers for bookings that have user_id
+      await fetchBookingPhones(bookingsData || []);
     } catch (error) {
       console.error('Error loading availability:', error);
       toast.error('Failed to load availability');
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchBookingPhones = async (bookings: Booking[]) => {
+    const phoneMap: {[key: number]: string} = {};
+    
+    for (const booking of bookings) {
+      if (booking.id && booking.user_id && !booking.client_phone) {
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('phone')
+            .eq('id', booking.user_id)
+            .single();
+          
+          if (profile?.phone) {
+            phoneMap[booking.id] = profile.phone;
+          }
+        } catch (error) {
+          console.log(`Could not fetch phone for booking ${booking.id}:`, error);
+        }
+      }
+    }
+    
+    setBookingPhones(phoneMap);
   };
 
   const loadClients = async () => {
@@ -348,11 +395,27 @@ const AvailabilityManager = () => {
       
       // Pre-populate the selected client from booking data
       if (existingBooking.client_name || existingBooking.client_email) {
+        let clientPhone = existingBooking.client_phone || '';
+        
+        // If we have a user_id, try to get phone from profiles
+        if (existingBooking.user_id && !clientPhone) {
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('phone')
+              .eq('id', existingBooking.user_id)
+              .single();
+            clientPhone = profile?.phone || '';
+          } catch (error) {
+            console.log('Could not fetch profile phone:', error);
+          }
+        }
+        
         const clientFromBooking: Client = {
           id: 'from-booking', // Special ID to indicate this came from booking data
           email: existingBooking.client_email || '',
           name: existingBooking.client_name || existingBooking.client_email || 'Unknown',
-          phone: existingBooking.client_phone || ''
+          phone: clientPhone
         };
         setSelectedClient(clientFromBooking);
       } else {
@@ -455,9 +518,9 @@ const AvailabilityManager = () => {
       const now = new Date();
       const hoursUntilBooking = (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
       
-      let refundAmount = 'No refund';
+      let refundAmount = 'Unable to cancel';
       if (hoursUntilBooking >= 48) {
-        refundAmount = '50% refund';
+        refundAmount = '100% refund';
       }
 
       // Send cancellation email to customer
@@ -469,8 +532,9 @@ const AvailabilityManager = () => {
             date: formatDate(slot.date),
             time: `${formatTime(slot.start_time)} - ${formatTime(slot.end_time)}`,
             serviceType: booking.reading_type === 'in_person' ? 'One to One (In-person)' :
-                        booking.reading_type === 'video' ? 'Video Call' : 
-                        booking.reading_type === 'telephone' ? 'Telephone' : 'Reading',
+                        booking.reading_type === 'video' ? 'Video Call' :
+                        booking.reading_type === 'telephone' ? 'Telephone' :
+                        booking.reading_type || '',
             notes: slot.notes,
             refundAmount: refundAmount
           });
@@ -517,8 +581,10 @@ const AvailabilityManager = () => {
           customerName: booking.client_name || 'Customer',
           date: formatDate(slot.date),
           time: `${formatTime(slot.start_time)} - ${formatTime(slot.end_time)}`,
-          serviceType: slot.service_type === 'both' ? 'In-person & Remote' :
-                      slot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only',
+          serviceType: booking.reading_type === 'in_person' ? 'One to One (In-person)' :
+                      booking.reading_type === 'video' ? 'Video Call' :
+                      booking.reading_type === 'telephone' ? 'Telephone' :
+                      booking.reading_type || '',
           notes: slot.notes,
           approved: true
         });
@@ -558,8 +624,10 @@ const AvailabilityManager = () => {
           customerName: booking.client_name || 'Customer',
           date: formatDate(slot.date),
           time: `${formatTime(slot.start_time)} - ${formatTime(slot.end_time)}`,
-          serviceType: slot.service_type === 'both' ? 'In-person & Remote' :
-                      slot.service_type === 'in_person' ? 'In-person Only' : 'Remote Only',
+          serviceType: booking.reading_type === 'in_person' ? 'One to One (In-person)' :
+                      booking.reading_type === 'video' ? 'Video Call' :
+                      booking.reading_type === 'telephone' ? 'Telephone' :
+                      booking.reading_type || '',
           notes: slot.notes,
           approved: false
         });
@@ -992,7 +1060,9 @@ const AvailabilityManager = () => {
                           const hasBooking = confirmedBooking || pendingBooking;
                           
                           return (
-                            <Card key={slot.id} className="hover:shadow-md transition-shadow max-w-none">
+                            <Card key={slot.id} className={`hover:shadow-md transition-shadow max-w-none ${
+                              confirmedBooking ? 'border-2 border-green-500' : pendingBooking ? 'border-2 border-red-500' : ''
+                            }`}>
                               <CardContent className="p-4">
                                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
                                   {/* Time and Basic Info */}
@@ -1030,12 +1100,16 @@ const AvailabilityManager = () => {
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 mt-1">
                                           {(confirmedBooking?.client_email || pendingBooking?.client_email) && (
                                             <div className="text-sm text-muted-foreground">
-                                              📧 {confirmedBooking?.client_email || pendingBooking?.client_email}
+                                              📧 <a href={`mailto:${confirmedBooking?.client_email || pendingBooking?.client_email}`} className="underline hover:text-primary">
+                                                {confirmedBooking?.client_email || pendingBooking?.client_email}
+                                              </a>
                                             </div>
                                           )}
-                                          {(confirmedBooking?.client_phone || pendingBooking?.client_phone) && (
+                                          {(confirmedBooking?.client_phone || bookingPhones[confirmedBooking?.id || 0] || pendingBooking?.client_phone || bookingPhones[pendingBooking?.id || 0]) && (
                                             <div className="text-sm text-muted-foreground">
-                                              📞 {confirmedBooking?.client_phone || pendingBooking?.client_phone}
+                                              📞 <a href={`tel:${confirmedBooking?.client_phone || bookingPhones[confirmedBooking?.id || 0] || pendingBooking?.client_phone || bookingPhones[pendingBooking?.id || 0]}`} className="underline hover:text-primary">
+                                                {confirmedBooking?.client_phone || bookingPhones[confirmedBooking?.id || 0] || pendingBooking?.client_phone || bookingPhones[pendingBooking?.id || 0]}
+                                              </a>
                                             </div>
                                           )}
                                         </div>
@@ -1050,6 +1124,62 @@ const AvailabilityManager = () => {
                                         {(confirmedBooking?.notes || pendingBooking?.notes) && (
                                           <div className="text-sm text-muted-foreground mt-2 italic">
                                             "{confirmedBooking?.notes || pendingBooking?.notes}"
+                                          </div>
+                                        )}
+                                        
+                                        {/* Payment Status Dropdown and Invoice/Copy Buttons */}
+                                        {hasBooking && (
+                                          <div className="mt-3 flex items-center gap-2">
+                                            <label htmlFor={`payment-status-${hasBooking.id}`} className="text-xs font-medium">Payment Status:</label>
+                                            <select
+                                              id={`payment-status-${hasBooking.id}`}
+                                              value={paymentStatuses[hasBooking.id] ?? hasBooking.payment_status ?? ''}
+                                              onChange={async (e) => {
+                                                const newStatus = e.target.value;
+                                                // Save to DB
+                                                await supabase.from('bookings').update({ payment_status: newStatus }).eq('id', hasBooking.id);
+                                                // Update local state
+                                                setPaymentStatuses(prev => ({ ...prev, [hasBooking.id]: newStatus }));
+                                                // If payment received, show prompt
+                                                if (newStatus === 'payment_received') {
+                                                  toast.info('Please click the Approve button to confirm this booking.');
+                                                }
+                                              }}
+                                              className={`text-xs border rounded px-2 py-1 ${
+                                                (paymentStatuses[hasBooking.id] ?? hasBooking.payment_status) === 'payment_received' ? 'text-green-600 font-semibold' : ''
+                                              }`}
+                                            >
+                                              {paymentStatusOptions.map(opt => (
+                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                              ))}
+                                            </select>
+                                            {/* Send Invoice Button */}
+                                            {hasBooking.client_email && (
+                                              <>
+                                                <Button
+                                                  size="sm"
+                                                  variant="outline"
+                                                  className="text-xs"
+                                                  onClick={() => {
+                                                    // Open PayPal in new tab (generic link, as pre-filling is limited)
+                                                    window.open('https://www.paypal.com/invoice/create', '_blank');
+                                                  }}
+                                                >
+                                                  Send Invoice
+                                                </Button>
+                                                <Button
+                                                  size="sm"
+                                                  variant="outline"
+                                                  className="text-xs"
+                                                  onClick={() => {
+                                                    navigator.clipboard.writeText(hasBooking.client_email);
+                                                    toast.success('Email copied to clipboard!');
+                                                  }}
+                                                >
+                                                  Copy Email
+                                                </Button>
+                                              </>
+                                            )}
                                           </div>
                                         )}
                                         
@@ -1319,9 +1449,9 @@ const AvailabilityManager = () => {
                       return (
                         <div key={slot.id} className={`flex items-center gap-3 p-3 rounded-lg bg-muted/50 ${
                           confirmedBooking
-                            ? 'border-2 border-blue-500 shadow-md bg-blue-50 dark:bg-blue-950/20'
+                            ? 'border-2 border-green-500 shadow-md bg-green-50 dark:bg-green-950/20'
                             : pendingBooking
-                              ? 'border-2 border-orange-500 shadow-md bg-orange-50 dark:bg-orange-950/20'
+                              ? 'border-2 border-red-500 shadow-md bg-red-50 dark:bg-red-950/20'
                               : 'border'
                         }`}>
                           {showEditMode && (
@@ -1402,7 +1532,7 @@ const AvailabilityManager = () => {
                     })}
                   </div>
                   {selectedSlots.length > 0 && (
-                    <div className="text-sm text-muted-foreground bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="text-sm text-muted-foreground bg-green-50 dark:bg-green-950/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
                       💡 <strong>Tip:</strong> {selectedSlots.length} slot{selectedSlots.length === 1 ? '' : 's'} selected. Click "Copy" to duplicate to other days.
                     </div>
                   )}
@@ -1560,6 +1690,9 @@ const AvailabilityManager = () => {
                         </div>
                         {selectedClient.id !== 'not-registered' && (
                           <div className="text-sm text-muted-foreground">{selectedClient.email}</div>
+                        )}
+                        {selectedClient.id !== 'not-registered' && selectedClient.phone && (
+                          <div className="text-sm text-muted-foreground">📞 {selectedClient.phone}</div>
                         )}
                       </div>
                       <Button

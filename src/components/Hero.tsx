@@ -49,7 +49,7 @@ const Hero = () => {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link to="/book">
+              <Link to="/contact">
                 <Button 
                   size="lg" 
                   className="bg-gradient-to-r from-purple-900 to-black hover:from-black hover:to-gray-900 text-white font-medium shadow-lg"

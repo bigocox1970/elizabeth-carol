@@ -125,7 +125,7 @@ export const emailTemplates = {
         <strong>Time:</strong> ${data.time}<br>
       </div>
       <p>Please visit our booking page to select an alternative time slot.</p>
-      <p><a href="https://yoursite.com/book" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Book Another Time</a></p>
+      <p><a href="https://elizabethcarol.co.uk/contact" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Contact Us</a></p>
       <p>Best regards,<br>Elizabeth Carol</p>
     `
   })
