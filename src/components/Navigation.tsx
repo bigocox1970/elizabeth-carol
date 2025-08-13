@@ -68,7 +68,7 @@ const Navigation = () => {
               <span>01865 361 786</span>
             </a>
             {!isActive("/contact") && (
-              <Link to="/book">
+              <Link to="/contact">
                 <Button size="sm" className="bg-gradient-mystical hover:opacity-90 text-primary-foreground">
                   Book Reading
                 </Button>
@@ -145,7 +145,7 @@ const Navigation = () => {
                       <span>01865 361 786</span>
                     </a>
                     {!isActive("/contact") && (
-                      <Link to="/book" onClick={() => setIsOpen(false)}>
+                      <Link to="/contact" onClick={() => setIsOpen(false)}>
                         <Button className="w-full bg-gradient-mystical hover:opacity-90 text-primary-foreground mb-4">
                           Book Reading
                         </Button>

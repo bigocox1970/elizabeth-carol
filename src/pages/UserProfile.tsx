@@ -715,7 +715,7 @@ const UserProfile = () => {
                     <div className="text-center py-8 text-muted-foreground">
                       <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
                       <p>You haven't booked any readings yet.</p>
-                      <Button className="mt-4" onClick={() => navigate("/book")}>
+                      <Button className="mt-4" onClick={() => navigate("/contact")}>
                         Book Your First Reading
                       </Button>
                     </div>

@@ -87,7 +87,7 @@ const Services = () => {
                     </ul>
                   </div>
 
-                  <Link to={service.title === "Home Psychic Evenings" ? "/contact" : "/book"} className="mt-6 block">
+                  <Link to="/contact" className="mt-6 block">
                     <Button 
                       className="w-full bg-gradient-mystical hover:opacity-90 text-primary-foreground"
                       size="sm"

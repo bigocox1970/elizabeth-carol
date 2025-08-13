@@ -273,7 +273,7 @@ Date: ${data.date}
 Time: ${data.time}
 
 Please visit our booking page to select an alternative time slot.
-Booking Page: https://www.elizabethcarol.co.uk/book
+Contact Page: https://www.elizabethcarol.co.uk/contact
 
 Best regards,
 Elizabeth Carol
@@ -337,7 +337,7 @@ Elizabeth Carol
               <p>Please visit our booking page to select an alternative time slot.</p>
               
               <p style="text-align: center;">
-                <a href="https://www.elizabethcarol.co.uk/book" style="background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Book Another Time</a>
+                <a href="https://www.elizabethcarol.co.uk/contact" style="background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Contact Us</a>
               </p>
               
               <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; color: #64748b;">
