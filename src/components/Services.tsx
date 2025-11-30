@@ -11,7 +11,6 @@ const Services = () => {
       title: "One-to-One Readings",
       description: "Personal spiritual guidance sessions in a comfortable, confidential setting. Connect with loved ones who have passed and receive insight into your life's path.",
       duration: "60 minutes",
-      price: "£70",
       features: ["Mediumship", "Clairvoyant guidance", "Tarot reading", "Spirit communication"],
       popular: true
     },
@@ -19,8 +18,7 @@ const Services = () => {
       icon: Phone,
       title: "Telephone & Video Readings",
       description: "Distance is no barrier to spiritual connection. Receive the same quality guidance from the comfort of your own home via phone or video call.",
-      duration: "60 minutes", 
-      price: "£70",
+      duration: "60 minutes",
       features: ["Remote sessions", "Flexible timing", "Recording available", "Same spiritual connection"]
     },
     {
@@ -28,7 +26,6 @@ const Services = () => {
       title: "Home Psychic Evenings",
       description: "Host an intimate psychic evening in your own home. Elizabeth will provide readings for you and your guests in a relaxed, familiar environment.",
       duration: "3-4 hours",
-      price: "From £300",
       features: ["In your home", "Multiple readings", "Social atmosphere", "Memorable experience"]
     }
   ];
@@ -58,14 +55,11 @@ const Services = () => {
                   </div>
                   <div className="text-center">
                     <CardTitle className="text-xl font-serif mb-2">{service.title}</CardTitle>
-                    <div className="flex items-center justify-center space-x-4 text-sm text-muted-foreground">
+                    <div className="flex items-center justify-center text-sm text-muted-foreground">
                       <div className="flex items-center space-x-1">
                         <Clock className="w-4 h-4" />
                         <span>{service.duration}</span>
                       </div>
-                      <span className="font-semibold bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs">
-                        {service.price}
-                      </span>
                     </div>
                   </div>
                 </CardHeader>

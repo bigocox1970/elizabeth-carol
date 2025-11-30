@@ -29,7 +29,9 @@ const Hero = () => {
           <div className="space-y-8 bg-white/80 dark:bg-transparent p-8 rounded-lg backdrop-blur-sm">
             <div className="space-y-4">
               <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-300">
-                <Star className="w-5 h-5" />
+                <Link to="/admin" className="hover:text-purple-600 transition-colors">
+                  <Star className="w-5 h-5" />
+                </Link>
                 <span className="text-sm font-medium">Oxford's Trusted Psychic Medium</span>
                 <Star className="w-5 h-5" />
               </div>
